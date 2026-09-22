@@ -1,0 +1,61 @@
+category,subject,rank,brand_id,brand_name,total_purchase_users,repurchase_users,repurchase_rate
+rank_repurchase,EN,1,9870,스푼 잉글리쉬,5,3,60.00
+rank_repurchase,EN,2,6728,쉘리영어,2,1,50.00
+rank_repurchase,EN,3,867,최강영어,2,1,50.00
+rank_repurchase,EN,4,960,우작서점 고담샘,6,2,33.33
+rank_repurchase,EN,5,10791,아이윌교육,28,9,32.14
+rank_repurchase,EN,6,29971,송샘,13,4,30.77
+rank_repurchase,EN,7,3827,담박영어,13,4,30.77
+rank_repurchase,EN,8,13784,대치동 강한영어,20,6,30.00
+rank_repurchase,EN,9,5956,김용환영어연구소,7,2,28.57
+rank_repurchase,EN,10,219,고미조슈아,23,6,26.09
+rank_repurchase,EN,11,2653,압도적 EML워크북,4,1,25.00
+rank_repurchase,EN,12,987,부교재나라,862,182,21.11
+rank_repurchase,EN,13,98907,입시영어 석쌤,19,4,21.05
+rank_repurchase,EN,14,12662,모자이크,30,6,20.00
+rank_repurchase,EN,15,14113,로제에듀,20,4,20.00
+rank_repurchase,EN,16,42836,도치쌤,20,4,20.00
+rank_repurchase,EN,17,23627,서브텍스트북,15,3,20.00
+rank_repurchase,EN,18,87137,브라이언영어카페,10,2,20.00
+rank_repurchase,EN,19,83581,히즈북스,10,2,20.00
+rank_repurchase,EN,20,955,이클라우드,251,50,19.92
+rank_repurchase,EN,21,926,와츄노,150,29,19.33
+rank_repurchase,EN,22,1026,탑앤탑 Gram맘,26,5,19.23
+rank_repurchase,EN,23,1012,메이플북스,256,47,18.36
+rank_repurchase,EN,24,210,단지,77,14,18.18
+rank_repurchase,EN,25,298,지이다영어교실,66,12,18.18
+rank_repurchase,EN,26,12281,퀴니퀴니,11,2,18.18
+rank_repurchase,EN,27,12672,시에나영어연구소,84,15,17.86
+rank_repurchase,EN,28,270,변형문제스토어,309,54,17.48
+rank_repurchase,EN,29,927,행복한 영어 나눔터,6,1,16.67
+rank_repurchase,EN,30,3889,J 영어랩,6,1,16.67
+rank_repurchase,KO,1,50043,이음 국어,1,1,100.00
+rank_repurchase,KO,2,80973,기본이 강한 국어,24,6,25.00
+rank_repurchase,KO,3,15681,써머썬 연구소,126,31,24.60
+rank_repurchase,KO,4,132780,자유로국어,130,28,21.54
+rank_repurchase,KO,5,169329,한백 국어,67,14,20.90
+rank_repurchase,KO,6,73858,상상초월,20,4,20.00
+rank_repurchase,KO,7,131883,아침가지 국어,46,9,19.57
+rank_repurchase,KO,8,131864,소담국어,165,32,19.39
+rank_repurchase,KO,9,78020,사계샘,31,6,19.35
+rank_repurchase,KO,10,85652,맥국어연구소,145,27,18.62
+rank_repurchase,KO,11,182299,국어를 찾는 사람들,49,9,18.37
+rank_repurchase,KO,12,78522,든든한 국어,132,24,18.18
+rank_repurchase,KO,13,124954,희연,44,8,18.18
+rank_repurchase,KO,14,59433,국어의 감각,6,1,16.67
+rank_repurchase,KO,15,26741,달콤한 국어,45,7,15.56
+rank_repurchase,KO,16,77762,솔빛국어연구소,21,3,14.29
+rank_repurchase,KO,17,54182,더함,14,2,14.29
+rank_repurchase,KO,18,25277,현존재쌤,58,8,13.79
+rank_repurchase,KO,19,82348,두루정쌤,39,5,12.82
+rank_repurchase,KO,20,87736,혜안의 창,8,1,12.50
+rank_repurchase,KO,21,28086,공부천재 김선생,25,3,12.00
+rank_repurchase,KO,22,26726,슬기로운 국어,92,11,11.96
+rank_repurchase,KO,23,4673,국지평,44,4,9.09
+rank_repurchase,KO,24,47014,장박사 국어,68,6,8.82
+rank_repurchase,KO,25,27074,국어방정식,12,1,8.33
+rank_repurchase,KO,26,116609,장미국어,49,4,8.16
+rank_repurchase,KO,27,125333,큰길국어,15,1,6.67
+rank_repurchase,KO,28,139106,옹달샘 국어,16,1,6.25
+rank_repurchase,KO,29,30135,웅샘,17,1,5.88
+rank_repurchase,KO,30,26796,청어람,18,1,5.56
