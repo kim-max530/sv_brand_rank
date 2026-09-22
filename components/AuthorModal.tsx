@@ -149,7 +149,7 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
                   주요 교재
                 </h3>
                 <p className="whitespace-pre-wrap break-keep text-sm leading-relaxed text-slate-700">
-                  {range3}
+                  {range3.endsWith("등") ? range3 : `${range3} 등`}
                 </p>
               </section>
             ) : null}
