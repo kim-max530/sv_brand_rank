@@ -180,7 +180,7 @@ function RankingRow({
   const hasAuthorDetail = Boolean(info2 || record);
   const hasYoutube = Boolean(youtubeUrl);
   const hasInfo1 = Boolean(info1);
-  const showEventBadge = Boolean(item.hasEvent && address);
+  const showEventBadge = Boolean(item.hasEvent);
 
   const openProfile = () => {
     trackAnalyticsEvent("profile_click", authorName);
@@ -199,14 +199,7 @@ function RankingRow({
           badge={item.badge ?? null}
           changeText={item.changeText ?? ""}
         />
-        <div className="relative">
-          <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
-          {showEventBadge ? (
-            <span className="absolute -right-2 -bottom-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold leading-none text-amber-950 shadow-sm ring-2 ring-white">
-              🎉 Event
-            </span>
-          ) : null}
-        </div>
+        <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
       </div>
 
       <div className="flex min-w-0 flex-grow flex-col items-start">
@@ -229,15 +222,24 @@ function RankingRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 self-center sm:gap-2">
-        {hasAuthorDetail ? (
-          <button
-            type="button"
-            onClick={openProfile}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-            aria-label={`${authorName} 저자 소개`}
-          >
-            <UserRound className="h-5 w-5" />
-          </button>
+        {hasAuthorDetail || showEventBadge ? (
+          <div className="flex flex-col items-center gap-1">
+            {hasAuthorDetail ? (
+              <button
+                type="button"
+                onClick={openProfile}
+                className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+                aria-label={`${authorName} 저자 소개`}
+              >
+                <UserRound className="h-5 w-5" />
+              </button>
+            ) : null}
+            {showEventBadge ? (
+              <span className="rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
+                Event
+              </span>
+            ) : null}
+          </div>
         ) : null}
 
         {hasYoutube ? (

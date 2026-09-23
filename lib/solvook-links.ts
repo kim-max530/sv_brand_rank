@@ -14,7 +14,7 @@ export function openAuthorExternalLink(item: {
   const address = typeof item.address === "string" ? item.address.trim() : "";
   if (address) {
     window.open(
-      `https://solvook.com/@${address}/product`,
+      `https://solvook.com/@${address}/products`,
       "_blank",
       "noopener,noreferrer",
     );
