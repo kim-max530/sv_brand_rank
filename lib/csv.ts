@@ -371,6 +371,32 @@ export function toPrevRankFilename(filename: string): string {
   return `prev_${filename}`;
 }
 
+/** brand_info.csv에서 저자명 부분일치 검색 */
+export async function searchBrandAuthors(
+  query: string,
+): Promise<Array<{ UID: string; 저자명: string }>> {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  const bytes = await fetchCsvBytes("brand_info.csv");
+  if (!bytes) return [];
+
+  const matches: Array<{ UID: string; 저자명: string }> = [];
+  const seen = new Set<string>();
+
+  for (const info of parseCsv(decodeCsvBytes(bytes))
+    .map(toBrandInfo)
+    .filter((item): item is BrandInfo => item !== null)) {
+    if (!info.저자명.toLowerCase().includes(q)) continue;
+    if (seen.has(info.UID)) continue;
+    seen.add(info.UID);
+    matches.push({ UID: info.UID, 저자명: info.저자명 });
+    if (matches.length >= 20) break;
+  }
+
+  return matches;
+}
+
 export async function fetchMergedRankings(): Promise<MergedRanking[]> {
   const [brandInfoBytes, ...fileBytes] = await Promise.all([
     fetchCsvBytes("brand_info.csv"),

@@ -30,8 +30,7 @@ create table if not exists public.author_events (
   uid text primary key,
   author_name text not null,
   start_date date not null,
-  end_date date not null,
-  updated_at timestamptz not null default now()
+  end_date date not null
 );
 
 alter table public.author_events enable row level security;

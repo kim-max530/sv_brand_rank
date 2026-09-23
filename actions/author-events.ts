@@ -4,12 +4,38 @@ import {
   listAuthorEvents,
   type AuthorEventRow,
 } from "@/lib/author-events";
+import { searchBrandAuthors } from "@/lib/csv";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 export type AuthorEventActionResult =
   | { ok: true; message: string; events?: AuthorEventRow[] }
   | { ok: false; error: string };
+
+export type AuthorSearchResult =
+  | { ok: true; authors: Array<{ UID: string; 저자명: string }> }
+  | { ok: false; error: string };
+
+export async function searchAuthorsByNameAction(
+  name: string,
+): Promise<AuthorSearchResult> {
+  try {
+    const authors = await searchBrandAuthors(name);
+    if (authors.length === 0) {
+      return {
+        ok: false,
+        error: "일치하는 저자를 찾지 못했습니다. 저자명을 확인해 주세요.",
+      };
+    }
+    return { ok: true, authors };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "저자 검색에 실패했습니다.",
+    };
+  }
+}
 
 export async function fetchAuthorEventsAction(): Promise<AuthorEventActionResult> {
   try {
@@ -36,7 +62,10 @@ export async function upsertAuthorEventAction(
     const endDate = String(formData.get("end_date") ?? "").trim();
 
     if (!uid || !authorName || !startDate || !endDate) {
-      return { ok: false, error: "모든 필드를 입력해 주세요." };
+      return {
+        ok: false,
+        error: "저자 검색으로 UID를 선택한 뒤 기간을 입력해 주세요.",
+      };
     }
     if (startDate > endDate) {
       return { ok: false, error: "종료일은 시작일 이후여야 합니다." };
@@ -49,7 +78,6 @@ export async function upsertAuthorEventAction(
         author_name: authorName,
         start_date: startDate,
         end_date: endDate,
-        updated_at: new Date().toISOString(),
       },
       { onConflict: "uid" },
     );

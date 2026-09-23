@@ -145,7 +145,18 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
           </div>
 
           <div className="space-y-5">
-            <section>
+            {range3 ? (
+              <section>
+                <h3 className="mb-2 text-xs font-semibold tracking-wide text-teal-700 uppercase">
+                  주요 교재
+                </h3>
+                <p className="whitespace-pre-wrap break-keep text-sm leading-relaxed text-slate-700">
+                  {range3.endsWith("등") ? range3 : `${range3} 등`}
+                </p>
+              </section>
+            ) : null}
+
+            <section className={range3 ? "border-t border-slate-100 pt-5" : ""}>
               <h3 className="mb-2 text-xs font-semibold tracking-wide text-teal-700 uppercase">
                 소개
               </h3>
@@ -162,17 +173,6 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
                 {record || "등록된 이력이 없습니다."}
               </p>
             </section>
-
-            {range3 ? (
-              <section className="border-t border-slate-100 pt-5">
-                <h3 className="mb-2 text-xs font-semibold tracking-wide text-teal-700 uppercase">
-                  주요 교재
-                </h3>
-                <p className="whitespace-pre-wrap break-keep text-sm leading-relaxed text-slate-700">
-                  {range3.endsWith("등") ? range3 : `${range3} 등`}
-                </p>
-              </section>
-            ) : null}
 
             {embedUrl ? (
               <section className="border-t border-slate-100 pt-5">

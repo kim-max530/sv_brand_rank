@@ -5,7 +5,6 @@ export interface AuthorEventRow {
   author_name: string;
   start_date: string;
   end_date: string;
-  updated_at?: string;
 }
 
 function todayKstDateString(): string {
@@ -48,8 +47,8 @@ export async function listAuthorEvents(): Promise<AuthorEventRow[]> {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from("author_events")
-    .select("uid, author_name, start_date, end_date, updated_at")
-    .order("updated_at", { ascending: false });
+    .select("uid, author_name, start_date, end_date")
+    .order("end_date", { ascending: false });
 
   if (error) throw new Error(error.message);
   return (data ?? []) as AuthorEventRow[];

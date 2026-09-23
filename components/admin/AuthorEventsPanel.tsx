@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import {
   deleteAuthorEventAction,
   fetchAuthorEventsAction,
+  searchAuthorsByNameAction,
   upsertAuthorEventAction,
 } from "@/actions/author-events";
 import type { AuthorEventRow } from "@/lib/author-events";
@@ -18,10 +19,15 @@ const emptyForm = {
 export default function AuthorEventsPanel() {
   const [events, setEvents] = useState<AuthorEventRow[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [matches, setMatches] = useState<Array<{ UID: string; 저자명: string }>>(
+    [],
+  );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -36,11 +42,66 @@ export default function AuthorEventsPanel() {
     })();
   }, []);
 
+  const handleSearch = async () => {
+    setError("");
+    setMessage("");
+    setMatches([]);
+    setForm((prev) => ({ ...prev, uid: "", author_name: "" }));
+
+    const q = searchQuery.trim();
+    if (!q) {
+      setError("검색할 저자명을 입력해 주세요.");
+      return;
+    }
+
+    setSearching(true);
+    const result = await searchAuthorsByNameAction(q);
+    setSearching(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setMatches(result.authors);
+    if (result.authors.length === 1) {
+      const only = result.authors[0];
+      setForm((prev) => ({
+        ...prev,
+        uid: only.UID,
+        author_name: only.저자명,
+      }));
+      setMessage(`선택됨: ${only.저자명} (${only.UID})`);
+    } else {
+      setMessage(
+        `${result.authors.length}명의 후보가 있습니다. 아래에서 선택해 주세요.`,
+      );
+    }
+  };
+
+  const handleSelectAuthor = (author: { UID: string; 저자명: string }) => {
+    setForm((prev) => ({
+      ...prev,
+      uid: author.UID,
+      author_name: author.저자명,
+    }));
+    setSearchQuery(author.저자명);
+    setMatches([]);
+    setError("");
+    setMessage(`선택됨: ${author.저자명} (${author.UID})`);
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setError("");
     setMessage("");
+
+    if (!form.uid || !form.author_name) {
+      setSaving(false);
+      setError("저자 검색 후 대상을 선택해 주세요.");
+      return;
+    }
 
     const formData = new FormData();
     formData.set("author_name", form.author_name);
@@ -59,6 +120,8 @@ export default function AuthorEventsPanel() {
     setEvents(result.events ?? []);
     setMessage(result.message);
     setForm(emptyForm);
+    setSearchQuery("");
+    setMatches([]);
   };
 
   const handleEdit = (row: AuthorEventRow) => {
@@ -68,7 +131,9 @@ export default function AuthorEventsPanel() {
       start_date: row.start_date,
       end_date: row.end_date,
     });
-    setMessage("");
+    setSearchQuery(row.author_name);
+    setMatches([]);
+    setMessage(`선택됨: ${row.author_name} (${row.uid})`);
     setError("");
   };
 
@@ -92,8 +157,7 @@ export default function AuthorEventsPanel() {
           저자 이벤트
         </h2>
         <p className="mt-1 text-sm text-slate-500">
-          UID 기준으로 upsert · 기간 내 저자에게 Event 뱃지/모달 말풍선이
-          표시됩니다.
+          저자명 검색으로 UID를 자동 조회한 뒤 이벤트 기간을 등록합니다.
         </p>
       </div>
 
@@ -102,65 +166,115 @@ export default function AuthorEventsPanel() {
         className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
       >
         <h3 className="text-lg font-semibold text-slate-900">이벤트 등록</h3>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-slate-700">
+
+        <div className="mt-4 space-y-4">
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">
               저자명
             </span>
-            <input
-              required
-              value={form.author_name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, author_name: e.target.value }))
-              }
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-slate-700">UID</span>
-            <input
-              required
-              value={form.uid}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, uid: e.target.value }))
-              }
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-slate-700">
-              시작일
-            </span>
-            <input
-              required
-              type="date"
-              value={form.start_date}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, start_date: e.target.value }))
-              }
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-slate-700">
-              종료일
-            </span>
-            <input
-              required
-              type="date"
-              value={form.end_date}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, end_date: e.target.value }))
-              }
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
-            />
-          </label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setForm((prev) => ({
+                    ...prev,
+                    uid: "",
+                    author_name: "",
+                  }));
+                  setMatches([]);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void handleSearch();
+                  }
+                }}
+                placeholder="저자명 입력 후 검색"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              />
+              <button
+                type="button"
+                onClick={() => void handleSearch()}
+                disabled={searching}
+                className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                {searching ? "검색 중…" : "검색"}
+              </button>
+            </div>
+          </div>
+
+          {matches.length > 1 ? (
+            <ul className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/80">
+              {matches.map((author) => (
+                <li key={author.UID}>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectAuthor(author)}
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-white"
+                  >
+                    <span className="font-medium text-slate-900">
+                      {author.저자명}
+                    </span>
+                    <span className="font-mono text-xs text-slate-500">
+                      {author.UID}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-sm">
+            <span className="text-slate-500">선택된 UID: </span>
+            {form.uid ? (
+              <span className="font-mono font-medium text-slate-800">
+                {form.uid}
+                <span className="ml-2 font-sans text-slate-600">
+                  ({form.author_name})
+                </span>
+              </span>
+            ) : (
+              <span className="text-slate-400">검색 후 자동 입력</span>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="mb-1.5 block font-medium text-slate-700">
+                시작일
+              </span>
+              <input
+                required
+                type="date"
+                value={form.start_date}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, start_date: e.target.value }))
+                }
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1.5 block font-medium text-slate-700">
+                종료일
+              </span>
+              <input
+                required
+                type="date"
+                value={form.end_date}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, end_date: e.target.value }))
+                }
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              />
+            </label>
+          </div>
         </div>
 
         <button
           type="submit"
-          disabled={saving}
-          className="mt-5 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-50"
+          disabled={saving || !form.uid}
+          className="mt-5 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "저장 중…" : "저장 (Upsert)"}
         </button>
