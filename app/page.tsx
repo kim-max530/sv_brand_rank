@@ -1,5 +1,6 @@
 import Image from "next/image";
 import RankingBoard from "@/components/RankingBoard";
+import { fetchActiveAuthorEventUids } from "@/lib/author-events";
 import { fetchMergedRankings } from "@/lib/csv";
 import { getPreviousWeekDateRange } from "@/lib/date";
 import type { MergedRanking } from "@/types/ranking";
@@ -12,7 +13,14 @@ export default async function HomePage() {
   let errorMessage: string | null = null;
 
   try {
-    rankings = await fetchMergedRankings();
+    const [merged, eventUids] = await Promise.all([
+      fetchMergedRankings(),
+      fetchActiveAuthorEventUids(),
+    ]);
+
+    rankings = merged.map((item) =>
+      eventUids.has(item.UID) ? { ...item, hasEvent: true } : item,
+    );
   } catch (error) {
     console.error(error);
     errorMessage =

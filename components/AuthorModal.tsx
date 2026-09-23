@@ -9,6 +9,7 @@ import {
   getCachedBannerSrc,
   initialCandidateIndex,
 } from "@/lib/brand-images";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
 import type { MergedRanking } from "@/types/ranking";
@@ -73,6 +74,12 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
   const range3 = author.range3?.trim() ?? "";
   const address = author.address?.trim() ?? "";
   const embedUrl = toYouTubeEmbedUrl(author.youtube_url);
+  const showEventCue = Boolean(author.hasEvent);
+
+  const openHomepage = () => {
+    trackAnalyticsEvent("homepage_click", authorName);
+    openAuthorExternalLink(author);
+  };
 
   return (
     <div
@@ -88,7 +95,7 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
       >
         <BannerImage uid={author.UID} name={authorName} />
 
-        <div className="p-5 sm:p-6">
+        <div className={`p-5 sm:p-6 ${showEventCue ? "pt-14" : ""}`}>
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-1.5">
               <h2
@@ -97,22 +104,35 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
               >
                 {authorName}
               </h2>
-              <button
-                type="button"
-                onClick={() => openAuthorExternalLink(author)}
-                className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-                aria-label={
-                  address
-                    ? `${authorName} 브랜드관 열기`
-                    : `${authorName} 검색하기`
-                }
-              >
-                {address ? (
-                  <Store className="h-5 w-5" />
-                ) : (
-                  <Search className="h-5 w-5" />
-                )}
-              </button>
+              <div className="relative shrink-0">
+                {showEventCue ? (
+                  <div className="absolute -top-12 left-1/2 z-10 w-max max-w-[14rem] -translate-x-1/2 animate-bounce">
+                    <div className="relative rounded-xl bg-amber-400 px-3 py-2 text-[11px] font-semibold leading-snug break-keep text-amber-950 shadow-lg">
+                      {authorName} 할인 쿠폰/패키지 이벤트 진행 중
+                      <span
+                        aria-hidden
+                        className="absolute top-full left-1/2 -mt-px -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-amber-400"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={openHomepage}
+                  className="rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+                  aria-label={
+                    address
+                      ? `${authorName} 브랜드관 열기`
+                      : `${authorName} 검색하기`
+                  }
+                >
+                  {address ? (
+                    <Store className="h-5 w-5" />
+                  ) : (
+                    <Search className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
             <button
               type="button"

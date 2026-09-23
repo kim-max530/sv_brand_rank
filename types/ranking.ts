@@ -34,4 +34,6 @@ export interface MergedRanking extends BrandInfo, RankingRecord {
   category: RankingCategory;
   badge: RankBadge;
   changeText: string;
+  /** author_events 기간 내 활성 여부 */
+  hasEvent?: boolean;
 }

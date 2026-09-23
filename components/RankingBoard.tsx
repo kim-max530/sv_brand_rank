@@ -1,15 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Search, Store, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
-import {
-  CATEGORY_DESCRIPTIONS,
-  CATEGORY_LABELS,
-  RANKING_CATEGORIES,
-  SUBJECTS,
-} from "@/lib/ranking-tabs";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   cacheAvatarSrc,
   getCachedAvatarSrc,
@@ -17,6 +12,12 @@ import {
   initialCandidateIndex,
 } from "@/lib/brand-images";
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
+import {
+  CATEGORY_DESCRIPTIONS,
+  CATEGORY_LABELS,
+  RANKING_CATEGORIES,
+  SUBJECTS,
+} from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import type {
   MergedRanking,
@@ -43,6 +44,10 @@ function YoutubeIcon({ className }: { className?: string }) {
 
 function safeText(value: string | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function tabTargetName(category: RankingCategory): string {
+  return CATEGORY_LABELS[category].replace(/^\S+\s+/, "").trim();
 }
 
 function StatusBadge({ badge }: { badge: RankBadge }) {
@@ -149,6 +154,10 @@ function ProfileAvatar({
 }
 
 function openAuthorLink(item: MergedRanking) {
+  trackAnalyticsEvent(
+    "homepage_click",
+    safeText(item.저자명) || safeText(item.UID),
+  );
   openAuthorExternalLink(item);
 }
 
@@ -171,6 +180,12 @@ function RankingRow({
   const hasAuthorDetail = Boolean(info2 || record);
   const hasYoutube = Boolean(youtubeUrl);
   const hasInfo1 = Boolean(info1);
+  const showEventBadge = Boolean(item.hasEvent && address);
+
+  const openProfile = () => {
+    trackAnalyticsEvent("profile_click", authorName);
+    onOpenIntro(item);
+  };
 
   return (
     <div
@@ -184,7 +199,14 @@ function RankingRow({
           badge={item.badge ?? null}
           changeText={item.changeText ?? ""}
         />
-        <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
+        <div className="relative">
+          <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
+          {showEventBadge ? (
+            <span className="absolute -right-2 -bottom-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-[9px] font-bold leading-none text-amber-950 shadow-sm ring-2 ring-white">
+              🎉 Event
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex min-w-0 flex-grow flex-col items-start">
@@ -210,7 +232,7 @@ function RankingRow({
         {hasAuthorDetail ? (
           <button
             type="button"
-            onClick={() => onOpenIntro(item)}
+            onClick={openProfile}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
             aria-label={`${authorName} 저자 소개`}
           >
@@ -221,7 +243,7 @@ function RankingRow({
         {hasYoutube ? (
           <button
             type="button"
-            onClick={() => onOpenIntro(item)}
+            onClick={openProfile}
             className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
             aria-label={`${authorName} 유튜브 소개 열기`}
           >
@@ -263,6 +285,10 @@ export default function RankingBoard({
     null,
   );
 
+  useEffect(() => {
+    trackAnalyticsEvent("page_view");
+  }, []);
+
   const list = useMemo(() => {
     if (!Array.isArray(rankings)) return [];
 
@@ -281,6 +307,11 @@ export default function RankingBoard({
   }, [rankings, subject, category]);
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
+
+  const selectCategory = (next: RankingCategory) => {
+    setCategory(next);
+    trackAnalyticsEvent("tab_click", tabTargetName(next));
+  };
 
   return (
     <section className="mx-auto w-full max-w-2xl">
@@ -319,7 +350,7 @@ export default function RankingBoard({
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => setCategory(item)}
+              onClick={() => selectCategory(item)}
               className={`rounded-lg px-2.5 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
                 selected
                   ? "bg-white text-teal-800 shadow-sm"
