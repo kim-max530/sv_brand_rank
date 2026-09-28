@@ -20,7 +20,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
   RANKING_CATEGORIES,
-  SUBJECTS,
+  SUBJECT_FILTERS,
   categoryFromTabParam,
   productFiltersForSubject,
 } from "@/lib/ranking-tabs";
@@ -30,7 +30,7 @@ import type {
   ProductFilter,
   RankBadge,
   RankingCategory,
-  Subject,
+  SubjectFilter,
 } from "@/types/ranking";
 
 function YoutubeIcon({ className }: { className?: string }) {
@@ -245,9 +245,12 @@ export function RankingRow({
   const metricChips = buildSystemBadgeChips(item);
 
   const openProfile = () => {
+    if (!hasAuthorDetail && !hasYoutube) return;
     trackAnalyticsEvent("profile_click", authorName);
     onOpenIntro(item);
   };
+
+  const profileClickable = hasAuthorDetail || hasYoutube;
 
   return (
     <div
@@ -257,77 +260,97 @@ export function RankingRow({
           : "items-center"
       }`}
     >
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        {showRank ? (
+      {showRank ? (
+        <div className="flex shrink-0 items-center self-start pt-0.5">
           <RankMeta
             rank={item.rank}
             badge={item.badge ?? null}
             changeText={item.changeText ?? ""}
           />
-        ) : null}
-        <div className="flex w-12 flex-col items-center gap-1">
-          <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
         </div>
-      </div>
+      ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col items-start overflow-hidden pr-2">
-        <div className="flex w-full min-w-0 items-center overflow-hidden whitespace-nowrap">
-          {intro ? (
-            <>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pr-2">
+        <div
+          className={`flex min-w-0 items-start gap-3 rounded-lg ${
+            profileClickable
+              ? "cursor-pointer transition hover:bg-slate-50/80"
+              : ""
+          }`}
+          onClick={profileClickable ? openProfile : undefined}
+          onKeyDown={
+            profileClickable
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openProfile();
+                  }
+                }
+              : undefined
+          }
+          role={profileClickable ? "button" : undefined}
+          tabIndex={profileClickable ? 0 : undefined}
+          aria-label={
+            profileClickable ? `${authorName} 저자 소개 열기` : undefined
+          }
+        >
+          <div className="flex w-12 shrink-0 flex-col items-center gap-1">
+            <ProfileAvatar
+              uid={item.UID}
+              name={authorName}
+              priority={priority}
+            />
+            {showEventBadge ? (
+              <span className="rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
+                Event
+              </span>
+            ) : null}
+          </div>
+
+          <div className="flex min-w-0 flex-1 items-center overflow-hidden whitespace-nowrap py-1">
+            {intro ? (
+              <>
+                <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
+                  {authorName},
+                </span>
+                <span className="ml-1 min-w-0 truncate text-[0.9em] text-slate-700">
+                  {intro}
+                </span>
+              </>
+            ) : (
               <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
-                {authorName},
+                {authorName}
               </span>
-              <span className="ml-1 min-w-0 truncate text-[0.9em] text-slate-700">
-                {intro}
-              </span>
-            </>
-          ) : (
-            <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
-              {authorName}
-            </span>
-          )}
+            )}
+          </div>
         </div>
+
         {hasInfo1 ? (
-          <p className="mt-2 inline-block max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700">
+          <p className="mt-2 max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700 sm:ml-[3.75rem]">
             {info1}
           </p>
         ) : null}
         <HashtagChips
           record2={item.record2}
-          className="mt-2"
+          className="mt-2 sm:ml-[3.75rem]"
           metricChips={metricChips}
         />
       </div>
 
-      {/* 프로필 · 홈페이지 · 교재목록 고정 간격/너비 */}
-      <div className="flex w-[5.5rem] shrink-0 items-center justify-end gap-x-3 self-center sm:w-[15.5rem]">
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-          {hasAuthorDetail ? (
-            <button
-              type="button"
-              onClick={openProfile}
-              className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-              aria-label={`${authorName} 저자 소개`}
-            >
-              <UserRound className="h-5 w-5" />
-            </button>
-          ) : null}
-          {hasYoutube ? (
-            <button
-              type="button"
-              onClick={openProfile}
-              className="absolute -top-1 -right-1 rounded-full bg-white p-0.5 text-red-500 shadow-sm"
-              aria-label={`${authorName} 유튜브 소개 열기`}
-            >
-              <YoutubeIcon className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-          {showEventBadge ? (
-            <span className="absolute top-full left-1/2 z-10 mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
-              Event
-            </span>
-          ) : null}
-        </div>
+      {/* 홈페이지 · 교재목록 고정 간격/너비 */}
+      <div className="flex w-9 shrink-0 items-center justify-end gap-x-3 self-center sm:w-[14rem]">
+        {hasYoutube ? (
+          <button
+            type="button"
+            onClick={openProfile}
+            className="shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
+            aria-label={`${authorName} 유튜브 소개 열기`}
+          >
+            <YoutubeIcon className="h-5 w-5" />
+          </button>
+        ) : (
+          <span className="hidden h-9 w-9 shrink-0 sm:block" aria-hidden />
+        )}
 
         <div className="flex h-9 w-9 shrink-0 items-center justify-center">
           <button
@@ -371,7 +394,7 @@ export default function RankingBoard({
   const searchParams = useSearchParams();
   const tabFromUrl = categoryFromTabParam(searchParams.get("tab"));
 
-  const [subject, setSubject] = useState<Subject>("영어");
+  const [subject, setSubject] = useState<SubjectFilter>("영어");
   const [product, setProduct] = useState<ProductFilter>("전체");
   const [category, setCategory] = useState<RankingCategory>(
     () => tabFromUrl ?? "인기",
@@ -394,7 +417,7 @@ export default function RankingBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional URL-driven sync
   }, [tabFromUrl]);
 
-  const selectSubject = (next: Subject) => {
+  const selectSubject = (next: SubjectFilter) => {
     setSubject(next);
     setProduct("전체");
   };
@@ -402,18 +425,19 @@ export default function RankingBoard({
   const list = useMemo(() => {
     if (isHashtagSearch || !Array.isArray(rankings)) return [];
 
-    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
-
     return rankings
       .filter((item) => {
         if (!item || item.category !== category) return false;
-        if (item.과목 !== subject) return false;
+        if (subject !== "전체" && item.과목 !== subject) return false;
+        const limit = DISPLAY_RANK_LIMIT[item.과목] ?? 15;
         if (!Number.isFinite(item.rank) || item.rank > limit) return false;
         return matchesProductFilter(item, product);
       })
       .sort(
         (a, b) =>
-          a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
+          a.rank - b.rank ||
+          a.과목.localeCompare(b.과목, "ko") ||
+          a.저자명.localeCompare(b.저자명, "ko"),
       );
   }, [rankings, subject, product, category, isHashtagSearch]);
 
@@ -432,65 +456,39 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto w-full max-w-4xl px-1 sm:px-0">
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
       {!isHashtagSearch ? (
-        <>
-          <div role="tablist" aria-label="과목" className="mb-3 flex flex-wrap gap-2">
-            {SUBJECTS.map((item) => {
-              const selected = item === subject;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => selectSubject(item)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                    selected
-                      ? "bg-teal-700 text-white"
-                      : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
-                  }`}
-                >
-                  {item}
-                </button>
-              );
-            })}
-          </div>
-
-          {productOptions.length > 0 ? (
-            <div
-              role="tablist"
-              aria-label="세부 필터"
-              className="mb-3 flex flex-wrap gap-2"
-            >
-              {productOptions.map((item) => {
-                const selected = item === product;
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    onClick={() => setProduct(item)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
-                      selected
-                        ? "bg-slate-800 text-white"
-                        : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </>
+        <div
+          role="tablist"
+          aria-label="과목"
+          className="flex flex-wrap gap-2"
+        >
+          {SUBJECT_FILTERS.map((item) => {
+            const selected = item === subject;
+            return (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => selectSubject(item)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  selected
+                    ? "bg-teal-700 text-white"
+                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
+        </div>
       ) : null}
 
       <div
         role="tablist"
         aria-label="랭킹 기준"
-        className="mb-3 flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
+        className="flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
       >
         {RANKING_CATEGORIES.map((item) => {
           const selected = item === category;
@@ -513,7 +511,35 @@ export default function RankingBoard({
         })}
       </div>
 
-      <div className="mb-3 px-1 text-right">
+      {!isHashtagSearch && productOptions.length > 0 ? (
+        <div
+          role="tablist"
+          aria-label="세부 필터"
+          className="flex flex-wrap gap-2"
+        >
+          {productOptions.map((item) => {
+            const selected = item === product;
+            return (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setProduct(item)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                  selected
+                    ? "bg-slate-800 text-white"
+                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className="px-1 text-right">
         {weekRangeLabel && !isHashtagSearch ? (
           <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
             {weekRangeLabel}

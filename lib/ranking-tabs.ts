@@ -8,8 +8,8 @@ import type {
 /** 클라이언트 UI(탭)에서만 쓰는 상수 — 서버 전용 모듈과 분리 */
 export const SUBJECTS: Subject[] = ["영어", "국어"];
 
-/** 과목 필터 버튼 (메인: 영어/국어만) */
-export const SUBJECT_FILTERS: SubjectFilter[] = ["영어", "국어"];
+/** 메인 과목 필터 (전체 포함) */
+export const SUBJECT_FILTERS: SubjectFilter[] = ["전체", "영어", "국어"];
 
 /** 영어 세부 필터 */
 export const ENGLISH_PRODUCT_FILTERS: ProductFilter[] = [
@@ -37,7 +37,7 @@ export function productFiltersForSubject(
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";
 
-/** 화면에 노출하는 탭: 브랜드 랭킹, 추천, 검색(#) */
+/** 화면에 노출하는 탭: 브랜드 랭킹, 추천 랭킹, 실시간 검색(#) */
 export const RANKING_CATEGORIES: RankingCategory[] = [
   "인기",
   "추천",
@@ -45,9 +45,9 @@ export const RANKING_CATEGORIES: RankingCategory[] = [
 ];
 
 export const CATEGORY_LABELS: Record<RankingCategory, string> = {
-  추천: "✨ 추천",
+  추천: "✨ 추천 랭킹",
   인기: "🔥 브랜드 랭킹",
-  해시검색: "🔍 검색(#)",
+  해시검색: "🔍 실시간 검색(#)",
   급성장: "🚀 급성장",
   많은: "🤝 검색",
   "계속 찾는": "💖 재구매",
