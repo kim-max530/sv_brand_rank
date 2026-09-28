@@ -134,6 +134,22 @@ function normalizeSubject(value: string): Subject | null {
   return null;
 }
 
+function parseTruthyFlag(value: string): boolean {
+  const v = value.trim().toLowerCase();
+  if (!v) return false;
+  if (
+    ["false", "0", "n", "no", "f", "x", "-", "없음", "null", "undefined"].includes(
+      v,
+    )
+  ) {
+    return false;
+  }
+  if (["true", "1", "o", "y", "yes", "t", "ok"].includes(v)) {
+    return true;
+  }
+  return true;
+}
+
 function toBrandInfo(row: Record<string, string>): BrandInfo | null {
   const UID = cell(row, "UID", "uid", "brand_id");
   const 저자명 = cell(row, "저자명", "brand_name", "nickname", "name");
@@ -153,6 +169,9 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
     "Youtube",
     "YouTube",
   );
+  const 변형문제Raw = cell(row, "변형문제", "변형", "variant");
+  const 워크북Raw = cell(row, "워크북", "workbook", "Workbook");
+  const 분석지Raw = cell(row, "분석지", "분석", "analysis");
 
   return {
     UID,
@@ -165,6 +184,9 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
     ...(record2 ? { record2 } : {}),
     ...(range3 ? { range3 } : {}),
     ...(youtube_url ? { youtube_url } : {}),
+    ...(parseTruthyFlag(변형문제Raw) ? { 변형문제: true } : {}),
+    ...(parseTruthyFlag(워크북Raw) ? { 워크북: true } : {}),
+    ...(parseTruthyFlag(분석지Raw) ? { 분석지: true } : {}),
   };
 }
 

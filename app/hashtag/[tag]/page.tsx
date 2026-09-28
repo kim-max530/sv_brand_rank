@@ -7,6 +7,7 @@ import {
   authorHasHashtag,
   collectRelatedHashtags,
   normalizeHashtagParam,
+  resolveSystemBadgeTag,
 } from "@/lib/hashtags";
 import type { MergedRanking, Subject } from "@/types/ranking";
 
@@ -29,6 +30,50 @@ export async function generateMetadata({
 
 function safeAddress(value: string | null | undefined): boolean {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function toAuthorView(
+  info: {
+    UID: string;
+    저자명: string;
+    address?: string;
+    info1?: string;
+    info2?: string;
+    intro?: string;
+    record?: string;
+    record2?: string;
+    range3?: string;
+    youtube_url?: string;
+    변형문제?: boolean;
+    워크북?: boolean;
+    분석지?: boolean;
+  },
+  meta:
+    | {
+        isInPopular: boolean;
+        isInRecommend: boolean;
+        isTopGrowth: boolean;
+        isTopRepurchase: boolean;
+        isTopSearch: boolean;
+        subjects: Set<Subject>;
+      }
+    | undefined,
+): MergedRanking {
+  const subjects = meta ? [...meta.subjects] : [];
+  return {
+    ...info,
+    과목: (subjects[0] ?? "영어") as Subject,
+    subjects,
+    rank: 0,
+    category: "인기",
+    badge: null,
+    changeText: "",
+    isInPopular: meta?.isInPopular ?? false,
+    isInRecommend: meta?.isInRecommend ?? false,
+    isTopGrowth: meta?.isTopGrowth ?? false,
+    isTopRepurchase: meta?.isTopRepurchase ?? false,
+    isTopSearch: meta?.isTopSearch ?? false,
+  };
 }
 
 export default async function HashtagPage({
@@ -95,32 +140,30 @@ export default async function HashtagPage({
       metaByUid.set(row.UID, current);
     }
 
-    const matched = all.filter(
-      (info) =>
-        authorHasHashtag(info.record2, tag) && safeAddress(info.address),
-    );
+    const systemTag = resolveSystemBadgeTag(tag);
 
-    relatedTags = collectRelatedHashtags(matched, tag, 7);
+    const matched = all.filter((info) => {
+      const meta = metaByUid.get(info.UID);
+
+      if (systemTag === "재구매") {
+        return Boolean(meta?.isTopRepurchase);
+      }
+      if (systemTag === "HOT") {
+        return Boolean(meta?.isTopGrowth);
+      }
+      if (systemTag === "검색어") {
+        return Boolean(meta?.isTopSearch);
+      }
+
+      return authorHasHashtag(info.record2, tag) && safeAddress(info.address);
+    });
+
+    relatedTags = systemTag
+      ? []
+      : collectRelatedHashtags(matched, tag, 7);
 
     authors = matched
-      .map((info) => {
-        const meta = metaByUid.get(info.UID);
-        const subjects = meta ? [...meta.subjects] : [];
-        return {
-          ...info,
-          과목: (subjects[0] ?? "영어") as Subject,
-          subjects,
-          rank: 0,
-          category: "인기" as const,
-          badge: null,
-          changeText: "",
-          isInPopular: meta?.isInPopular ?? false,
-          isInRecommend: meta?.isInRecommend ?? false,
-          isTopGrowth: meta?.isTopGrowth ?? false,
-          isTopRepurchase: meta?.isTopRepurchase ?? false,
-          isTopSearch: meta?.isTopSearch ?? false,
-        };
-      })
+      .map((info) => toAuthorView(info, metaByUid.get(info.UID)))
       .sort((a, b) => {
         if (a.isInPopular !== b.isInPopular) {
           return a.isInPopular ? -1 : 1;

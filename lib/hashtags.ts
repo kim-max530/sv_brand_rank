@@ -34,6 +34,19 @@ export function normalizeHashtagParam(raw: string): string {
   }
 }
 
+/** 시스템 뱃지 전용 태그 (record2가 아닌 랭킹 플래그로 조회) */
+export type SystemBadgeTag = "재구매" | "HOT" | "검색어";
+
+export function resolveSystemBadgeTag(
+  tag: string,
+): SystemBadgeTag | null {
+  const normalized = tag.replace(/^#+/, "").trim();
+  if (normalized === "재구매") return "재구매";
+  if (normalized === "HOT" || normalized.toLowerCase() === "hot") return "HOT";
+  if (normalized === "검색어") return "검색어";
+  return null;
+}
+
 export function authorHasHashtag(
   record2: string | null | undefined,
   tag: string,

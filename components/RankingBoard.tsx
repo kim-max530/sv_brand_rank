@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Store, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
@@ -16,21 +15,22 @@ import {
   initialCandidateIndex,
 } from "@/lib/brand-images";
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
-import { hashtagHref, parseRange3Tags } from "@/lib/hashtags";
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
   RANKING_CATEGORIES,
-  SUBJECTS,
+  SUBJECT_FILTERS,
   categoryFromTabParam,
+  productFiltersForSubject,
 } from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import type {
   MergedRanking,
+  ProductFilter,
   RankBadge,
   RankingCategory,
-  Subject,
+  SubjectFilter,
 } from "@/types/ranking";
 
 function YoutubeIcon({ className }: { className?: string }) {
@@ -156,7 +156,7 @@ function openAuthorLink(item: MergedRanking) {
   openAuthorExternalLink(item);
 }
 
-function buildMetricChips(item: MergedRanking): MetricChip[] {
+function buildHashtagLayoutChips(item: MergedRanking): MetricChip[] {
   const chips: MetricChip[] = [];
   if (item.isTopGrowth) {
     chips.push({
@@ -188,27 +188,25 @@ function buildMetricChips(item: MergedRanking): MetricChip[] {
   return chips;
 }
 
-function Range3Hashtags({ range3 }: { range3: string }) {
-  const tags = parseRange3Tags(range3);
-  if (tags.length === 0) return null;
+function searchChip(): MetricChip {
+  return {
+    key: "search",
+    label: "🔍검색어",
+    tag: "검색어",
+    className:
+      "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100",
+  };
+}
 
-  return (
-    <div className="flex flex-col items-center justify-center gap-1 text-center">
-      {tags.map((tag) => (
-        <Link
-          key={tag}
-          href={hashtagHref(tag)}
-          className="block max-w-full truncate text-[11px] font-medium text-teal-700 transition hover:text-teal-900"
-          onClick={(event) => {
-            event.stopPropagation();
-            trackAnalyticsEvent("hashtag_click", tag);
-          }}
-        >
-          #{tag}
-        </Link>
-      ))}
-    </div>
-  );
+function matchesProductFilter(
+  item: MergedRanking,
+  product: ProductFilter,
+): boolean {
+  if (product === "전체") return true;
+  if (product === "변형문제") return Boolean(item.변형문제);
+  if (product === "워크북") return Boolean(item.워크북);
+  if (product === "분석지" || product === "분석") return Boolean(item.분석지);
+  return true;
 }
 
 export function RankingRow({
@@ -239,15 +237,17 @@ export function RankingRow({
   const showEventBadge = Boolean(item.hasEvent);
   const isHashtagLayout = layout === "hashtag";
 
-  const metricChips = isHashtagLayout ? buildMetricChips(item) : [];
+  const metricChips = isHashtagLayout
+    ? buildHashtagLayoutChips(item)
+    : item.isTopSearch
+      ? [searchChip()]
+      : [];
   const showDefaultMetricBeside =
-    !isHashtagLayout &&
-    !address &&
-    (item.isTopGrowth || item.isTopRepurchase || item.isTopSearch);
+    !isHashtagLayout && !address && (item.isTopGrowth || item.isTopRepurchase);
   const showDefaultMetricBelow =
     !isHashtagLayout &&
     Boolean(address) &&
-    (item.isTopGrowth || item.isTopRepurchase || item.isTopSearch);
+    (item.isTopGrowth || item.isTopRepurchase);
 
   const openProfile = () => {
     trackAnalyticsEvent("profile_click", authorName);
@@ -298,11 +298,6 @@ export function RankingRow({
                   💖재구매
                 </span>
               ) : null}
-              {item.isTopSearch ? (
-                <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
-                  🔍검색어
-                </span>
-              ) : null}
             </div>
           ) : null}
         </div>
@@ -327,11 +322,6 @@ export function RankingRow({
                       💖재구매
                     </span>
                   ) : null}
-                  {item.isTopSearch ? (
-                    <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
-                      🔍검색어
-                    </span>
-                  ) : null}
                 </span>
               ) : null}
               <span className="ml-1 min-w-0 truncate text-[0.9em] text-slate-700">
@@ -353,11 +343,6 @@ export function RankingRow({
                   {item.isTopRepurchase ? (
                     <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
                       💖재구매
-                    </span>
-                  ) : null}
-                  {item.isTopSearch ? (
-                    <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
-                      🔍검색어
                     </span>
                   ) : null}
                 </span>
@@ -424,8 +409,12 @@ export function RankingRow({
           </button>
         </div>
 
-        <div className="hidden h-full min-h-[2.25rem] w-[8.5rem] shrink-0 items-center justify-center overflow-hidden sm:flex">
-          {range3 ? <Range3Hashtags range3={range3} /> : null}
+        <div className="hidden min-h-[2.25rem] w-[8.5rem] shrink-0 items-center justify-center overflow-hidden sm:flex">
+          {range3 ? (
+            <span className="line-clamp-3 w-full break-keep text-center text-xs leading-snug text-gray-500">
+              {range3.endsWith("등") ? range3 : `${range3} 등`}
+            </span>
+          ) : null}
         </div>
       </div>
     </div>
@@ -445,7 +434,8 @@ export default function RankingBoard({
   const searchParams = useSearchParams();
   const tabFromUrl = categoryFromTabParam(searchParams.get("tab"));
 
-  const [subject, setSubject] = useState<Subject>("영어");
+  const [subject, setSubject] = useState<SubjectFilter>("전체");
+  const [product, setProduct] = useState<ProductFilter>("전체");
   const [category, setCategory] = useState<RankingCategory>(
     () => tabFromUrl ?? "인기",
   );
@@ -454,6 +444,7 @@ export default function RankingBoard({
   );
 
   const isHashtagSearch = category === "해시검색";
+  const productOptions = productFiltersForSubject(subject);
 
   useEffect(() => {
     trackAnalyticsEvent("page_view");
@@ -463,26 +454,32 @@ export default function RankingBoard({
     if (tabFromUrl && tabFromUrl !== category) {
       setCategory(tabFromUrl);
     }
-    // URL → 탭만 동기화 (카테고리 변경 시 URL은 selectCategory에서 갱신)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional URL-driven sync
   }, [tabFromUrl]);
+
+  const selectSubject = (next: SubjectFilter) => {
+    setSubject(next);
+    setProduct("전체");
+  };
 
   const list = useMemo(() => {
     if (isHashtagSearch || !Array.isArray(rankings)) return [];
 
-    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
-
     return rankings
-      .filter(
-        (item) =>
-          item &&
-          item.과목 === subject &&
-          item.category === category &&
-          Number.isFinite(item.rank) &&
-          item.rank <= limit,
-      )
-      .sort((a, b) => a.rank - b.rank);
-  }, [rankings, subject, category, isHashtagSearch]);
+      .filter((item) => {
+        if (!item || item.category !== category) return false;
+        if (subject !== "전체" && item.과목 !== subject) return false;
+        const limit = DISPLAY_RANK_LIMIT[item.과목] ?? 15;
+        if (!Number.isFinite(item.rank) || item.rank > limit) return false;
+        return matchesProductFilter(item, product);
+      })
+      .sort(
+        (a, b) =>
+          a.rank - b.rank ||
+          a.과목.localeCompare(b.과목, "ko") ||
+          a.저자명.localeCompare(b.저자명, "ko"),
+      );
+  }, [rankings, subject, product, category, isHashtagSearch]);
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
 
@@ -500,34 +497,10 @@ export default function RankingBoard({
 
   return (
     <section className="mx-auto w-full max-w-4xl px-1 sm:px-0">
-      {!isHashtagSearch ? (
-        <div role="tablist" aria-label="과목" className="mb-3 flex gap-2">
-          {SUBJECTS.map((item) => {
-            const selected = item === subject;
-            return (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setSubject(item)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  selected
-                    ? "bg-teal-700 text-white"
-                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
-                }`}
-              >
-                {item}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
       <div
         role="tablist"
         aria-label="랭킹 기준"
-        className="mb-4 flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
+        className="mb-3 flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
       >
         {RANKING_CATEGORIES.map((item) => {
           const selected = item === category;
@@ -549,6 +522,60 @@ export default function RankingBoard({
           );
         })}
       </div>
+
+      {!isHashtagSearch ? (
+        <>
+          <div role="tablist" aria-label="과목" className="mb-3 flex flex-wrap gap-2">
+            {SUBJECT_FILTERS.map((item) => {
+              const selected = item === subject;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => selectSubject(item)}
+                  className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    selected
+                      ? "bg-teal-700 text-white"
+                      : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+
+          {productOptions.length > 0 ? (
+            <div
+              role="tablist"
+              aria-label="세부 필터"
+              className="mb-3 flex flex-wrap gap-2"
+            >
+              {productOptions.map((item) => {
+                const selected = item === product;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setProduct(item)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                      selected
+                        ? "bg-slate-800 text-white"
+                        : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+        </>
+      ) : null}
 
       <div className="mb-3 px-1 text-right">
         {weekRangeLabel && !isHashtagSearch ? (

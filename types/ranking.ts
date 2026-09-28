@@ -33,7 +33,22 @@ export interface BrandInfo {
   record2?: string;
   range3?: string;
   youtube_url?: string;
+  /** brand_info 상품 플래그 */
+  변형문제?: boolean;
+  워크북?: boolean;
+  분석지?: boolean;
 }
+
+/** 메인 과목 필터 (전체 포함) */
+export type SubjectFilter = "전체" | Subject;
+
+/** 과목별 세부 상품 필터 */
+export type ProductFilter =
+  | "전체"
+  | "변형문제"
+  | "워크북"
+  | "분석지"
+  | "분석";
 
 export interface RankingRecord {
   UID: string;

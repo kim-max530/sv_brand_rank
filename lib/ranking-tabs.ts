@@ -1,7 +1,38 @@
-import type { RankingCategory, Subject } from "@/types/ranking";
+import type {
+  ProductFilter,
+  RankingCategory,
+  Subject,
+  SubjectFilter,
+} from "@/types/ranking";
 
 /** 클라이언트 UI(탭)에서만 쓰는 상수 — 서버 전용 모듈과 분리 */
 export const SUBJECTS: Subject[] = ["영어", "국어"];
+
+/** 과목 필터 버튼 (전체 포함) */
+export const SUBJECT_FILTERS: SubjectFilter[] = ["전체", "영어", "국어"];
+
+/** 영어 세부 필터 */
+export const ENGLISH_PRODUCT_FILTERS: ProductFilter[] = [
+  "전체",
+  "변형문제",
+  "워크북",
+  "분석지",
+];
+
+/** 국어 세부 필터 (분석 = 분석지 열) */
+export const KOREAN_PRODUCT_FILTERS: ProductFilter[] = [
+  "전체",
+  "변형문제",
+  "분석",
+];
+
+export function productFiltersForSubject(
+  subject: SubjectFilter,
+): ProductFilter[] {
+  if (subject === "영어") return ENGLISH_PRODUCT_FILTERS;
+  if (subject === "국어") return KOREAN_PRODUCT_FILTERS;
+  return [];
+}
 
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";

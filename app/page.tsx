@@ -64,7 +64,7 @@ export default async function HomePage() {
       <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
         <header className="mx-auto mb-8 w-full max-w-4xl text-center sm:mb-10">
           <h1 className="break-keep font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            쏠북, 좋은 자료의 발견
+            쏠북, 좋은 브랜드의 발견
           </h1>
         </header>
 

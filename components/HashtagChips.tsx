@@ -11,6 +11,7 @@ export type MetricChip = {
   className?: string;
 };
 
+/** record2 해시태그 먼저, metricChips는 맨 뒤에 이어붙임 */
 export default function HashtagChips({
   record2,
   className = "",
@@ -25,6 +26,19 @@ export default function HashtagChips({
 
   return (
     <div className={`flex flex-wrap items-center gap-1.5 ${className}`.trim()}>
+      {tags.map((tag) => (
+        <Link
+          key={tag}
+          href={hashtagHref(tag)}
+          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50"
+          onClick={(event) => {
+            event.stopPropagation();
+            trackAnalyticsEvent("hashtag_click", tag);
+          }}
+        >
+          #{tag}
+        </Link>
+      ))}
       {metricChips.map((chip) => (
         <Link
           key={chip.key}
@@ -39,19 +53,6 @@ export default function HashtagChips({
           }}
         >
           {chip.label}
-        </Link>
-      ))}
-      {tags.map((tag) => (
-        <Link
-          key={tag}
-          href={hashtagHref(tag)}
-          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50"
-          onClick={(event) => {
-            event.stopPropagation();
-            trackAnalyticsEvent("hashtag_click", tag);
-          }}
-        >
-          #{tag}
         </Link>
       ))}
     </div>
