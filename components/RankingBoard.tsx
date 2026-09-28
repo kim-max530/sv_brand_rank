@@ -20,7 +20,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
   RANKING_CATEGORIES,
-  SUBJECT_FILTERS,
+  SUBJECTS,
   categoryFromTabParam,
   productFiltersForSubject,
 } from "@/lib/ranking-tabs";
@@ -30,7 +30,7 @@ import type {
   ProductFilter,
   RankBadge,
   RankingCategory,
-  SubjectFilter,
+  Subject,
 } from "@/types/ranking";
 
 function YoutubeIcon({ className }: { className?: string }) {
@@ -434,7 +434,7 @@ export default function RankingBoard({
   const searchParams = useSearchParams();
   const tabFromUrl = categoryFromTabParam(searchParams.get("tab"));
 
-  const [subject, setSubject] = useState<SubjectFilter>("전체");
+  const [subject, setSubject] = useState<Subject>("영어");
   const [product, setProduct] = useState<ProductFilter>("전체");
   const [category, setCategory] = useState<RankingCategory>(
     () => tabFromUrl ?? "인기",
@@ -457,7 +457,7 @@ export default function RankingBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional URL-driven sync
   }, [tabFromUrl]);
 
-  const selectSubject = (next: SubjectFilter) => {
+  const selectSubject = (next: Subject) => {
     setSubject(next);
     setProduct("전체");
   };
@@ -465,19 +465,18 @@ export default function RankingBoard({
   const list = useMemo(() => {
     if (isHashtagSearch || !Array.isArray(rankings)) return [];
 
+    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
+
     return rankings
       .filter((item) => {
         if (!item || item.category !== category) return false;
-        if (subject !== "전체" && item.과목 !== subject) return false;
-        const limit = DISPLAY_RANK_LIMIT[item.과목] ?? 15;
+        if (item.과목 !== subject) return false;
         if (!Number.isFinite(item.rank) || item.rank > limit) return false;
         return matchesProductFilter(item, product);
       })
       .sort(
         (a, b) =>
-          a.rank - b.rank ||
-          a.과목.localeCompare(b.과목, "ko") ||
-          a.저자명.localeCompare(b.저자명, "ko"),
+          a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
       );
   }, [rankings, subject, product, category, isHashtagSearch]);
 
@@ -526,7 +525,7 @@ export default function RankingBoard({
       {!isHashtagSearch ? (
         <>
           <div role="tablist" aria-label="과목" className="mb-3 flex flex-wrap gap-2">
-            {SUBJECT_FILTERS.map((item) => {
+            {SUBJECTS.map((item) => {
               const selected = item === subject;
               return (
                 <button
