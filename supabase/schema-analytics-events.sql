@@ -16,15 +16,17 @@ create index if not exists analytics_events_event_type_idx
 
 alter table public.analytics_events enable row level security;
 
+-- 구 anon 키 / 신규 publishable 키 모두 insert 가능하도록 public 역할 허용
 drop policy if exists "anon_insert_analytics_events" on public.analytics_events;
-create policy "anon_insert_analytics_events"
+drop policy if exists "public_insert_analytics_events" on public.analytics_events;
+create policy "public_insert_analytics_events"
   on public.analytics_events
   for insert
-  to anon, authenticated
+  to public
   with check (true);
 
+-- 앱은 서버 secret key API(/api/analytics)로 Insert하는 것을 권장합니다.
 -- 대시보드 조회는 서버 secret key(RLS bypass)로 처리합니다.
--- 필요 시 service_role만 select 하도록 정책을 추가해도 됩니다.
 
 create table if not exists public.author_events (
   uid text primary key,
