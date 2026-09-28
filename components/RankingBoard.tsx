@@ -236,20 +236,22 @@ export function RankingRow({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-grow flex-col items-start">
-        <p className="flex w-full flex-wrap items-center gap-1.5 break-keep text-sm text-slate-800 sm:text-base">
+      <div className="flex min-w-0 flex-1 flex-col items-start pr-2">
+        <p className="w-full break-keep text-sm leading-snug text-slate-800 sm:text-base">
           <span className="break-keep font-bold text-slate-900">
             {authorName}
           </span>
           {topBesideName ? (
-            <TopMetricBadges
-              isTopGrowth={item.isTopGrowth}
-              isTopRepurchase={item.isTopRepurchase}
-            />
+            <span className="ml-1.5 inline-flex align-middle">
+              <TopMetricBadges
+                isTopGrowth={item.isTopGrowth}
+                isTopRepurchase={item.isTopRepurchase}
+              />
+            </span>
           ) : null}
           {intro ? (
             <>
-              <span className="text-slate-400">,</span>
+              <span className="text-slate-400">, </span>
               <span className="break-keep text-slate-700">{intro}</span>
             </>
           ) : null}
@@ -263,57 +265,62 @@ export function RankingRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 self-center sm:gap-2">
-        {hasAuthorDetail || showEventBadge ? (
-          <div className="flex flex-col items-center gap-1">
-            {hasAuthorDetail ? (
-              <button
-                type="button"
-                onClick={openProfile}
-                className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-                aria-label={`${authorName} 저자 소개`}
-              >
-                <UserRound className="h-5 w-5" />
-              </button>
-            ) : null}
-            {showEventBadge ? (
-              <span className="rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
-                Event
-              </span>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="flex w-9 flex-col items-center justify-center gap-1">
+          {hasAuthorDetail ? (
+            <button
+              type="button"
+              onClick={openProfile}
+              className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+              aria-label={`${authorName} 저자 소개`}
+            >
+              <UserRound className="h-5 w-5" />
+            </button>
+          ) : (
+            <span className="h-9 w-9" aria-hidden />
+          )}
+          {showEventBadge ? (
+            <span className="rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
+              Event
+            </span>
+          ) : null}
+        </div>
 
-        {hasYoutube ? (
+        <div className="flex w-9 items-center justify-center">
+          {hasYoutube ? (
+            <button
+              type="button"
+              onClick={openProfile}
+              className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
+              aria-label={`${authorName} 유튜브 소개 열기`}
+            >
+              <YoutubeIcon className="h-5 w-5" />
+            </button>
+          ) : (
+            <span className="h-9 w-9" aria-hidden />
+          )}
+        </div>
+
+        <div className="flex max-w-[10.5rem] items-start gap-1.5 sm:max-w-[13rem]">
           <button
             type="button"
-            onClick={openProfile}
-            className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
-            aria-label={`${authorName} 유튜브 소개 열기`}
+            onClick={() => openAuthorLink(item)}
+            className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+            aria-label={
+              address ? `${authorName} 브랜드관 열기` : `${authorName} 검색하기`
+            }
           >
-            <YoutubeIcon className="h-5 w-5" />
+            {address ? (
+              <Store className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
           </button>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={() => openAuthorLink(item)}
-          className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-          aria-label={
-            address ? `${authorName} 브랜드관 열기` : `${authorName} 검색하기`
-          }
-        >
-          {address ? (
-            <Store className="h-5 w-5" />
-          ) : (
-            <Search className="h-5 w-5" />
-          )}
-        </button>
-
-        {range3 ? (
-          <span className="max-w-[7rem] truncate text-xs text-gray-500 sm:max-w-[10rem]">
-            {range3.endsWith("등") ? range3 : `${range3} 등`}
-          </span>
-        ) : null}
+          {range3 ? (
+            <span className="line-clamp-3 min-w-0 flex-1 break-keep pt-1.5 text-xs leading-snug text-gray-500">
+              {range3.endsWith("등") ? range3 : `${range3} 등`}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -329,7 +336,7 @@ export default function RankingBoard({
   weekRangeLabel,
 }: RankingBoardProps) {
   const [subject, setSubject] = useState<Subject>("영어");
-  const [category, setCategory] = useState<RankingCategory>("추천");
+  const [category, setCategory] = useState<RankingCategory>("인기");
   const [selectedAuthor, setSelectedAuthor] = useState<MergedRanking | null>(
     null,
   );

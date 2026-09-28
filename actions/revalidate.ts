@@ -9,6 +9,7 @@ export async function revalidateHomePage(): Promise<
     // CSV fetch 캐시 + 홈 페이지 캐시 즉시 무효화
     revalidateTag("ranking-data", { expire: 0 });
     revalidatePath("/");
+    revalidatePath("/hashtag", "layout");
     return { ok: true };
   } catch (error) {
     const message =

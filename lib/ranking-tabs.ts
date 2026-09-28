@@ -3,8 +3,8 @@ import type { RankingCategory, Subject } from "@/types/ranking";
 /** 클라이언트 UI(탭)에서만 쓰는 상수 — 서버 전용 모듈과 분리 */
 export const SUBJECTS: Subject[] = ["영어", "국어"];
 
-/** 화면에 노출하는 탭: 발견, 인기 */
-export const RANKING_CATEGORIES: RankingCategory[] = ["추천", "인기"];
+/** 화면에 노출하는 탭: 인기, 발견 */
+export const RANKING_CATEGORIES: RankingCategory[] = ["인기", "추천"];
 
 export const CATEGORY_LABELS: Record<RankingCategory, string> = {
   추천: "✨ 발견",
