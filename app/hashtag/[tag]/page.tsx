@@ -1,18 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import HashtagAuthorList, {
-  HashtagPagination,
-} from "@/components/HashtagAuthorList";
-import { HASHTAG_PAGE_SIZE } from "@/lib/constants";
+import HashtagAuthorList from "@/components/HashtagAuthorList";
 import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
 import {
   authorHasHashtag,
-  hashtagHref,
+  collectRelatedHashtags,
   normalizeHashtagParam,
 } from "@/lib/hashtags";
-import type { MergedRanking } from "@/types/ranking";
+import type { MergedRanking, Subject } from "@/types/ranking";
 
 export const revalidate = false;
 
@@ -31,36 +27,29 @@ export async function generateMetadata({
   };
 }
 
-function parsePage(raw: string | string[] | undefined): number {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  const n = Number(value);
-  if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) return 1;
-  return n;
-}
-
 function safeAddress(value: string | null | undefined): boolean {
   return typeof value === "string" && value.trim().length > 0;
 }
 
 export default async function HashtagPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ tag: string }>;
-  searchParams: Promise<{ page?: string | string[] }>;
 }) {
   const { tag: rawTag } = await params;
-  const query = await searchParams;
   const tag = normalizeHashtagParam(rawTag);
 
   if (!tag) {
     return (
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-12">
         <h1 className="font-display text-2xl font-semibold text-slate-900">
-          해시태그
+          검색(#)
         </h1>
         <p className="mt-3 text-slate-600">유효하지 않은 해시태그입니다.</p>
-        <Link href="/" className="mt-6 text-sm font-medium text-teal-700">
+        <Link
+          href="/?tab=search"
+          className="mt-6 text-sm font-medium text-teal-700"
+        >
           홈으로 돌아가기
         </Link>
       </main>
@@ -68,6 +57,8 @@ export default async function HashtagPage({
   }
 
   let authors: MergedRanking[] = [];
+  let relatedTags: string[] = [];
+
   try {
     const [all, rankings] = await Promise.all([
       fetchBrandInfoList(),
@@ -81,6 +72,8 @@ export default async function HashtagPage({
         isInRecommend: boolean;
         isTopGrowth: boolean;
         isTopRepurchase: boolean;
+        isTopSearch: boolean;
+        subjects: Set<Subject>;
       }
     >();
 
@@ -90,24 +83,33 @@ export default async function HashtagPage({
         isInRecommend: false,
         isTopGrowth: false,
         isTopRepurchase: false,
+        isTopSearch: false,
+        subjects: new Set<Subject>(),
       };
       if (row.category === "인기") current.isInPopular = true;
       if (row.category === "추천") current.isInRecommend = true;
       if (row.isTopGrowth) current.isTopGrowth = true;
       if (row.isTopRepurchase) current.isTopRepurchase = true;
+      if (row.isTopSearch) current.isTopSearch = true;
+      current.subjects.add(row.과목);
       metaByUid.set(row.UID, current);
     }
 
-    authors = all
-      .filter(
-        (info) =>
-          authorHasHashtag(info.record2, tag) && safeAddress(info.address),
-      )
+    const matched = all.filter(
+      (info) =>
+        authorHasHashtag(info.record2, tag) && safeAddress(info.address),
+    );
+
+    relatedTags = collectRelatedHashtags(matched, tag, 7);
+
+    authors = matched
       .map((info) => {
         const meta = metaByUid.get(info.UID);
+        const subjects = meta ? [...meta.subjects] : [];
         return {
           ...info,
-          과목: "영어" as const,
+          과목: (subjects[0] ?? "영어") as Subject,
+          subjects,
           rank: 0,
           category: "인기" as const,
           badge: null,
@@ -116,6 +118,7 @@ export default async function HashtagPage({
           isInRecommend: meta?.isInRecommend ?? false,
           isTopGrowth: meta?.isTopGrowth ?? false,
           isTopRepurchase: meta?.isTopRepurchase ?? false,
+          isTopSearch: meta?.isTopSearch ?? false,
         };
       })
       .sort((a, b) => {
@@ -137,18 +140,6 @@ export default async function HashtagPage({
       </main>
     );
   }
-
-  const total = authors.length;
-  const totalPages = Math.max(1, Math.ceil(total / HASHTAG_PAGE_SIZE));
-  const requestedPage = parsePage(query.page);
-
-  if (total > 0 && requestedPage > totalPages) {
-    redirect(hashtagHref(tag));
-  }
-
-  const page = Math.min(requestedPage, totalPages);
-  const start = (page - 1) * HASHTAG_PAGE_SIZE;
-  const pageAuthors = authors.slice(start, start + HASHTAG_PAGE_SIZE);
 
   return (
     <main className="relative flex flex-1 flex-col">
@@ -177,23 +168,11 @@ export default async function HashtagPage({
       </div>
 
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-hidden px-4 py-8 sm:px-6 sm:py-10">
-        <header className="mb-6">
-          <p className="text-sm font-medium text-teal-700">Hashtag</p>
-          <h1 className="mt-1 break-keep font-display text-2xl font-semibold text-slate-900 sm:text-3xl">
-            #{tag}
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            {total > 0
-              ? `브랜드관 저자 ${total}명 · ${page}/${totalPages} 페이지`
-              : "해당 해시태그의 브랜드관 저자가 없습니다."}
-          </p>
-        </header>
-
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]">
-          <HashtagAuthorList authors={pageAuthors} />
-        </div>
-
-        <HashtagPagination tag={tag} page={page} totalPages={totalPages} />
+        <HashtagAuthorList
+          authors={authors}
+          tag={tag}
+          relatedTags={relatedTags}
+        />
       </div>
     </main>
   );

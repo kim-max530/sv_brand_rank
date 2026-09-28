@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { Suspense } from "react";
 import RankingBoard from "@/components/RankingBoard";
 import { fetchActiveAuthorEventUids } from "@/lib/author-events";
 import { fetchMergedRankings } from "@/lib/csv";
@@ -75,7 +76,18 @@ export default async function HomePage() {
             <p className="mt-2 break-all text-rose-600/90">{errorMessage}</p>
           </div>
         ) : (
-          <RankingBoard rankings={rankings} weekRangeLabel={weekRangeLabel} />
+          <Suspense
+            fallback={
+              <p className="mx-auto w-full max-w-4xl px-4 py-12 text-center text-sm text-slate-500">
+                불러오는 중…
+              </p>
+            }
+          >
+            <RankingBoard
+              rankings={rankings}
+              weekRangeLabel={weekRangeLabel}
+            />
+          </Suspense>
         )}
       </div>
     </main>

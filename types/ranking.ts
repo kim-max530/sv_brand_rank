@@ -51,8 +51,12 @@ export interface MergedRanking extends BrandInfo, RankingRecord {
   isTopGrowth?: boolean;
   /** repurchase CSV 1~5위 */
   isTopRepurchase?: boolean;
+  /** search(자꾸 찾는) CSV 1~5위 */
+  isTopSearch?: boolean;
   /** 인기 랭킹 소속 (해시태그 상세 등) */
   isInPopular?: boolean;
   /** 발견(추천) 랭킹 소속 (해시태그 상세 등) */
   isInRecommend?: boolean;
+  /** 해시태그 상세 과목 필터용 (복수 가능) */
+  subjects?: Subject[];
 }

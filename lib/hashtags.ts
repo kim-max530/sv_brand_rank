@@ -42,3 +42,44 @@ export function authorHasHashtag(
   if (!needle) return false;
   return parseHashtags(record2).some((t) => t.toLowerCase() === needle);
 }
+
+/** range3 교재 목록 → 해시태그 키워드 */
+export function parseRange3Tags(value: string | null | undefined): string[] {
+  if (typeof value !== "string") return [];
+  const cleaned = value
+    .replace(/\s*등\s*$/u, "")
+    .replace(/등$/u, "")
+    .trim();
+  return parseHashtags(cleaned);
+}
+
+/** 현재 태그와 함께 자주 등장하는 연관 태그 (최대 limit개) */
+export function collectRelatedHashtags(
+  authors: Array<{ record2?: string | null }>,
+  currentTag: string,
+  limit = 7,
+): string[] {
+  const needle = currentTag.replace(/^#+/, "").trim().toLowerCase();
+  if (!needle) return [];
+
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const author of authors) {
+    const tags = parseHashtags(author.record2);
+    if (!tags.some((t) => t.toLowerCase() === needle)) continue;
+    for (const tag of tags) {
+      const key = tag.toLowerCase();
+      if (key === needle) continue;
+      const prev = counts.get(key);
+      if (prev) prev.count += 1;
+      else counts.set(key, { label: tag, count: 1 });
+    }
+  }
+
+  return [...counts.values()]
+    .sort(
+      (a, b) =>
+        b.count - a.count || a.label.localeCompare(b.label, "ko"),
+    )
+    .slice(0, limit)
+    .map((entry) => entry.label);
+}

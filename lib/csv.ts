@@ -251,12 +251,14 @@ function withTopFlags(
   item: MergedRanking,
   growthTop: Set<string>,
   repurchaseTop: Set<string>,
+  searchTop: Set<string>,
 ): MergedRanking {
   const key = rankingKey(item.UID, item.과목);
   return {
     ...item,
     isTopGrowth: growthTop.has(key),
     isTopRepurchase: repurchaseTop.has(key),
+    isTopSearch: searchTop.has(key),
   };
 }
 
@@ -303,6 +305,7 @@ function buildRecommendRankings(
   hasPrevData: boolean,
   growthTop: Set<string>,
   repurchaseTop: Set<string>,
+  searchTop: Set<string>,
 ): MergedRanking[] {
   const brands = [...brandMap.values()];
   if (brands.length === 0) return [];
@@ -351,6 +354,7 @@ function buildRecommendRankings(
           },
           growthTop,
           repurchaseTop,
+          searchTop,
         ),
       );
     });
@@ -405,6 +409,7 @@ function buildPopularRankings(
   hasPrevPopularData: boolean,
   growthTop: Set<string>,
   repurchaseTop: Set<string>,
+  searchTop: Set<string>,
 ): MergedRanking[] {
   const brands = [...brandMap.values()].filter((info) =>
     Boolean(info.address?.trim()),
@@ -455,6 +460,7 @@ function buildPopularRankings(
           },
           growthTop,
           repurchaseTop,
+          searchTop,
         ),
       );
     });
@@ -578,6 +584,7 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
   const repurchaseTop = collectTopMetricUids(
     categoryRankMaps.get("계속 찾는"),
   );
+  const searchTop = collectTopMetricUids(categoryRankMaps.get("자꾸 찾는"));
 
   const hasPrevRecommend = prevCategoryRankMaps.size > 0;
 
@@ -589,6 +596,7 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
       hasPrevRecommend,
       growthTop,
       repurchaseTop,
+      searchTop,
     ),
     ...buildPopularRankings(
       brandMap,
@@ -597,6 +605,7 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
       loadedPrevPopularFiles > 0,
       growthTop,
       repurchaseTop,
+      searchTop,
     ),
   ];
 }

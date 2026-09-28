@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Store, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
-import HashtagChips from "@/components/HashtagChips";
+import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -14,11 +16,14 @@ import {
   initialCandidateIndex,
 } from "@/lib/brand-images";
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
+import { hashtagHref, parseRange3Tags } from "@/lib/hashtags";
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
+  CATEGORY_TO_TAB,
   RANKING_CATEGORIES,
   SUBJECTS,
+  categoryFromTabParam,
 } from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import type {
@@ -60,54 +65,6 @@ function StatusBadge({ badge }: { badge: RankBadge }) {
     );
   }
   return null;
-}
-
-function TopMetricBadges({
-  isInPopular,
-  isInRecommend,
-  isTopGrowth,
-  isTopRepurchase,
-  className = "",
-}: {
-  isInPopular?: boolean;
-  isInRecommend?: boolean;
-  isTopGrowth?: boolean;
-  isTopRepurchase?: boolean;
-  className?: string;
-}) {
-  if (
-    !isInPopular &&
-    !isInRecommend &&
-    !isTopGrowth &&
-    !isTopRepurchase
-  ) {
-    return null;
-  }
-
-  return (
-    <div className={`flex flex-wrap items-center gap-1 ${className}`.trim()}>
-      {isInPopular ? (
-        <span className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-700">
-          🔥인기
-        </span>
-      ) : null}
-      {isInRecommend ? (
-        <span className="inline-flex items-center rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-violet-700">
-          ✨추천
-        </span>
-      ) : null}
-      {isTopGrowth ? (
-        <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-orange-600">
-          HOT
-        </span>
-      ) : null}
-      {isTopRepurchase ? (
-        <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-rose-600">
-          💖재구매
-        </span>
-      ) : null}
-    </div>
-  );
 }
 
 function RankMeta({
@@ -199,16 +156,74 @@ function openAuthorLink(item: MergedRanking) {
   openAuthorExternalLink(item);
 }
 
+function buildMetricChips(item: MergedRanking): MetricChip[] {
+  const chips: MetricChip[] = [];
+  if (item.isTopGrowth) {
+    chips.push({
+      key: "hot",
+      label: "🚀HOT",
+      tag: "HOT",
+      className:
+        "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
+    });
+  }
+  if (item.isTopRepurchase) {
+    chips.push({
+      key: "repurchase",
+      label: "💖재구매",
+      tag: "재구매",
+      className:
+        "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100",
+    });
+  }
+  if (item.isTopSearch) {
+    chips.push({
+      key: "search",
+      label: "🔍검색어",
+      tag: "검색어",
+      className:
+        "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100",
+    });
+  }
+  return chips;
+}
+
+function Range3Hashtags({ range3 }: { range3: string }) {
+  const tags = parseRange3Tags(range3);
+  if (tags.length === 0) return null;
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-1 text-center">
+      {tags.map((tag) => (
+        <Link
+          key={tag}
+          href={hashtagHref(tag)}
+          className="block max-w-full truncate text-[11px] font-medium text-teal-700 transition hover:text-teal-900"
+          onClick={(event) => {
+            event.stopPropagation();
+            trackAnalyticsEvent("hashtag_click", tag);
+          }}
+        >
+          #{tag}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export function RankingRow({
   item,
   onOpenIntro,
   priority,
   showRank = true,
+  layout = "default",
 }: {
   item: MergedRanking;
   onOpenIntro: (item: MergedRanking) => void;
   priority?: boolean;
   showRank?: boolean;
+  /** hashtag: 인기Top/쏠북Pick 아바타 아래, 메트릭 뱃지는 해시태그 영역 */
+  layout?: "default" | "hashtag";
 }) {
   const authorName = safeText(item.저자명) || safeText(item.UID) || "이름 없음";
   const intro = safeText(item.intro);
@@ -222,15 +237,17 @@ export function RankingRow({
   const hasYoutube = Boolean(youtubeUrl);
   const hasInfo1 = Boolean(info1);
   const showEventBadge = Boolean(item.hasEvent);
-  const hasAddress = Boolean(address);
-  const hasContextBadges = Boolean(
-    item.isInPopular ||
-      item.isInRecommend ||
-      item.isTopGrowth ||
-      item.isTopRepurchase,
-  );
-  const topBelowAvatar = hasAddress && hasContextBadges;
-  const topBesideName = !hasAddress && hasContextBadges;
+  const isHashtagLayout = layout === "hashtag";
+
+  const metricChips = isHashtagLayout ? buildMetricChips(item) : [];
+  const showDefaultMetricBeside =
+    !isHashtagLayout &&
+    !address &&
+    (item.isTopGrowth || item.isTopRepurchase || item.isTopSearch);
+  const showDefaultMetricBelow =
+    !isHashtagLayout &&
+    Boolean(address) &&
+    (item.isTopGrowth || item.isTopRepurchase || item.isTopSearch);
 
   const openProfile = () => {
     trackAnalyticsEvent("profile_click", authorName);
@@ -240,7 +257,9 @@ export function RankingRow({
   return (
     <div
       className={`flex w-full gap-3 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-4 sm:px-4 ${
-        hasInfo1 || item.record2 ? "items-start" : "items-center"
+        hasInfo1 || item.record2 || metricChips.length > 0
+          ? "items-start"
+          : "items-center"
       }`}
     >
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -251,109 +270,162 @@ export function RankingRow({
             changeText={item.changeText ?? ""}
           />
         ) : null}
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex w-12 flex-col items-center gap-1">
           <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
-          {topBelowAvatar ? (
-            <TopMetricBadges
-              isInPopular={item.isInPopular}
-              isInRecommend={item.isInRecommend}
-              isTopGrowth={item.isTopGrowth}
-              isTopRepurchase={item.isTopRepurchase}
-            />
+          {isHashtagLayout ? (
+            <div className="flex flex-col items-center gap-0.5">
+              {item.isInPopular ? (
+                <span className="inline-flex items-center rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold tracking-tight text-amber-700 whitespace-nowrap">
+                  🔥인기Top
+                </span>
+              ) : null}
+              {item.isInRecommend ? (
+                <span className="inline-flex items-center rounded bg-violet-100 px-1 py-0.5 text-[9px] font-bold tracking-tight text-violet-700 whitespace-nowrap">
+                  ✨쏠북Pick
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+          {showDefaultMetricBelow ? (
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              {item.isTopGrowth ? (
+                <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
+                  🚀HOT
+                </span>
+              ) : null}
+              {item.isTopRepurchase ? (
+                <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                  💖재구매
+                </span>
+              ) : null}
+              {item.isTopSearch ? (
+                <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
+                  🔍검색어
+                </span>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col items-start overflow-hidden pr-2">
         <div className="flex w-full min-w-0 items-center overflow-hidden whitespace-nowrap">
-          <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
-            {authorName}
-          </span>
-          {topBesideName ? (
-            <span className="ml-1.5 inline-flex shrink-0">
-              <TopMetricBadges
-                isInPopular={item.isInPopular}
-                isInRecommend={item.isInRecommend}
-                isTopGrowth={item.isTopGrowth}
-                isTopRepurchase={item.isTopRepurchase}
-              />
-            </span>
-          ) : null}
           {intro ? (
-            <span className="ml-1 min-w-0 truncate text-[0.9em] text-slate-700">
-              <span className="text-slate-400">, </span>
-              {intro}
-            </span>
-          ) : null}
+            <>
+              <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
+                {authorName},
+              </span>
+              {showDefaultMetricBeside ? (
+                <span className="ml-1.5 inline-flex shrink-0 gap-1">
+                  {item.isTopGrowth ? (
+                    <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
+                      🚀HOT
+                    </span>
+                  ) : null}
+                  {item.isTopRepurchase ? (
+                    <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                      💖재구매
+                    </span>
+                  ) : null}
+                  {item.isTopSearch ? (
+                    <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
+                      🔍검색어
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+              <span className="ml-1 min-w-0 truncate text-[0.9em] text-slate-700">
+                {intro}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
+                {authorName}
+              </span>
+              {showDefaultMetricBeside ? (
+                <span className="ml-1.5 inline-flex shrink-0 gap-1">
+                  {item.isTopGrowth ? (
+                    <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
+                      🚀HOT
+                    </span>
+                  ) : null}
+                  {item.isTopRepurchase ? (
+                    <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
+                      💖재구매
+                    </span>
+                  ) : null}
+                  {item.isTopSearch ? (
+                    <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700">
+                      🔍검색어
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+            </>
+          )}
         </div>
         {hasInfo1 ? (
           <p className="mt-2 inline-block max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700">
             {info1}
           </p>
         ) : null}
-        <HashtagChips record2={item.record2} className="mt-2" />
+        <HashtagChips
+          record2={item.record2}
+          className="mt-2"
+          metricChips={metricChips}
+        />
       </div>
 
-      {/* 우측: 아이콘·교재범위 고정 폭 — 텍스트 길이에 밀리지 않음 */}
-      <div className="flex w-[6.75rem] shrink-0 items-center justify-end self-center sm:w-[15.75rem] sm:gap-1.5">
-        <div className="flex w-[6.75rem] shrink-0 items-center justify-end">
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
-            {hasAuthorDetail ? (
-              <button
-                type="button"
-                onClick={openProfile}
-                className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-                aria-label={`${authorName} 저자 소개`}
-              >
-                <UserRound className="h-5 w-5" />
-              </button>
-            ) : null}
-            {showEventBadge ? (
-              <span className="absolute top-full left-1/2 z-10 mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
-                Event
-              </span>
-            ) : null}
-          </div>
-
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center">
-            {hasYoutube ? (
-              <button
-                type="button"
-                onClick={openProfile}
-                className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
-                aria-label={`${authorName} 유튜브 소개 열기`}
-              >
-                <YoutubeIcon className="h-5 w-5" />
-              </button>
-            ) : null}
-          </div>
-
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+      {/* 프로필 · 홈페이지 · 교재목록 고정 간격/너비 */}
+      <div className="flex w-[5.5rem] shrink-0 items-center justify-end gap-x-3 self-center sm:w-[15.5rem]">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
+          {hasAuthorDetail ? (
             <button
               type="button"
-              onClick={() => openAuthorLink(item)}
+              onClick={openProfile}
               className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-              aria-label={
-                address
-                  ? `${authorName} 브랜드관 열기`
-                  : `${authorName} 검색하기`
-              }
+              aria-label={`${authorName} 저자 소개`}
             >
-              {address ? (
-                <Store className="h-5 w-5" />
-              ) : (
-                <Search className="h-5 w-5" />
-              )}
+              <UserRound className="h-5 w-5" />
             </button>
-          </div>
-        </div>
-
-        <div className="hidden min-h-[2.25rem] w-[8.5rem] shrink-0 overflow-hidden sm:block">
-          {range3 ? (
-            <span className="line-clamp-3 break-keep pt-1.5 text-xs leading-snug text-gray-500">
-              {range3.endsWith("등") ? range3 : `${range3} 등`}
+          ) : null}
+          {hasYoutube ? (
+            <button
+              type="button"
+              onClick={openProfile}
+              className="absolute -top-1 -right-1 rounded-full bg-white p-0.5 text-red-500 shadow-sm"
+              aria-label={`${authorName} 유튜브 소개 열기`}
+            >
+              <YoutubeIcon className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {showEventBadge ? (
+            <span className="absolute top-full left-1/2 z-10 mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
+              Event
             </span>
           ) : null}
+        </div>
+
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+          <button
+            type="button"
+            onClick={() => openAuthorLink(item)}
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+            aria-label={
+              address ? `${authorName} 브랜드관 열기` : `${authorName} 검색하기`
+            }
+          >
+            {address ? (
+              <Store className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+
+        <div className="hidden h-full min-h-[2.25rem] w-[8.5rem] shrink-0 items-center justify-center overflow-hidden sm:flex">
+          {range3 ? <Range3Hashtags range3={range3} /> : null}
         </div>
       </div>
     </div>
@@ -369,8 +441,14 @@ export default function RankingBoard({
   rankings,
   weekRangeLabel,
 }: RankingBoardProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabFromUrl = categoryFromTabParam(searchParams.get("tab"));
+
   const [subject, setSubject] = useState<Subject>("영어");
-  const [category, setCategory] = useState<RankingCategory>("인기");
+  const [category, setCategory] = useState<RankingCategory>(
+    () => tabFromUrl ?? "인기",
+  );
   const [selectedAuthor, setSelectedAuthor] = useState<MergedRanking | null>(
     null,
   );
@@ -380,6 +458,14 @@ export default function RankingBoard({
   useEffect(() => {
     trackAnalyticsEvent("page_view");
   }, []);
+
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== category) {
+      setCategory(tabFromUrl);
+    }
+    // URL → 탭만 동기화 (카테고리 변경 시 URL은 selectCategory에서 갱신)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional URL-driven sync
+  }, [tabFromUrl]);
 
   const list = useMemo(() => {
     if (isHashtagSearch || !Array.isArray(rankings)) return [];
@@ -403,6 +489,13 @@ export default function RankingBoard({
   const selectCategory = (next: RankingCategory) => {
     setCategory(next);
     trackAnalyticsEvent("tab_click", tabTargetName(next));
+    const tab =
+      next === "인기" || next === "추천" || next === "해시검색"
+        ? CATEGORY_TO_TAB[next]
+        : null;
+    if (tab) {
+      router.replace(`/?tab=${tab}`, { scroll: false });
+    }
   };
 
   return (
