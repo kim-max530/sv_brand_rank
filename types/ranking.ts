@@ -62,12 +62,12 @@ export interface MergedRanking extends BrandInfo, RankingRecord {
   changeText: string;
   /** author_events 기간 내 활성 여부 */
   hasEvent?: boolean;
-  /** growth CSV 1~5위 */
-  isTopGrowth?: boolean;
-  /** repurchase CSV 1~5위 */
-  isTopRepurchase?: boolean;
-  /** search(자꾸 찾는) CSV 1~5위 */
-  isTopSearch?: boolean;
+  /** growth CSV에 UID 존재 */
+  inGrowth?: boolean;
+  /** repurchase CSV에 UID 존재 */
+  inRepurchase?: boolean;
+  /** search CSV에 UID 존재 */
+  inSearch?: boolean;
   /** 인기 랭킹 소속 (해시태그 상세 등) */
   isInPopular?: boolean;
   /** 발견(추천) 랭킹 소속 (해시태그 상세 등) */

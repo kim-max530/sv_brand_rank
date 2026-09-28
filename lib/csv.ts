@@ -8,7 +8,6 @@ import {
   RANKING_FILES,
   RECOMMEND_TOP_N,
   SUBJECTS,
-  TOP_METRIC_RANK_LIMIT,
 } from "@/lib/constants";
 import type {
   BrandInfo,
@@ -256,31 +255,30 @@ function calcBadgeAndChangeText(
 
 type CategoryRankMaps = Map<SourceRankingCategory, Map<string, number>>;
 
-function collectTopMetricUids(
+/** CSV에 UID가 한 번이라도 있으면 포함 (순위 제한 없음) */
+function collectPresentUids(
   rankMap: Map<string, number> | undefined,
 ): Set<string> {
   const result = new Set<string>();
   if (!rankMap) return result;
-  for (const [key, rank] of rankMap.entries()) {
-    if (Number.isFinite(rank) && rank >= 1 && rank <= TOP_METRIC_RANK_LIMIT) {
-      result.add(key);
-    }
+  for (const key of rankMap.keys()) {
+    const uid = key.split("::")[0]?.trim();
+    if (uid) result.add(uid);
   }
   return result;
 }
 
-function withTopFlags(
+function withMetricFlags(
   item: MergedRanking,
-  growthTop: Set<string>,
-  repurchaseTop: Set<string>,
-  searchTop: Set<string>,
+  growthUids: Set<string>,
+  repurchaseUids: Set<string>,
+  searchUids: Set<string>,
 ): MergedRanking {
-  const key = rankingKey(item.UID, item.과목);
   return {
     ...item,
-    isTopGrowth: growthTop.has(key),
-    isTopRepurchase: repurchaseTop.has(key),
-    isTopSearch: searchTop.has(key),
+    inGrowth: growthUids.has(item.UID),
+    inRepurchase: repurchaseUids.has(item.UID),
+    inSearch: searchUids.has(item.UID),
   };
 }
 
@@ -325,9 +323,9 @@ function buildRecommendRankings(
   categoryRankMaps: CategoryRankMaps,
   prevCategoryRankMaps: CategoryRankMaps,
   hasPrevData: boolean,
-  growthTop: Set<string>,
-  repurchaseTop: Set<string>,
-  searchTop: Set<string>,
+  growthUids: Set<string>,
+  repurchaseUids: Set<string>,
+  searchUids: Set<string>,
 ): MergedRanking[] {
   const brands = [...brandMap.values()];
   if (brands.length === 0) return [];
@@ -365,7 +363,7 @@ function buildRecommendRankings(
       );
 
       results.push(
-        withTopFlags(
+        withMetricFlags(
           {
             ...entry.info,
             과목: subject,
@@ -374,9 +372,9 @@ function buildRecommendRankings(
             badge,
             changeText,
           },
-          growthTop,
-          repurchaseTop,
-          searchTop,
+          growthUids,
+          repurchaseUids,
+          searchUids,
         ),
       );
     });
@@ -429,9 +427,9 @@ function buildPopularRankings(
   categoryRankMaps: CategoryRankMaps,
   prevCategoryRankMaps: CategoryRankMaps,
   hasPrevPopularData: boolean,
-  growthTop: Set<string>,
-  repurchaseTop: Set<string>,
-  searchTop: Set<string>,
+  growthUids: Set<string>,
+  repurchaseUids: Set<string>,
+  searchUids: Set<string>,
 ): MergedRanking[] {
   const brands = [...brandMap.values()].filter((info) =>
     Boolean(info.address?.trim()),
@@ -471,7 +469,7 @@ function buildPopularRankings(
       );
 
       results.push(
-        withTopFlags(
+        withMetricFlags(
           {
             ...entry.info,
             과목: subject,
@@ -480,9 +478,9 @@ function buildPopularRankings(
             badge,
             changeText,
           },
-          growthTop,
-          repurchaseTop,
-          searchTop,
+          growthUids,
+          repurchaseUids,
+          searchUids,
         ),
       );
     });
@@ -602,11 +600,11 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
     throw new Error("불러올 랭킹 CSV가 없습니다.");
   }
 
-  const growthTop = collectTopMetricUids(categoryRankMaps.get("급성장"));
-  const repurchaseTop = collectTopMetricUids(
+  const growthUids = collectPresentUids(categoryRankMaps.get("급성장"));
+  const repurchaseUids = collectPresentUids(
     categoryRankMaps.get("계속 찾는"),
   );
-  const searchTop = collectTopMetricUids(categoryRankMaps.get("자꾸 찾는"));
+  const searchUids = collectPresentUids(categoryRankMaps.get("자꾸 찾는"));
 
   const hasPrevRecommend = prevCategoryRankMaps.size > 0;
 
@@ -616,18 +614,18 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
       categoryRankMaps,
       prevCategoryRankMaps,
       hasPrevRecommend,
-      growthTop,
-      repurchaseTop,
-      searchTop,
+      growthUids,
+      repurchaseUids,
+      searchUids,
     ),
     ...buildPopularRankings(
       brandMap,
       categoryRankMaps,
       prevCategoryRankMaps,
       loadedPrevPopularFiles > 0,
-      growthTop,
-      repurchaseTop,
-      searchTop,
+      growthUids,
+      repurchaseUids,
+      searchUids,
     ),
   ];
 }

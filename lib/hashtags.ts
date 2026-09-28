@@ -35,7 +35,12 @@ export function normalizeHashtagParam(raw: string): string {
 }
 
 /** 시스템 뱃지 전용 태그 (record2가 아닌 랭킹 플래그로 조회) */
-export type SystemBadgeTag = "재구매" | "HOT" | "검색어";
+export type SystemBadgeTag =
+  | "재구매"
+  | "HOT"
+  | "검색어"
+  | "인기Top"
+  | "쏠북Pick";
 
 export function resolveSystemBadgeTag(
   tag: string,
@@ -44,6 +49,20 @@ export function resolveSystemBadgeTag(
   if (normalized === "재구매") return "재구매";
   if (normalized === "HOT" || normalized.toLowerCase() === "hot") return "HOT";
   if (normalized === "검색어") return "검색어";
+  if (
+    normalized === "인기Top" ||
+    normalized === "인기TOP" ||
+    normalized.toLowerCase() === "인기top"
+  ) {
+    return "인기Top";
+  }
+  if (
+    normalized === "쏠북Pick" ||
+    normalized === "쏠북PICK" ||
+    normalized.toLowerCase() === "쏠북pick"
+  ) {
+    return "쏠북Pick";
+  }
   return null;
 }
 

@@ -32,6 +32,15 @@ function safeAddress(value: string | null | undefined): boolean {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+type AuthorMeta = {
+  isInPopular: boolean;
+  isInRecommend: boolean;
+  inGrowth: boolean;
+  inRepurchase: boolean;
+  inSearch: boolean;
+  subjects: Set<Subject>;
+};
+
 function toAuthorView(
   info: {
     UID: string;
@@ -48,16 +57,7 @@ function toAuthorView(
     워크북?: boolean;
     분석지?: boolean;
   },
-  meta:
-    | {
-        isInPopular: boolean;
-        isInRecommend: boolean;
-        isTopGrowth: boolean;
-        isTopRepurchase: boolean;
-        isTopSearch: boolean;
-        subjects: Set<Subject>;
-      }
-    | undefined,
+  meta: AuthorMeta | undefined,
 ): MergedRanking {
   const subjects = meta ? [...meta.subjects] : [];
   return {
@@ -70,9 +70,9 @@ function toAuthorView(
     changeText: "",
     isInPopular: meta?.isInPopular ?? false,
     isInRecommend: meta?.isInRecommend ?? false,
-    isTopGrowth: meta?.isTopGrowth ?? false,
-    isTopRepurchase: meta?.isTopRepurchase ?? false,
-    isTopSearch: meta?.isTopSearch ?? false,
+    inGrowth: meta?.inGrowth ?? false,
+    inRepurchase: meta?.inRepurchase ?? false,
+    inSearch: meta?.inSearch ?? false,
   };
 }
 
@@ -110,32 +110,22 @@ export default async function HashtagPage({
       fetchMergedRankings(),
     ]);
 
-    const metaByUid = new Map<
-      string,
-      {
-        isInPopular: boolean;
-        isInRecommend: boolean;
-        isTopGrowth: boolean;
-        isTopRepurchase: boolean;
-        isTopSearch: boolean;
-        subjects: Set<Subject>;
-      }
-    >();
+    const metaByUid = new Map<string, AuthorMeta>();
 
     for (const row of rankings) {
       const current = metaByUid.get(row.UID) ?? {
         isInPopular: false,
         isInRecommend: false,
-        isTopGrowth: false,
-        isTopRepurchase: false,
-        isTopSearch: false,
+        inGrowth: false,
+        inRepurchase: false,
+        inSearch: false,
         subjects: new Set<Subject>(),
       };
       if (row.category === "인기") current.isInPopular = true;
       if (row.category === "추천") current.isInRecommend = true;
-      if (row.isTopGrowth) current.isTopGrowth = true;
-      if (row.isTopRepurchase) current.isTopRepurchase = true;
-      if (row.isTopSearch) current.isTopSearch = true;
+      if (row.inGrowth) current.inGrowth = true;
+      if (row.inRepurchase) current.inRepurchase = true;
+      if (row.inSearch) current.inSearch = true;
       current.subjects.add(row.과목);
       metaByUid.set(row.UID, current);
     }
@@ -146,21 +136,25 @@ export default async function HashtagPage({
       const meta = metaByUid.get(info.UID);
 
       if (systemTag === "재구매") {
-        return Boolean(meta?.isTopRepurchase);
+        return Boolean(meta?.inRepurchase);
       }
       if (systemTag === "HOT") {
-        return Boolean(meta?.isTopGrowth);
+        return Boolean(meta?.inGrowth);
       }
       if (systemTag === "검색어") {
-        return Boolean(meta?.isTopSearch);
+        return Boolean(meta?.inSearch);
+      }
+      if (systemTag === "인기Top") {
+        return Boolean(meta?.isInPopular);
+      }
+      if (systemTag === "쏠북Pick") {
+        return Boolean(meta?.isInRecommend);
       }
 
       return authorHasHashtag(info.record2, tag) && safeAddress(info.address);
     });
 
-    relatedTags = systemTag
-      ? []
-      : collectRelatedHashtags(matched, tag, 7);
+    relatedTags = systemTag ? [] : collectRelatedHashtags(matched, tag, 7);
 
     authors = matched
       .map((info) => toAuthorView(info, metaByUid.get(info.UID)))

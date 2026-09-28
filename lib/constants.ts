@@ -47,8 +47,5 @@ export const DISPLAY_RANK_LIMIT: Record<Subject, number> = {
 /** NEW 뱃지: 과거 없음/15위 초과 → 현재 15위 이내 진입 */
 export const NEW_BADGE_RANK_THRESHOLD = 15;
 
-/** growth / repurchase Top N */
-export const TOP_METRIC_RANK_LIMIT = 5;
-
 /** 해시태그 목록 페이지당 개수 */
 export const HASHTAG_PAGE_SIZE = 10;

@@ -156,9 +156,9 @@ function openAuthorLink(item: MergedRanking) {
   openAuthorExternalLink(item);
 }
 
-function buildHashtagLayoutChips(item: MergedRanking): MetricChip[] {
+function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
   const chips: MetricChip[] = [];
-  if (item.isTopGrowth) {
+  if (item.inGrowth) {
     chips.push({
       key: "hot",
       label: "🚀HOT",
@@ -167,7 +167,7 @@ function buildHashtagLayoutChips(item: MergedRanking): MetricChip[] {
         "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
     });
   }
-  if (item.isTopRepurchase) {
+  if (item.inRepurchase) {
     chips.push({
       key: "repurchase",
       label: "💖재구매",
@@ -176,7 +176,7 @@ function buildHashtagLayoutChips(item: MergedRanking): MetricChip[] {
         "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100",
     });
   }
-  if (item.isTopSearch) {
+  if (item.inSearch) {
     chips.push({
       key: "search",
       label: "🔍검색어",
@@ -185,17 +185,25 @@ function buildHashtagLayoutChips(item: MergedRanking): MetricChip[] {
         "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100",
     });
   }
+  if (item.isInPopular) {
+    chips.push({
+      key: "popular",
+      label: "🔥인기Top",
+      tag: "인기Top",
+      className:
+        "inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100",
+    });
+  }
+  if (item.isInRecommend) {
+    chips.push({
+      key: "recommend",
+      label: "✨쏠북Pick",
+      tag: "쏠북Pick",
+      className:
+        "inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100",
+    });
+  }
   return chips;
-}
-
-function searchChip(): MetricChip {
-  return {
-    key: "search",
-    label: "🔍검색어",
-    tag: "검색어",
-    className:
-      "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100",
-  };
 }
 
 function matchesProductFilter(
@@ -220,7 +228,6 @@ export function RankingRow({
   onOpenIntro: (item: MergedRanking) => void;
   priority?: boolean;
   showRank?: boolean;
-  /** hashtag: 인기Top/쏠북Pick 아바타 아래, 메트릭 뱃지는 해시태그 영역 */
   layout?: "default" | "hashtag";
 }) {
   const authorName = safeText(item.저자명) || safeText(item.UID) || "이름 없음";
@@ -235,19 +242,7 @@ export function RankingRow({
   const hasYoutube = Boolean(youtubeUrl);
   const hasInfo1 = Boolean(info1);
   const showEventBadge = Boolean(item.hasEvent);
-  const isHashtagLayout = layout === "hashtag";
-
-  const metricChips = isHashtagLayout
-    ? buildHashtagLayoutChips(item)
-    : item.isTopSearch
-      ? [searchChip()]
-      : [];
-  const showDefaultMetricBeside =
-    !isHashtagLayout && !address && (item.isTopGrowth || item.isTopRepurchase);
-  const showDefaultMetricBelow =
-    !isHashtagLayout &&
-    Boolean(address) &&
-    (item.isTopGrowth || item.isTopRepurchase);
+  const metricChips = buildSystemBadgeChips(item);
 
   const openProfile = () => {
     trackAnalyticsEvent("profile_click", authorName);
@@ -272,34 +267,6 @@ export function RankingRow({
         ) : null}
         <div className="flex w-12 flex-col items-center gap-1">
           <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
-          {isHashtagLayout ? (
-            <div className="flex flex-col items-center gap-0.5">
-              {item.isInPopular ? (
-                <span className="inline-flex items-center rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold tracking-tight text-amber-700 whitespace-nowrap">
-                  🔥인기Top
-                </span>
-              ) : null}
-              {item.isInRecommend ? (
-                <span className="inline-flex items-center rounded bg-violet-100 px-1 py-0.5 text-[9px] font-bold tracking-tight text-violet-700 whitespace-nowrap">
-                  ✨쏠북Pick
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-          {showDefaultMetricBelow ? (
-            <div className="flex flex-wrap items-center justify-center gap-1">
-              {item.isTopGrowth ? (
-                <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
-                  🚀HOT
-                </span>
-              ) : null}
-              {item.isTopRepurchase ? (
-                <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
-                  💖재구매
-                </span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -310,44 +277,14 @@ export function RankingRow({
               <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
                 {authorName},
               </span>
-              {showDefaultMetricBeside ? (
-                <span className="ml-1.5 inline-flex shrink-0 gap-1">
-                  {item.isTopGrowth ? (
-                    <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
-                      🚀HOT
-                    </span>
-                  ) : null}
-                  {item.isTopRepurchase ? (
-                    <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
-                      💖재구매
-                    </span>
-                  ) : null}
-                </span>
-              ) : null}
               <span className="ml-1 min-w-0 truncate text-[0.9em] text-slate-700">
                 {intro}
               </span>
             </>
           ) : (
-            <>
-              <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
-                {authorName}
-              </span>
-              {showDefaultMetricBeside ? (
-                <span className="ml-1.5 inline-flex shrink-0 gap-1">
-                  {item.isTopGrowth ? (
-                    <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold text-orange-600">
-                      🚀HOT
-                    </span>
-                  ) : null}
-                  {item.isTopRepurchase ? (
-                    <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-600">
-                      💖재구매
-                    </span>
-                  ) : null}
-                </span>
-              ) : null}
-            </>
+            <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
+              {authorName}
+            </span>
           )}
         </div>
         {hasInfo1 ? (
