@@ -508,12 +508,12 @@ export default function RankingBoard({
         </div>
 
         {!isHashtagSearch ? (
-          <div className="flex flex-col items-end gap-1 px-1">
+          <div className="flex items-center justify-between gap-3 px-1">
             {productOptions.length > 0 ? (
               <div
                 role="tablist"
                 aria-label="세부 필터"
-                className="flex flex-wrap justify-end gap-1.5"
+                className="flex min-w-0 flex-wrap justify-start gap-1.5"
               >
                 {productOptions.map((item) => {
                   const selected = item === product;
@@ -535,18 +535,26 @@ export default function RankingBoard({
                   );
                 })}
               </div>
-            ) : null}
+            ) : (
+              <span aria-hidden />
+            )}
 
-            {weekRangeLabel ? (
-              <p className="break-keep text-right text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                {weekRangeLabel}
-              </p>
-            ) : null}
-            {categoryDescription ? (
-              <p className="break-keep text-right text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                {categoryDescription}
-              </p>
-            ) : null}
+            <div className="shrink-0 text-right">
+              {weekRangeLabel ? (
+                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                  {weekRangeLabel}
+                </p>
+              ) : null}
+              {categoryDescription ? (
+                <p
+                  className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
+                    weekRangeLabel ? "mt-[0.1875rem]" : ""
+                  }`}
+                >
+                  {categoryDescription}
+                </p>
+              ) : null}
+            </div>
           </div>
         ) : categoryDescription ? (
           <div className="px-1 text-right">
