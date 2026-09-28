@@ -20,7 +20,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
   RANKING_CATEGORIES,
-  SUBJECT_FILTERS,
+  SUBJECTS,
   categoryFromTabParam,
   productFiltersForSubject,
 } from "@/lib/ranking-tabs";
@@ -30,7 +30,7 @@ import type {
   ProductFilter,
   RankBadge,
   RankingCategory,
-  SubjectFilter,
+  Subject,
 } from "@/types/ranking";
 
 function YoutubeIcon({ className }: { className?: string }) {
@@ -394,7 +394,7 @@ export default function RankingBoard({
   const searchParams = useSearchParams();
   const tabFromUrl = categoryFromTabParam(searchParams.get("tab"));
 
-  const [subject, setSubject] = useState<SubjectFilter>("영어");
+  const [subject, setSubject] = useState<Subject>("영어");
   const [product, setProduct] = useState<ProductFilter>("전체");
   const [category, setCategory] = useState<RankingCategory>(
     () => tabFromUrl ?? "인기",
@@ -417,7 +417,7 @@ export default function RankingBoard({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional URL-driven sync
   }, [tabFromUrl]);
 
-  const selectSubject = (next: SubjectFilter) => {
+  const selectSubject = (next: Subject) => {
     setSubject(next);
     setProduct("전체");
   };
@@ -425,19 +425,18 @@ export default function RankingBoard({
   const list = useMemo(() => {
     if (isHashtagSearch || !Array.isArray(rankings)) return [];
 
+    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
+
     return rankings
       .filter((item) => {
         if (!item || item.category !== category) return false;
-        if (subject !== "전체" && item.과목 !== subject) return false;
-        const limit = DISPLAY_RANK_LIMIT[item.과목] ?? 15;
+        if (item.과목 !== subject) return false;
         if (!Number.isFinite(item.rank) || item.rank > limit) return false;
         return matchesProductFilter(item, product);
       })
       .sort(
         (a, b) =>
-          a.rank - b.rank ||
-          a.과목.localeCompare(b.과목, "ko") ||
-          a.저자명.localeCompare(b.저자명, "ko"),
+          a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
       );
   }, [rankings, subject, product, category, isHashtagSearch]);
 
@@ -458,12 +457,8 @@ export default function RankingBoard({
   return (
     <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
       {!isHashtagSearch ? (
-        <div
-          role="tablist"
-          aria-label="과목"
-          className="flex flex-wrap gap-2"
-        >
-          {SUBJECT_FILTERS.map((item) => {
+        <div role="tablist" aria-label="과목" className="flex flex-wrap gap-2">
+          {SUBJECTS.map((item) => {
             const selected = item === subject;
             return (
               <button
@@ -485,74 +480,80 @@ export default function RankingBoard({
         </div>
       ) : null}
 
-      <div
-        role="tablist"
-        aria-label="랭킹 기준"
-        className="flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
-      >
-        {RANKING_CATEGORIES.map((item) => {
-          const selected = item === category;
-          return (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => selectCategory(item)}
-              className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
-                selected
-                  ? "bg-white text-teal-800 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {!isHashtagSearch && productOptions.length > 0 ? (
+      <div className="flex flex-col gap-1.5">
         <div
           role="tablist"
-          aria-label="세부 필터"
-          className="flex flex-wrap gap-2"
+          aria-label="랭킹 기준"
+          className="flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
         >
-          {productOptions.map((item) => {
-            const selected = item === product;
+          {RANKING_CATEGORIES.map((item) => {
+            const selected = item === category;
             return (
               <button
                 key={item}
                 type="button"
                 role="tab"
                 aria-selected={selected}
-                onClick={() => setProduct(item)}
-                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                onClick={() => selectCategory(item)}
+                className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
                   selected
-                    ? "bg-slate-800 text-white"
-                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                    ? "bg-white text-teal-800 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                {item}
+                <span className="break-keep">{CATEGORY_LABELS[item]}</span>
               </button>
             );
           })}
         </div>
-      ) : null}
 
-      <div className="px-1 text-right">
-        {weekRangeLabel && !isHashtagSearch ? (
-          <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-            {weekRangeLabel}
-          </p>
-        ) : null}
-        {categoryDescription ? (
-          <p
-            className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
-              weekRangeLabel && !isHashtagSearch ? "mt-[0.1875rem]" : ""
-            }`}
-          >
-            {categoryDescription}
-          </p>
+        {!isHashtagSearch ? (
+          <div className="flex flex-col items-end gap-1 px-1">
+            {productOptions.length > 0 ? (
+              <div
+                role="tablist"
+                aria-label="세부 필터"
+                className="flex flex-wrap justify-end gap-1.5"
+              >
+                {productOptions.map((item) => {
+                  const selected = item === product;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setProduct(item)}
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                        selected
+                          ? "bg-slate-800 text-white"
+                          : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {weekRangeLabel ? (
+              <p className="break-keep text-right text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                {weekRangeLabel}
+              </p>
+            ) : null}
+            {categoryDescription ? (
+              <p className="break-keep text-right text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                {categoryDescription}
+              </p>
+            ) : null}
+          </div>
+        ) : categoryDescription ? (
+          <div className="px-1 text-right">
+            <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+              {categoryDescription}
+            </p>
+          </div>
         ) : null}
       </div>
 

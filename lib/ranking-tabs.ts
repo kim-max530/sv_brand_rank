@@ -8,8 +8,8 @@ import type {
 /** 클라이언트 UI(탭)에서만 쓰는 상수 — 서버 전용 모듈과 분리 */
 export const SUBJECTS: Subject[] = ["영어", "국어"];
 
-/** 메인 과목 필터 (전체 포함) */
-export const SUBJECT_FILTERS: SubjectFilter[] = ["전체", "영어", "국어"];
+/** 메인 과목 필터 (영어/국어) */
+export const SUBJECT_FILTERS: SubjectFilter[] = ["영어", "국어"];
 
 /** 영어 세부 필터 */
 export const ENGLISH_PRODUCT_FILTERS: ProductFilter[] = [
