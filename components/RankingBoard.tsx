@@ -433,32 +433,6 @@ export default function RankingBoard({
 
   return (
     <section className="mx-auto w-full max-w-4xl px-1 sm:px-0">
-      <div
-        role="tablist"
-        aria-label="랭킹 기준"
-        className="mb-3 flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
-      >
-        {RANKING_CATEGORIES.map((item) => {
-          const selected = item === category;
-          return (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => selectCategory(item)}
-              className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
-                selected
-                  ? "bg-white text-teal-800 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {!isHashtagSearch ? (
         <>
           <div role="tablist" aria-label="과목" className="mb-3 flex flex-wrap gap-2">
@@ -512,6 +486,32 @@ export default function RankingBoard({
           ) : null}
         </>
       ) : null}
+
+      <div
+        role="tablist"
+        aria-label="랭킹 기준"
+        className="mb-3 flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
+      >
+        {RANKING_CATEGORIES.map((item) => {
+          const selected = item === category;
+          return (
+            <button
+              key={item}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => selectCategory(item)}
+              className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
+                selected
+                  ? "bg-white text-teal-800 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="mb-3 px-1 text-right">
         {weekRangeLabel && !isHashtagSearch ? (
