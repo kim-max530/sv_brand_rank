@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Search, Store, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
+import HashtagChips from "@/components/HashtagChips";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   cacheAvatarSrc,
@@ -26,9 +27,6 @@ import type {
   Subject,
 } from "@/types/ranking";
 
-// 라우팅은 next/navigation(useRouter) 대신 window.open 사용.
-// Turbopack HMR에서 navigation 모듈 factory 오류가 나지 않도록 의도적으로 제외합니다.
-
 function YoutubeIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -47,7 +45,9 @@ function safeText(value: string | null | undefined): string {
 }
 
 function tabTargetName(category: RankingCategory): string {
-  return CATEGORY_LABELS[category].replace(/^\S+\s+/, "").trim();
+  return (CATEGORY_LABELS[category] ?? String(category))
+    .replace(/^\S+\s+/, "")
+    .trim();
 }
 
 function StatusBadge({ badge }: { badge: RankBadge }) {
@@ -58,19 +58,36 @@ function StatusBadge({ badge }: { badge: RankBadge }) {
       </span>
     );
   }
-
-  if (badge === "HOT") {
-    return (
-      <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-orange-600">
-        HOT
-      </span>
-    );
-  }
-
   return null;
 }
 
-/** 좌측: [변동폭/뱃지] → [랭킹 숫자] */
+function TopMetricBadges({
+  isTopGrowth,
+  isTopRepurchase,
+  className = "",
+}: {
+  isTopGrowth?: boolean;
+  isTopRepurchase?: boolean;
+  className?: string;
+}) {
+  if (!isTopGrowth && !isTopRepurchase) return null;
+
+  return (
+    <div className={`flex flex-wrap items-center gap-1 ${className}`.trim()}>
+      {isTopGrowth ? (
+        <span className="inline-flex items-center rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-orange-600">
+          HOT
+        </span>
+      ) : null}
+      {isTopRepurchase ? (
+        <span className="inline-flex items-center rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-rose-600">
+          💖재구매
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function RankMeta({
   rank,
   badge,
@@ -81,8 +98,7 @@ function RankMeta({
   changeText: string;
 }) {
   const safeRank = Number.isFinite(rank) ? rank : 0;
-  const showChange =
-    Boolean(safeText(changeText)) && badge !== "NEW";
+  const showChange = Boolean(safeText(changeText)) && badge !== "NEW";
 
   return (
     <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
@@ -161,14 +177,16 @@ function openAuthorLink(item: MergedRanking) {
   openAuthorExternalLink(item);
 }
 
-function RankingRow({
+export function RankingRow({
   item,
   onOpenIntro,
   priority,
+  showRank = true,
 }: {
   item: MergedRanking;
   onOpenIntro: (item: MergedRanking) => void;
   priority?: boolean;
+  showRank?: boolean;
 }) {
   const authorName = safeText(item.저자명) || safeText(item.UID) || "이름 없음";
   const intro = safeText(item.intro);
@@ -177,10 +195,16 @@ function RankingRow({
   const record = safeText(item.record);
   const youtubeUrl = safeText(item.youtube_url);
   const address = safeText(item.address);
+  const range3 = safeText(item.range3);
   const hasAuthorDetail = Boolean(info2 || record);
   const hasYoutube = Boolean(youtubeUrl);
   const hasInfo1 = Boolean(info1);
   const showEventBadge = Boolean(item.hasEvent);
+  const hasAddress = Boolean(address);
+  const topBelowAvatar =
+    hasAddress && (item.isTopGrowth || item.isTopRepurchase);
+  const topBesideName =
+    !hasAddress && (item.isTopGrowth || item.isTopRepurchase);
 
   const openProfile = () => {
     trackAnalyticsEvent("profile_click", authorName);
@@ -190,26 +214,42 @@ function RankingRow({
   return (
     <div
       className={`flex w-full gap-3 border-b border-slate-100 px-3 py-3 sm:gap-4 sm:px-4 ${
-        hasInfo1 ? "items-start" : "items-center"
+        hasInfo1 || item.record2 ? "items-start" : "items-center"
       }`}
     >
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <RankMeta
-          rank={item.rank}
-          badge={item.badge ?? null}
-          changeText={item.changeText ?? ""}
-        />
-        <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
+        {showRank ? (
+          <RankMeta
+            rank={item.rank}
+            badge={item.badge ?? null}
+            changeText={item.changeText ?? ""}
+          />
+        ) : null}
+        <div className="flex flex-col items-center gap-1">
+          <ProfileAvatar uid={item.UID} name={authorName} priority={priority} />
+          {topBelowAvatar ? (
+            <TopMetricBadges
+              isTopGrowth={item.isTopGrowth}
+              isTopRepurchase={item.isTopRepurchase}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className="flex min-w-0 flex-grow flex-col items-start">
-        <p className="w-full break-keep text-sm text-slate-800 sm:text-base">
+        <p className="flex w-full flex-wrap items-center gap-1.5 break-keep text-sm text-slate-800 sm:text-base">
           <span className="break-keep font-bold text-slate-900">
             {authorName}
           </span>
+          {topBesideName ? (
+            <TopMetricBadges
+              isTopGrowth={item.isTopGrowth}
+              isTopRepurchase={item.isTopRepurchase}
+            />
+          ) : null}
           {intro ? (
             <>
-              <span className="text-slate-400">, </span>
+              <span className="text-slate-400">,</span>
               <span className="break-keep text-slate-700">{intro}</span>
             </>
           ) : null}
@@ -219,6 +259,7 @@ function RankingRow({
             {info1}
           </p>
         ) : null}
+        <HashtagChips record2={item.record2} className="mt-2" />
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5 self-center sm:gap-2">
@@ -267,6 +308,12 @@ function RankingRow({
             <Search className="h-5 w-5" />
           )}
         </button>
+
+        {range3 ? (
+          <span className="max-w-[7rem] truncate text-xs text-gray-500 sm:max-w-[10rem]">
+            {range3.endsWith("등") ? range3 : `${range3} 등`}
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -353,7 +400,7 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`rounded-lg px-2.5 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
+              className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
                 selected
                   ? "bg-white text-teal-800 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"

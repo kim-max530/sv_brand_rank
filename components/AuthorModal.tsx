@@ -10,6 +10,7 @@ import {
   initialCandidateIndex,
 } from "@/lib/brand-images";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import HashtagChips from "@/components/HashtagChips";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
 import type { MergedRanking } from "@/types/ranking";
@@ -173,6 +174,20 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
                 {record || "등록된 이력이 없습니다."}
               </p>
             </section>
+
+            {address ? (
+              <section className="border-t border-slate-100 pt-5">
+                <h3 className="mb-2 text-xs font-semibold tracking-wide text-teal-700 uppercase">
+                  해시태그
+                </h3>
+                <HashtagChips record2={author.record2} />
+                {!author.record2?.trim() ? (
+                  <p className="text-sm text-slate-500">
+                    등록된 해시태그가 없습니다.
+                  </p>
+                ) : null}
+              </section>
+            ) : null}
 
             {embedUrl ? (
               <section className="border-t border-slate-100 pt-5">
