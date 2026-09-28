@@ -294,20 +294,10 @@ export function RankingRow({
         <HashtagChips record2={item.record2} className="mt-2" />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 self-center sm:gap-2">
-        {hasYoutube ? (
-          <button
-            type="button"
-            onClick={openProfile}
-            className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
-            aria-label={`${authorName} 유튜브 소개 열기`}
-          >
-            <YoutubeIcon className="h-5 w-5" />
-          </button>
-        ) : null}
-
-        <div className="flex w-24 shrink-0 items-center justify-end gap-0.5">
-          <div className="flex w-9 flex-col items-center justify-center gap-1">
+      {/* 우측: 아이콘·교재범위 고정 폭 — 텍스트 길이에 밀리지 않음 */}
+      <div className="flex w-[6.75rem] shrink-0 items-center justify-end self-center sm:w-[15.75rem] sm:gap-1.5">
+        <div className="flex w-[6.75rem] shrink-0 items-center justify-end">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center">
             {hasAuthorDetail ? (
               <button
                 type="button"
@@ -317,37 +307,54 @@ export function RankingRow({
               >
                 <UserRound className="h-5 w-5" />
               </button>
-            ) : (
-              <span className="h-9 w-9" aria-hidden />
-            )}
+            ) : null}
             {showEventBadge ? (
-              <span className="rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
+              <span className="absolute top-full left-1/2 z-10 mt-0.5 -translate-x-1/2 whitespace-nowrap rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
                 Event
               </span>
             ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={() => openAuthorLink(item)}
-            className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-            aria-label={
-              address ? `${authorName} 브랜드관 열기` : `${authorName} 검색하기`
-            }
-          >
-            {address ? (
-              <Store className="h-5 w-5" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
-          </button>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+            {hasYoutube ? (
+              <button
+                type="button"
+                onClick={openProfile}
+                className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
+                aria-label={`${authorName} 유튜브 소개 열기`}
+              >
+                <YoutubeIcon className="h-5 w-5" />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center">
+            <button
+              type="button"
+              onClick={() => openAuthorLink(item)}
+              className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+              aria-label={
+                address
+                  ? `${authorName} 브랜드관 열기`
+                  : `${authorName} 검색하기`
+              }
+            >
+              {address ? (
+                <Store className="h-5 w-5" />
+              ) : (
+                <Search className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {range3 ? (
-          <span className="hidden min-w-0 max-w-[9rem] break-keep pt-0.5 text-xs leading-snug text-gray-500 sm:inline-block sm:line-clamp-3 sm:max-w-[11rem]">
-            {range3.endsWith("등") ? range3 : `${range3} 등`}
-          </span>
-        ) : null}
+        <div className="hidden min-h-[2.25rem] w-[8.5rem] shrink-0 overflow-hidden sm:block">
+          {range3 ? (
+            <span className="line-clamp-3 break-keep pt-1.5 text-xs leading-snug text-gray-500">
+              {range3.endsWith("등") ? range3 : `${range3} 등`}
+            </span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
