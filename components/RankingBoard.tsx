@@ -294,14 +294,14 @@ export function RankingRow({
             profileClickable ? `${authorName} 저자 소개 열기` : undefined
           }
         >
-          <div className="flex w-12 shrink-0 flex-col items-center gap-1">
+          <div className="relative flex h-10 w-12 shrink-0 items-center justify-center">
             <ProfileAvatar
               uid={item.UID}
               name={authorName}
               priority={priority}
             />
             {showEventBadge ? (
-              <span className="rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
+              <span className="absolute -bottom-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
                 Event
               </span>
             ) : null}
