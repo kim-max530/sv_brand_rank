@@ -13,6 +13,7 @@ export interface AnalyticsSummary {
     tab_click: number;
     profile_click: number;
     homepage_click: number;
+    hashtag_click: number;
     all: number;
   };
   byTarget: Array<{
@@ -26,8 +27,14 @@ export interface AnalyticsSummary {
     tab_click: number;
     profile_click: number;
     homepage_click: number;
+    hashtag_click: number;
     all: number;
   }>;
+}
+
+export interface HashtagSearchData {
+  topTags: Array<{ tag: string; count: number }>;
+  recentTags: Array<{ tag: string; created_at: string }>;
 }
 
 function toKstDate(date: Date): string {
@@ -80,6 +87,83 @@ function bucketKey(iso: string, period: AnalyticsPeriod): string {
   return `${y}-${m}`;
 }
 
+function normalizeTag(value: unknown): string {
+  return String(value ?? "")
+    .replace(/^#+/, "")
+    .trim();
+}
+
+export async function fetchHashtagSearchData(): Promise<
+  { ok: true; data: HashtagSearchData } | { ok: false; error: string }
+> {
+  try {
+    const supabase = getSupabaseAdminClient();
+    const from = new Date();
+    from.setDate(from.getDate() - 6);
+    from.setHours(0, 0, 0, 0);
+
+    const [topResult, recentResult] = await Promise.all([
+      supabase
+        .from("analytics_events")
+        .select("target_name, created_at")
+        .eq("event_type", "hashtag_click")
+        .gte("created_at", from.toISOString())
+        .not("target_name", "is", null)
+        .limit(3000),
+      supabase
+        .from("analytics_events")
+        .select("target_name, created_at")
+        .eq("event_type", "hashtag_click")
+        .not("target_name", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(30),
+    ]);
+
+    if (topResult.error) {
+      return { ok: false, error: topResult.error.message };
+    }
+    if (recentResult.error) {
+      return { ok: false, error: recentResult.error.message };
+    }
+
+    const counts = new Map<string, number>();
+    for (const row of topResult.data ?? []) {
+      const tag = normalizeTag(row.target_name);
+      if (!tag) continue;
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+
+    const topTags = [...counts.entries()]
+      .map(([tag, count]) => ({ tag, count }))
+      .sort(
+        (a, b) =>
+          b.count - a.count || a.tag.localeCompare(b.tag, "ko"),
+      )
+      .slice(0, 15);
+
+    const recentTags: Array<{ tag: string; created_at: string }> = [];
+    for (const row of recentResult.data ?? []) {
+      const tag = normalizeTag(row.target_name);
+      if (!tag) continue;
+      recentTags.push({
+        tag,
+        created_at: String(row.created_at ?? ""),
+      });
+      if (recentTags.length >= 5) break;
+    }
+
+    return { ok: true, data: { topTags, recentTags } };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "해시태그 데이터를 불러오지 못했습니다.",
+    };
+  }
+}
+
 export async function fetchAnalyticsSummary(
   period: AnalyticsPeriod,
 ): Promise<{ ok: true; data: AnalyticsSummary } | { ok: false; error: string }> {
@@ -103,6 +187,7 @@ export async function fetchAnalyticsSummary(
       tab_click: 0,
       profile_click: 0,
       homepage_click: 0,
+      hashtag_click: 0,
       all: rows.length,
     };
 
@@ -114,6 +199,7 @@ export async function fetchAnalyticsSummary(
         tab_click: number;
         profile_click: number;
         homepage_click: number;
+        hashtag_click: number;
         all: number;
       }
     >();
@@ -134,6 +220,7 @@ export async function fetchAnalyticsSummary(
         tab_click: 0,
         profile_click: 0,
         homepage_click: 0,
+        hashtag_click: 0,
         all: 0,
       };
       bucket.all += 1;
@@ -141,7 +228,8 @@ export async function fetchAnalyticsSummary(
         type === "page_view" ||
         type === "tab_click" ||
         type === "profile_click" ||
-        type === "homepage_click"
+        type === "homepage_click" ||
+        type === "hashtag_click"
       ) {
         bucket[type] += 1;
       }

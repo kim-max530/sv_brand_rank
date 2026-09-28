@@ -18,6 +18,7 @@ const EVENT_LABELS: Record<string, string> = {
   tab_click: "탭 클릭",
   profile_click: "프로필 클릭",
   homepage_click: "홈페이지 클릭",
+  hashtag_click: "해시태그 클릭",
 };
 
 export default function AnalyticsPanel() {
@@ -91,13 +92,14 @@ export default function AnalyticsPanel() {
         <p className="text-sm text-slate-500">불러오는 중…</p>
       ) : summary ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {(
               [
                 "page_view",
                 "tab_click",
                 "profile_click",
                 "homepage_click",
+                "hashtag_click",
               ] as const
             ).map((key) => (
               <div
@@ -127,6 +129,7 @@ export default function AnalyticsPanel() {
                     <th className="px-4 py-2.5 font-medium">탭</th>
                     <th className="px-4 py-2.5 font-medium">프로필</th>
                     <th className="px-4 py-2.5 font-medium">홈</th>
+                    <th className="px-4 py-2.5 font-medium">해시</th>
                     <th className="px-4 py-2.5 font-medium">합계</th>
                   </tr>
                 </thead>
@@ -134,7 +137,7 @@ export default function AnalyticsPanel() {
                   {summary.byBucket.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="px-4 py-8 text-center text-slate-500"
                       >
                         해당 기간 데이터가 없습니다.
@@ -160,6 +163,9 @@ export default function AnalyticsPanel() {
                         </td>
                         <td className="px-4 py-2.5 tabular-nums">
                           {row.homepage_click}
+                        </td>
+                        <td className="px-4 py-2.5 tabular-nums">
+                          {row.hashtag_click}
                         </td>
                         <td className="px-4 py-2.5 tabular-nums font-semibold">
                           {row.all}

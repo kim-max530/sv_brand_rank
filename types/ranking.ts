@@ -2,10 +2,11 @@
 
 export type Subject = "영어" | "국어";
 
-/** 화면 탭: 추천(발견), 인기 / CSV 원본 카테고리도 유지 */
+/** 화면 탭: 추천(발견), 인기, 해시검색 / CSV 원본 카테고리도 유지 */
 export type RankingCategory =
   | "추천"
   | "인기"
+  | "해시검색"
   | "많은"
   | "높은"
   | "급성장"
@@ -13,7 +14,10 @@ export type RankingCategory =
   | "자꾸 찾는";
 
 /** CSV에서 로드하는 원본 지표 카테고리 */
-export type SourceRankingCategory = Exclude<RankingCategory, "추천" | "인기">;
+export type SourceRankingCategory = Exclude<
+  RankingCategory,
+  "추천" | "인기" | "해시검색"
+>;
 
 /** 순위 변동 뱃지 — HOT(상승폭)은 제거, NEW만 사용 */
 export type RankBadge = "NEW" | null;
@@ -47,4 +51,8 @@ export interface MergedRanking extends BrandInfo, RankingRecord {
   isTopGrowth?: boolean;
   /** repurchase CSV 1~5위 */
   isTopRepurchase?: boolean;
+  /** 인기 랭킹 소속 (해시태그 상세 등) */
+  isInPopular?: boolean;
+  /** 발견(추천) 랭킹 소속 (해시태그 상세 등) */
+  isInRecommend?: boolean;
 }

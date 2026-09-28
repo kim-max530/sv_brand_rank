@@ -5,26 +5,15 @@ import { useMemo, useState } from "react";
 import AuthorModal from "@/components/AuthorModal";
 import { RankingRow } from "@/components/RankingBoard";
 import { hashtagHref } from "@/lib/hashtags";
-import type { BrandInfo, MergedRanking } from "@/types/ranking";
-
-function toListItem(info: BrandInfo): MergedRanking {
-  return {
-    ...info,
-    과목: "영어",
-    rank: 0,
-    category: "인기",
-    badge: null,
-    changeText: "",
-  };
-}
+import type { MergedRanking } from "@/types/ranking";
 
 export default function HashtagAuthorList({
   authors,
 }: {
-  authors: BrandInfo[];
+  authors: MergedRanking[];
 }) {
   const [selected, setSelected] = useState<MergedRanking | null>(null);
-  const items = useMemo(() => authors.map(toListItem), [authors]);
+  const items = useMemo(() => authors, [authors]);
 
   if (items.length === 0) {
     return (

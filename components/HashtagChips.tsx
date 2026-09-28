@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref, parseHashtags } from "@/lib/hashtags";
 
 export default function HashtagChips({
@@ -20,7 +21,10 @@ export default function HashtagChips({
           key={tag}
           href={hashtagHref(tag)}
           className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50"
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            trackAnalyticsEvent("hashtag_click", tag);
+          }}
         >
           #{tag}
         </Link>

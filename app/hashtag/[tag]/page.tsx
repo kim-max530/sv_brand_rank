@@ -6,12 +6,13 @@ import HashtagAuthorList, {
   HashtagPagination,
 } from "@/components/HashtagAuthorList";
 import { HASHTAG_PAGE_SIZE } from "@/lib/constants";
-import { fetchBrandInfoList } from "@/lib/csv";
+import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
 import {
   authorHasHashtag,
   hashtagHref,
   normalizeHashtagParam,
 } from "@/lib/hashtags";
+import type { MergedRanking } from "@/types/ranking";
 
 export const revalidate = false;
 
@@ -37,6 +38,10 @@ function parsePage(raw: string | string[] | undefined): number {
   return n;
 }
 
+function safeAddress(value: string | null | undefined): boolean {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 export default async function HashtagPage({
   params,
   searchParams,
@@ -50,7 +55,7 @@ export default async function HashtagPage({
 
   if (!tag) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-12">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-12">
         <h1 className="font-display text-2xl font-semibold text-slate-900">
           해시태그
         </h1>
@@ -62,16 +67,67 @@ export default async function HashtagPage({
     );
   }
 
-  let authors = [];
+  let authors: MergedRanking[] = [];
   try {
-    const all = await fetchBrandInfoList();
+    const [all, rankings] = await Promise.all([
+      fetchBrandInfoList(),
+      fetchMergedRankings(),
+    ]);
+
+    const metaByUid = new Map<
+      string,
+      {
+        isInPopular: boolean;
+        isInRecommend: boolean;
+        isTopGrowth: boolean;
+        isTopRepurchase: boolean;
+      }
+    >();
+
+    for (const row of rankings) {
+      const current = metaByUid.get(row.UID) ?? {
+        isInPopular: false,
+        isInRecommend: false,
+        isTopGrowth: false,
+        isTopRepurchase: false,
+      };
+      if (row.category === "인기") current.isInPopular = true;
+      if (row.category === "추천") current.isInRecommend = true;
+      if (row.isTopGrowth) current.isTopGrowth = true;
+      if (row.isTopRepurchase) current.isTopRepurchase = true;
+      metaByUid.set(row.UID, current);
+    }
+
     authors = all
-      .filter((info) => authorHasHashtag(info.record2, tag))
-      .sort((a, b) => a.저자명.localeCompare(b.저자명, "ko"));
+      .filter(
+        (info) =>
+          authorHasHashtag(info.record2, tag) && safeAddress(info.address),
+      )
+      .map((info) => {
+        const meta = metaByUid.get(info.UID);
+        return {
+          ...info,
+          과목: "영어" as const,
+          rank: 0,
+          category: "인기" as const,
+          badge: null,
+          changeText: "",
+          isInPopular: meta?.isInPopular ?? false,
+          isInRecommend: meta?.isInRecommend ?? false,
+          isTopGrowth: meta?.isTopGrowth ?? false,
+          isTopRepurchase: meta?.isTopRepurchase ?? false,
+        };
+      })
+      .sort((a, b) => {
+        if (a.isInPopular !== b.isInPopular) {
+          return a.isInPopular ? -1 : 1;
+        }
+        return a.저자명.localeCompare(b.저자명, "ko");
+      });
   } catch (error) {
     console.error(error);
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-12">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-12">
         <h1 className="font-display text-2xl font-semibold text-slate-900">
           #{tag}
         </h1>
@@ -120,7 +176,7 @@ export default async function HashtagPage({
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-hidden px-4 py-8 sm:px-6 sm:py-10">
         <header className="mb-6">
           <p className="text-sm font-medium text-teal-700">Hashtag</p>
           <h1 className="mt-1 break-keep font-display text-2xl font-semibold text-slate-900 sm:text-3xl">
@@ -128,8 +184,8 @@ export default async function HashtagPage({
           </h1>
           <p className="mt-2 text-sm text-slate-500">
             {total > 0
-              ? `${total}명의 저자 · ${page}/${totalPages} 페이지`
-              : "해당 해시태그의 저자가 없습니다."}
+              ? `브랜드관 저자 ${total}명 · ${page}/${totalPages} 페이지`
+              : "해당 해시태그의 브랜드관 저자가 없습니다."}
           </p>
         </header>
 

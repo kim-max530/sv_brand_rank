@@ -61,14 +61,14 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
-        <header className="mx-auto mb-8 w-full max-w-2xl text-center sm:mb-10">
+        <header className="mx-auto mb-8 w-full max-w-4xl text-center sm:mb-10">
           <h1 className="break-keep font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
             쏠북, 좋은 자료의 발견
           </h1>
         </header>
 
         {errorMessage ? (
-          <div className="mx-auto w-full max-w-2xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
+          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
             <p className="font-medium break-keep">
               데이터를 불러오는 중 문제가 발생했습니다.
             </p>

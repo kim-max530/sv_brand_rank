@@ -6,7 +6,8 @@ export type AnalyticsEventType =
   | "page_view"
   | "tab_click"
   | "profile_click"
-  | "homepage_click";
+  | "homepage_click"
+  | "hashtag_click";
 
 /** 트래킹 실패가 UI를 막지 않도록 fire-and-forget */
 export function trackAnalyticsEvent(
