@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { FileText, Search, X } from "lucide-react";
+import { Home, Search, X } from "lucide-react";
 import {
   cacheBannerSrc,
   getBannerImageCandidates,
@@ -12,6 +12,7 @@ import {
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import HashtagChips from "@/components/HashtagChips";
 import { formatClicks } from "@/lib/format-clicks";
+import { COUPONS_HREF } from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
 import type { MergedRanking } from "@/types/ranking";
@@ -82,6 +83,7 @@ export default function AuthorModal({
   const address = author.address?.trim() ?? "";
   const embedUrl = toYouTubeEmbedUrl(author.youtube_url);
   const showEventCue = Boolean(author.hasEvent);
+  const eventDiscount = author.eventDiscount ?? 35;
   const totalClicks = author.totalClicks ?? 0;
 
   const openHomepage = () => {
@@ -91,6 +93,10 @@ export default function AuthorModal({
     }
     trackAnalyticsEvent("homepage_click", authorName);
     openAuthorExternalLink(author);
+  };
+
+  const openCoupons = () => {
+    window.open(COUPONS_HREF, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -118,15 +124,19 @@ export default function AuthorModal({
               </h2>
               <div className="relative shrink-0">
                 {showEventCue ? (
-                  <div className="absolute -top-12 left-1/2 z-10 w-max max-w-[14rem] -translate-x-1/2 animate-bounce">
-                    <div className="relative rounded-xl bg-amber-400 px-3 py-2 text-[11px] font-semibold leading-snug break-keep text-amber-950 shadow-lg">
-                      {authorName} 할인 쿠폰/패키지 이벤트 진행 중
+                  <button
+                    type="button"
+                    onClick={openCoupons}
+                    className="absolute -top-12 left-1/2 z-10 w-max max-w-[16rem] -translate-x-1/2 animate-bounce text-left"
+                  >
+                    <span className="relative block rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-3 py-2 text-[11px] font-bold leading-snug break-keep whitespace-nowrap text-white shadow-lg">
+                      최대 {eventDiscount}% 할인쿠폰 이벤트 진행 중 ↗
                       <span
                         aria-hidden
-                        className="absolute top-full left-1/2 -mt-px -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-amber-400"
+                        className="absolute top-full left-1/2 -mt-px -translate-x-1/2 border-x-[6px] border-t-[8px] border-x-transparent border-t-fuchsia-500"
                       />
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 ) : null}
                 {address ? (
                   <div className="flex flex-row items-center gap-1.5">
@@ -134,9 +144,9 @@ export default function AuthorModal({
                       type="button"
                       onClick={openHomepage}
                       className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
-                      aria-label={`${authorName} 자료보기`}
+                      aria-label={`${authorName} 홈페이지 열기`}
                     >
-                      <FileText className="h-5 w-5" aria-hidden />
+                      <Home className="h-5 w-5" aria-hidden />
                     </button>
                     <span className="text-[11px] font-semibold tabular-nums text-gray-600">
                       {formatClicks(totalClicks)}

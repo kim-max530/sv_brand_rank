@@ -60,6 +60,11 @@ export async function upsertAuthorEventAction(
     const authorName = String(formData.get("author_name") ?? "").trim();
     const startDate = String(formData.get("start_date") ?? "").trim();
     const endDate = String(formData.get("end_date") ?? "").trim();
+    const discountRaw = Number(formData.get("discount_percent"));
+    const discountPercent =
+      Number.isFinite(discountRaw) && discountRaw > 0
+        ? Math.min(100, Math.round(discountRaw))
+        : 35;
 
     if (!uid || !authorName || !startDate || !endDate) {
       return {
@@ -78,6 +83,7 @@ export async function upsertAuthorEventAction(
         author_name: authorName,
         start_date: startDate,
         end_date: endDate,
+        discount_percent: discountPercent,
       },
       { onConflict: "uid" },
     );

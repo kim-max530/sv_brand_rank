@@ -75,6 +75,8 @@ export interface MergedRanking extends BrandInfo, RankingRecord {
   changeText: string;
   /** author_events 기간 내 활성 여부 */
   hasEvent?: boolean;
+  /** 이벤트 할인율(%) — 없으면 35 */
+  eventDiscount?: number;
   /** author_stats.total_clicks (자료보기 누적) */
   totalClicks?: number;
   /** growth CSV에 UID 존재 */

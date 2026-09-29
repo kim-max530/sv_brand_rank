@@ -9,7 +9,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import { HASHTAG_PAGE_SIZE } from "@/lib/constants";
 import { hashtagHref } from "@/lib/hashtags";
-import { homeHrefWithTab, SUBJECTS } from "@/lib/ranking-tabs";
+import { SUBJECTS } from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import type { MergedRanking, Subject } from "@/types/ranking";
 
@@ -93,11 +93,11 @@ export default function HashtagAuthorList({
       <header className="mb-6">
         <div className="flex items-center gap-2">
           <Link
-            href={homeHrefWithTab("해시검색")}
+            href="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-teal-700 transition hover:text-teal-900"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
-            검색(#)
+            홈
           </Link>
         </div>
 

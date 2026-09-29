@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Suspense } from "react";
 import RankingBoard from "@/components/RankingBoard";
-import { fetchActiveAuthorEventUids } from "@/lib/author-events";
+import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { ensureAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchMergedRankings } from "@/lib/csv";
 import { getPreviousWeekDateRange } from "@/lib/date";
@@ -15,14 +15,20 @@ export default async function HomePage() {
   let errorMessage: string | null = null;
 
   try {
-    const [merged, eventUids] = await Promise.all([
+    const [merged, eventMap] = await Promise.all([
       fetchMergedRankings(),
-      fetchActiveAuthorEventUids(),
+      fetchActiveAuthorEvents(),
     ]);
 
-    const withEvents = merged.map((item) =>
-      eventUids.has(item.UID) ? { ...item, hasEvent: true } : item,
-    );
+    const withEvents = merged.map((item) => {
+      const discount = eventMap.get(item.UID);
+      if (discount == null) return item;
+      return {
+        ...item,
+        hasEvent: true,
+        eventDiscount: discount,
+      };
+    });
 
     const clickMap = await ensureAuthorStatsForUids(
       withEvents.map((item) => item.UID),
@@ -49,9 +55,8 @@ export default async function HomePage() {
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_rgba(14,116,144,0.12),_transparent_50%)]"
       />
 
-      {/* 좌측 상단: 쏠북 홈 로고 버튼 */}
       <div className="w-full border-b border-slate-200/70 bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:h-16 sm:px-6">
+        <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-4 sm:h-16 sm:px-6">
           <a
             href="https://solvook.com"
             target="_blank"
@@ -72,19 +77,22 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
-        <header className="mx-auto mb-8 w-full max-w-4xl text-center sm:mb-10">
+        <header className="mx-auto mb-8 w-full max-w-6xl text-center sm:mb-10">
           <h1 className="break-keep font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
             <span className="relative inline-block pr-10">
-              쏠북, 좋은 브랜드의 발견
+              쏠북, 좋은 자료의 발견
               <span className="absolute -top-2 -right-2 rounded-md bg-blue-50 px-2 py-[0.2rem] text-[12px] font-bold leading-none text-blue-500 sm:-right-3">
                 Beta
               </span>
             </span>
           </h1>
+          <p className="mx-auto mt-3 max-w-xl break-keep text-sm text-slate-500 sm:text-base">
+            인기/추천, 해시태그 목록으로 좋은 자료 더 잘 쓰이게
+          </p>
         </header>
 
         {errorMessage ? (
-          <div className="mx-auto w-full max-w-4xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
+          <div className="mx-auto w-full max-w-6xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
             <p className="font-medium break-keep">
               데이터를 불러오는 중 문제가 발생했습니다.
             </p>
@@ -93,7 +101,7 @@ export default async function HomePage() {
         ) : (
           <Suspense
             fallback={
-              <p className="mx-auto w-full max-w-4xl px-4 py-12 text-center text-sm text-slate-500">
+              <p className="mx-auto w-full max-w-6xl px-4 py-12 text-center text-sm text-slate-500">
                 불러오는 중…
               </p>
             }

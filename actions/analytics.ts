@@ -37,6 +37,15 @@ export interface HashtagSearchData {
   recentTags: Array<{ tag: string; created_at: string }>;
 }
 
+export interface LiveHashtagRankItem {
+  tag: string;
+  /** 클릭 수 (순위 산정용) */
+  clickCount: number;
+  /** 해당 해시태그 보유 저자 수 */
+  authorCount: number;
+  rank: number;
+}
+
 function toKstDate(date: Date): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -160,6 +169,50 @@ export async function fetchHashtagSearchData(): Promise<
         error instanceof Error
           ? error.message
           : "해시태그 데이터를 불러오지 못했습니다.",
+    };
+  }
+}
+
+/** 실시간 해시태그 Top 10 — 클릭 순위 + 저자 수 */
+export async function fetchLiveHashtagRanking(): Promise<
+  { ok: true; data: LiveHashtagRankItem[] } | { ok: false; error: string }
+> {
+  try {
+    const [{ fetchBrandInfoList }, { parseHashtags }] = await Promise.all([
+      import("@/lib/csv"),
+      import("@/lib/hashtags"),
+    ]);
+
+    const search = await fetchHashtagSearchData();
+    if (!search.ok) return search;
+
+    const brands = await fetchBrandInfoList();
+    const authorCounts = new Map<string, number>();
+    for (const info of brands) {
+      const seen = new Set<string>();
+      for (const tag of parseHashtags(info.record2)) {
+        const key = tag.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        authorCounts.set(key, (authorCounts.get(key) ?? 0) + 1);
+      }
+    }
+
+    const data = search.data.topTags.slice(0, 10).map((item, index) => ({
+      tag: item.tag,
+      clickCount: item.count,
+      authorCount: authorCounts.get(item.tag.toLowerCase()) ?? 0,
+      rank: index + 1,
+    }));
+
+    return { ok: true, data };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "실시간 해시태그 랭킹을 불러오지 못했습니다.",
     };
   }
 }

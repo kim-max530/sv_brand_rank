@@ -62,12 +62,8 @@ export const FILTER_AUX_PILL_INVERSE_CLASS =
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";
 
-/** 화면에 노출하는 탭: 브랜드 랭킹, 추천 랭킹, 실시간 검색 */
-export const RANKING_CATEGORIES: RankingCategory[] = [
-  "인기",
-  "추천",
-  "해시검색",
-];
+/** 화면에 노출하는 탭: 브랜드 랭킹, 추천 랭킹 (+ 교재 별 랭킹은 외부 링크) */
+export const RANKING_CATEGORIES: RankingCategory[] = ["인기", "추천"];
 
 export const CATEGORY_LABELS: Record<RankingCategory, string> = {
   추천: "✨ 추천 랭킹",
@@ -80,6 +76,12 @@ export const CATEGORY_LABELS: Record<RankingCategory, string> = {
   "자꾸 찾는": "🔥 인기",
 };
 
+/** 교재 별 랭킹 바로가기 */
+export const TEXTBOOK_RANKING_HREF =
+  "https://solvook.com/#:~:text=%EC%84%A0%ED%83%9D%ED%95%9C%20%EA%B5%90%EC%9E%AC%EC%9D%98%20%EC%9E%90%EB%A3%8C%EB%A5%BC%20%EB%B3%B4%EC%97%AC%EB%93%9C%EB%A0%A4%EC%9A%94";
+
+export const COUPONS_HREF = "https://solvook.com/coupons";
+
 /** 탭 선택 시 리스트 위에 보여줄 설명 */
 export const CATEGORY_DESCRIPTIONS: Partial<Record<RankingCategory, string>> = {
   추천: "고객 피드백, 다양한 판매 지수 등으로 재구성한 쏠북 추천 지수 상위 저자",
@@ -87,13 +89,9 @@ export const CATEGORY_DESCRIPTIONS: Partial<Record<RankingCategory, string>> = {
   해시검색: "최근 7일간 가장 많이 클릭된 해시태그",
 };
 
-export const CATEGORY_TO_TAB: Record<
-  "인기" | "추천" | "해시검색",
-  RankingTabParam
-> = {
+export const CATEGORY_TO_TAB: Record<"인기" | "추천", RankingTabParam> = {
   인기: "brand",
   추천: "recommend",
-  해시검색: "search",
 };
 
 export function categoryFromTabParam(
@@ -103,7 +101,7 @@ export function categoryFromTabParam(
     .trim()
     .toLowerCase();
   if (value === "search" || value === "해시검색" || value === "hashtag") {
-    return "해시검색";
+    return "인기";
   }
   if (value === "recommend" || value === "추천" || value === "발견") {
     return "추천";
@@ -115,7 +113,6 @@ export function categoryFromTabParam(
 }
 
 export function homeHrefWithTab(category: RankingCategory): string {
-  if (category === "해시검색") return "/?tab=search";
   if (category === "추천") return "/?tab=recommend";
   if (category === "인기") return "/?tab=brand";
   return "/";

@@ -14,6 +14,7 @@ const emptyForm = {
   uid: "",
   start_date: "",
   end_date: "",
+  discount_percent: "35",
 };
 
 export default function AuthorEventsPanel() {
@@ -108,6 +109,7 @@ export default function AuthorEventsPanel() {
     formData.set("uid", form.uid);
     formData.set("start_date", form.start_date);
     formData.set("end_date", form.end_date);
+    formData.set("discount_percent", form.discount_percent);
 
     const result = await upsertAuthorEventAction(formData);
     setSaving(false);
@@ -130,6 +132,7 @@ export default function AuthorEventsPanel() {
       uid: row.uid,
       start_date: row.start_date,
       end_date: row.end_date,
+      discount_percent: String(row.discount_percent ?? 35),
     });
     setSearchQuery(row.author_name);
     setMatches([]);
@@ -239,7 +242,7 @@ export default function AuthorEventsPanel() {
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <label className="block text-sm">
               <span className="mb-1.5 block font-medium text-slate-700">
                 시작일
@@ -264,6 +267,25 @@ export default function AuthorEventsPanel() {
                 value={form.end_date}
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, end_date: e.target.value }))
+                }
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1.5 block font-medium text-slate-700">
+                할인율(%)
+              </span>
+              <input
+                required
+                type="number"
+                min={1}
+                max={100}
+                value={form.discount_percent}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    discount_percent: e.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
               />
@@ -307,6 +329,7 @@ export default function AuthorEventsPanel() {
                 <tr>
                   <th className="px-4 py-2.5 font-medium">저자명</th>
                   <th className="px-4 py-2.5 font-medium">UID</th>
+                  <th className="px-4 py-2.5 font-medium">할인율</th>
                   <th className="px-4 py-2.5 font-medium">시작</th>
                   <th className="px-4 py-2.5 font-medium">종료</th>
                   <th className="px-4 py-2.5 font-medium">관리</th>
@@ -316,7 +339,7 @@ export default function AuthorEventsPanel() {
                 {events.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="px-4 py-8 text-center text-slate-500"
                     >
                       등록된 이벤트가 없습니다.
@@ -333,6 +356,9 @@ export default function AuthorEventsPanel() {
                       </td>
                       <td className="px-4 py-2.5 font-mono text-xs">
                         {row.uid}
+                      </td>
+                      <td className="px-4 py-2.5 tabular-nums">
+                        {row.discount_percent ?? 35}%
                       </td>
                       <td className="px-4 py-2.5 tabular-nums">
                         {row.start_date}

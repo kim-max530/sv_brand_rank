@@ -32,9 +32,18 @@ create table if not exists public.author_events (
   uid text primary key,
   author_name text not null,
   start_date date not null,
-  end_date date not null
+  end_date date not null,
+  discount_percent integer not null default 35
 );
 
 alter table public.author_events enable row level security;
+
+-- 기존 테이블에 컬럼이 없으면 추가 (일괄 35% 폴백)
+alter table public.author_events
+  add column if not exists discount_percent integer not null default 35;
+
+update public.author_events
+set discount_percent = 35
+where discount_percent is null or discount_percent <= 0;
 
 -- 클라이언트 직접 접근 차단. 서버 secret key로만 읽고/씁니다.
