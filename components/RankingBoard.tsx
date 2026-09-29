@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Library, Search, UserRound } from "lucide-react";
+import { FileText, Filter, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
@@ -270,9 +270,15 @@ export function RankingRow({
   const showEventBadge = Boolean(item.hasEvent);
   const metricChips = buildSystemBadgeChips(item);
   void layout;
+  void range3;
 
   const openProfile = () => {
     if (!hasAuthorDetail && !hasYoutube) return;
+    trackAnalyticsEvent("profile_click", authorName);
+    onOpenIntro(item);
+  };
+
+  const openIntroModal = () => {
     trackAnalyticsEvent("profile_click", authorName);
     onOpenIntro(item);
   };
@@ -290,7 +296,7 @@ export function RankingRow({
   return (
     <div
       className={`flex w-full gap-4 overflow-hidden border-b border-slate-100 px-4 py-3 sm:gap-5 sm:px-5 ${
-        hasInfo1 || item.record2 || metricChips.length > 0 || showEventBadge
+        hasInfo1 || item.record2 || metricChips.length > 0
           ? "items-start"
           : "items-center"
       }`}
@@ -306,41 +312,34 @@ export function RankingRow({
       ) : null}
 
       <div className="flex min-w-0 flex-1 items-start gap-4 overflow-hidden pr-3">
-        <div className="flex w-12 shrink-0 flex-col items-center gap-1.5">
-          <div
-            className={`flex h-10 w-12 items-center justify-center rounded-lg ${
-              profileClickable
-                ? "cursor-pointer transition hover:bg-slate-50/80"
-                : ""
-            }`}
-            onClick={profileClickable ? openProfile : undefined}
-            onKeyDown={
-              profileClickable
-                ? (event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openProfile();
-                    }
+        <div
+          className={`flex h-10 w-12 shrink-0 items-center justify-center rounded-lg ${
+            profileClickable
+              ? "cursor-pointer transition hover:bg-slate-50/80"
+              : ""
+          }`}
+          onClick={profileClickable ? openProfile : undefined}
+          onKeyDown={
+            profileClickable
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openProfile();
                   }
-                : undefined
-            }
-            role={profileClickable ? "button" : undefined}
-            tabIndex={profileClickable ? 0 : undefined}
-            aria-label={
-              profileClickable ? `${authorName} 저자 소개 열기` : undefined
-            }
-          >
-            <ProfileAvatar
-              uid={item.UID}
-              name={authorName}
-              priority={priority}
-            />
-          </div>
-          {showEventBadge ? (
-            <span className="inline-flex items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
-              Event
-            </span>
-          ) : null}
+                }
+              : undefined
+          }
+          role={profileClickable ? "button" : undefined}
+          tabIndex={profileClickable ? 0 : undefined}
+          aria-label={
+            profileClickable ? `${authorName} 저자 소개 열기` : undefined
+          }
+        >
+          <ProfileAvatar
+            uid={item.UID}
+            name={authorName}
+            priority={priority}
+          />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 overflow-hidden">
@@ -393,7 +392,7 @@ export function RankingRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 self-center">
+      <div className="flex shrink-0 items-center gap-3 self-center sm:gap-4">
         {hasYoutube ? (
           <button
             type="button"
@@ -405,33 +404,55 @@ export function RankingRow({
           </button>
         ) : null}
 
-        <div className="flex w-40 flex-col items-center justify-center gap-1.5 sm:w-48">
-          {range3 ? (
-            <span className="line-clamp-3 w-full break-keep text-center text-xs leading-snug text-gray-500">
-              {range3.endsWith("등") ? range3 : `${range3} 등`}
-            </span>
-          ) : null}
-          {address ? (
+        <div className="flex flex-row items-start justify-center gap-4">
+          {/* 좌측 열: 소개(프로필) + Event */}
+          <div className="flex flex-col items-center gap-1">
+            <button
+              type="button"
+              onClick={openIntroModal}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
+              aria-label={`${authorName} 저자 소개 열기`}
+            >
+              <UserRound className="h-5 w-5" aria-hidden />
+            </button>
+            <div className="flex h-5 items-center justify-center">
+              {showEventBadge ? (
+                <span className="inline-flex items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
+                  Event
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* 우측 열: 자료보기 + 방문수 */}
+          <div className="flex flex-col items-center gap-1">
             <button
               type="button"
               onClick={handleActionClick}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 transition-colors hover:text-gray-900"
-              aria-label={`${authorName} 자료보기`}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
+              aria-label={
+                address
+                  ? `${authorName} 자료보기`
+                  : `${authorName} 검색하기`
+              }
             >
-              <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              <span className="tabular-nums">{formatClicks(totalClicks)}</span>
+              <FileText className="h-5 w-5" aria-hidden />
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleActionClick}
-              className="rounded-lg p-1.5 text-gray-500 transition hover:text-gray-900"
-              aria-label={`${authorName} 검색하기`}
-            >
-              <Search className="h-5 w-5" />
-            </button>
-          )}
+            <div className="flex h-5 items-center justify-center">
+              <span className="text-[11px] font-semibold tabular-nums text-gray-600">
+                {formatClicks(totalClicks)}
+              </span>
+            </div>
+          </div>
         </div>
+
+        {/* 교재 목록(range3) — 일시 비표시
+        {range3 ? (
+          <span className="line-clamp-3 w-full break-keep text-center text-xs leading-snug text-gray-500">
+            {range3.endsWith("등") ? range3 : `${range3} 등`}
+          </span>
+        ) : null}
+        */}
       </div>
     </div>
   );
@@ -454,6 +475,7 @@ export default function RankingBoard({
   const [product, setProduct] = useState<ProductFilter>("전체");
   const [textbookGroup, setTextbookGroup] =
     useState<TextbookGroupFilter>("전체");
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [category, setCategory] = useState<RankingCategory>(
     () => tabFromUrl ?? "인기",
   );
@@ -565,7 +587,7 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-1 sm:px-0">
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-1 sm:px-0">
       {!isHashtagSearch ? (
         <div role="tablist" aria-label="과목" className="flex flex-wrap gap-2">
           {SUBJECTS.map((item) => {
@@ -633,78 +655,106 @@ export default function RankingBoard({
       {!isHashtagSearch ? (
         <>
           <div className="flex items-center justify-between gap-3 px-1">
-            {productOptions.length > 0 ? (
-              <div
-                role="tablist"
-                aria-label="자료 종류"
-                className="flex min-w-0 flex-wrap justify-start gap-2"
-              >
-                {productOptions.map((item) => {
-                  const selected = item === product;
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      onClick={() => setProduct(item)}
-                      className={`${FILTER_PILL_CLASS} ${
-                        selected
-                          ? FILTER_PILL_SELECTED_CLASS
-                          : FILTER_PILL_IDLE_CLASS
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <span aria-hidden />
-            )}
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              {productOptions.length > 0 ? (
+                <div
+                  role="tablist"
+                  aria-label="자료 종류"
+                  className="flex min-w-0 flex-wrap justify-start gap-2"
+                >
+                  {productOptions.map((item) => {
+                    const selected = item === product;
+                    return (
+                      <button
+                        key={item}
+                        type="button"
+                        role="tab"
+                        aria-selected={selected}
+                        onClick={() => setProduct(item)}
+                        className={`${FILTER_PILL_CLASS} ${
+                          selected
+                            ? FILTER_PILL_SELECTED_CLASS
+                            : FILTER_PILL_IDLE_CLASS
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
 
-            <div className="shrink-0 text-right">
+              <button
+                type="button"
+                onClick={() => setIsDetailOpen((open) => !open)}
+                aria-expanded={isDetailOpen}
+                aria-controls="textbook-group-filters"
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
+                  isDetailOpen
+                    ? "bg-slate-800 text-white"
+                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                }`}
+              >
+                <Filter className="h-3.5 w-3.5" aria-hidden />
+                세부
+              </button>
+            </div>
+
+            <div className="flex shrink-0 flex-col items-end gap-1 text-right">
               {weekRangeLabel ? (
                 <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
                   {weekRangeLabel}
                 </p>
               ) : null}
               {categoryDescription ? (
-                <p
-                  className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
-                    weekRangeLabel ? "mt-[0.1875rem]" : ""
-                  }`}
-                >
+                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
                   {categoryDescription}
                 </p>
               ) : null}
+              <a
+                href="https://solvook.com/#:~:text=%EC%84%A0%ED%83%9D%ED%95%9C%20%EA%B5%90%EC%9E%AC%EC%9D%98%20%EC%9E%90%EB%A3%8C%EB%A5%BC%20%EB%B3%B4%EC%97%AC%EB%93%9C%EB%A0%A4%EC%9A%94"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-keep text-xs font-medium text-blue-600 transition hover:underline sm:text-sm"
+              >
+                내가 찾고있는 교재별 인기 자료 확인하기 ↗
+              </a>
             </div>
           </div>
 
           <div
-            role="tablist"
-            aria-label="교재 그룹"
-            className="flex flex-wrap gap-2 px-1"
+            id="textbook-group-filters"
+            className={`overflow-hidden transition-all duration-300 ease-out ${
+              isDetailOpen
+                ? "max-h-24 opacity-100"
+                : "pointer-events-none max-h-0 opacity-0"
+            }`}
           >
-            {TEXTBOOK_GROUP_FILTERS.map((item) => {
-              const selected = item === textbookGroup;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  onClick={() => setTextbookGroup(item)}
-                  className={`${FILTER_PILL_CLASS} ${
-                    selected
-                      ? FILTER_PILL_SELECTED_CLASS
-                      : FILTER_PILL_IDLE_CLASS
-                  }`}
-                >
-                  {item}
-                </button>
-              );
-            })}
+            <div
+              role="tablist"
+              aria-label="교재 그룹"
+              className="flex flex-wrap gap-2 px-1 pt-0.5"
+            >
+              {TEXTBOOK_GROUP_FILTERS.map((item) => {
+                const selected = item === textbookGroup;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setTextbookGroup(item)}
+                    className={`${FILTER_PILL_CLASS} ${
+                      selected
+                        ? FILTER_PILL_SELECTED_CLASS
+                        : FILTER_PILL_IDLE_CLASS
+                    }`}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </>
       ) : categoryDescription ? (
