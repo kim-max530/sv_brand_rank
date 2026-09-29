@@ -37,7 +37,7 @@ export function productFiltersForSubject(
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";
 
-/** 화면에 노출하는 탭: 브랜드 랭킹, 추천 랭킹, 실시간 검색(#) */
+/** 화면에 노출하는 탭: 브랜드 랭킹, 추천 랭킹, 실시간 검색 */
 export const RANKING_CATEGORIES: RankingCategory[] = [
   "인기",
   "추천",
@@ -47,7 +47,7 @@ export const RANKING_CATEGORIES: RankingCategory[] = [
 export const CATEGORY_LABELS: Record<RankingCategory, string> = {
   추천: "✨ 추천 랭킹",
   인기: "🔥 브랜드 랭킹",
-  해시검색: "🔍 실시간 검색(#)",
+  해시검색: "🔍 실시간 검색",
   급성장: "🚀 급성장",
   많은: "🤝 검색",
   "계속 찾는": "💖 재구매",

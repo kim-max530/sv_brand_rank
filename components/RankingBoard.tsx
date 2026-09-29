@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Store, UserRound } from "lucide-react";
+import { ExternalLink, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
@@ -270,9 +270,9 @@ export function RankingRow({
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pr-2">
+      <div className="flex min-w-0 flex-1 items-start gap-3 overflow-hidden pr-2">
         <div
-          className={`flex min-w-0 items-start gap-3 rounded-lg ${
+          className={`relative flex h-10 w-12 shrink-0 items-center justify-center rounded-lg ${
             profileClickable
               ? "cursor-pointer transition hover:bg-slate-50/80"
               : ""
@@ -294,20 +294,37 @@ export function RankingRow({
             profileClickable ? `${authorName} 저자 소개 열기` : undefined
           }
         >
-          <div className="relative flex h-10 w-12 shrink-0 items-center justify-center">
-            <ProfileAvatar
-              uid={item.UID}
-              name={authorName}
-              priority={priority}
-            />
-            {showEventBadge ? (
-              <span className="absolute -bottom-2 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-red-100 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-red-500 uppercase">
-                Event
-              </span>
-            ) : null}
-          </div>
+          <ProfileAvatar
+            uid={item.UID}
+            name={authorName}
+            priority={priority}
+          />
+        </div>
 
-          <div className="flex min-w-0 flex-1 items-center overflow-hidden whitespace-nowrap py-1">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 overflow-hidden">
+          <div
+            className={`flex min-w-0 w-full items-center overflow-hidden whitespace-nowrap rounded-lg py-0.5 ${
+              profileClickable
+                ? "cursor-pointer transition hover:bg-slate-50/80"
+                : ""
+            }`}
+            onClick={profileClickable ? openProfile : undefined}
+            onKeyDown={
+              profileClickable
+                ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openProfile();
+                    }
+                  }
+                : undefined
+            }
+            role={profileClickable ? "button" : undefined}
+            tabIndex={profileClickable ? 0 : undefined}
+            aria-label={
+              profileClickable ? `${authorName} 저자 소개 열기` : undefined
+            }
+          >
             {intro ? (
               <>
                 <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
@@ -323,58 +340,58 @@ export function RankingRow({
               </span>
             )}
           </div>
-        </div>
 
-        {hasInfo1 ? (
-          <p className="mt-2 max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700 sm:ml-[3.75rem]">
-            {info1}
-          </p>
-        ) : null}
-        <HashtagChips
-          record2={item.record2}
-          className="mt-2 sm:ml-[3.75rem]"
-          metricChips={metricChips}
-        />
+          {hasInfo1 || showEventBadge ? (
+            <div className="flex w-full items-start gap-2">
+              {showEventBadge ? (
+                <span className="inline-flex shrink-0 items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
+                  Event
+                </span>
+              ) : null}
+              {hasInfo1 ? (
+                <p className="min-w-0 flex-1 break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700">
+                  {info1}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          <HashtagChips record2={item.record2} metricChips={metricChips} />
+        </div>
       </div>
 
-      {/* 홈페이지 · 교재목록 고정 간격/너비 */}
-      <div className="flex w-9 shrink-0 items-center justify-end gap-x-3 self-center sm:w-[14rem]">
+      {/* 교재목록(상) · 보러가기(하) · 유튜브 */}
+      <div className="flex shrink-0 items-center gap-1.5 self-center">
         {hasYoutube ? (
           <button
             type="button"
             onClick={openProfile}
-            className="shrink-0 rounded-lg p-2 text-red-500 transition hover:bg-red-50 hover:text-red-600"
+            className="shrink-0 rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-600"
             aria-label={`${authorName} 유튜브 소개 열기`}
           >
             <YoutubeIcon className="h-5 w-5" />
           </button>
-        ) : (
-          <span className="hidden h-9 w-9 shrink-0 sm:block" aria-hidden />
-        )}
+        ) : null}
 
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center">
-          <button
-            type="button"
-            onClick={() => openAuthorLink(item)}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-            aria-label={
-              address ? `${authorName} 브랜드관 열기` : `${authorName} 검색하기`
-            }
-          >
-            {address ? (
-              <Store className="h-5 w-5" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
-          </button>
-        </div>
-
-        <div className="hidden min-h-[2.25rem] w-[8.5rem] shrink-0 items-center justify-center overflow-hidden sm:flex">
+        <div className="flex max-w-[6.75rem] flex-col items-end justify-center gap-1.5 sm:max-w-[9rem] sm:w-[9rem]">
           {range3 ? (
-            <span className="line-clamp-3 w-full break-keep text-center text-xs leading-snug text-gray-500">
+            <span className="line-clamp-3 w-full break-keep text-right text-xs leading-snug text-gray-500">
               {range3.endsWith("등") ? range3 : `${range3} 등`}
             </span>
           ) : null}
+          <button
+            type="button"
+            onClick={() => openAuthorLink(item)}
+            className="flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+            aria-label={
+              address
+                ? `${authorName} 브랜드관 보러가기`
+                : `${authorName} 검색하러 가기`
+            }
+          >
+            보러가기
+            <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+          </button>
         </div>
       </div>
     </div>
@@ -455,7 +472,7 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-1 sm:px-0">
       {!isHashtagSearch ? (
         <div role="tablist" aria-label="과목" className="flex flex-wrap gap-2">
           {SUBJECTS.map((item) => {
@@ -480,90 +497,97 @@ export default function RankingBoard({
         </div>
       ) : null}
 
-      <div className="flex flex-col gap-1.5">
-        <div
-          role="tablist"
-          aria-label="랭킹 기준"
-          className="flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
-        >
-          {RANKING_CATEGORIES.map((item) => {
-            const selected = item === category;
-            return (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => selectCategory(item)}
-                className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
-                  selected
-                    ? "bg-white text-teal-800 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+      <div
+        role="tablist"
+        aria-label="랭킹 기준"
+        className="flex flex-wrap justify-start gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
+      >
+        {RANKING_CATEGORIES.map((item) => {
+          const selected = item === category;
+          const isSearchTab = item === "해시검색";
+          return (
+            <button
+              key={item}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              onClick={() => selectCategory(item)}
+              className={`relative rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
+                selected
+                  ? "bg-white text-teal-800 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              } ${isSearchTab ? "pr-5" : ""}`}
+            >
+              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
+              {isSearchTab ? (
+                <span
+                  aria-hidden
+                  className="absolute -top-1.5 -right-1 rotate-12 rounded-full bg-sky-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-md"
+                >
+                  #
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      {!isHashtagSearch ? (
+        <div className="flex items-center justify-between gap-3 px-1">
+          {productOptions.length > 0 ? (
+            <div
+              role="tablist"
+              aria-label="세부 필터"
+              className="flex min-w-0 flex-wrap justify-start gap-1.5"
+            >
+              {productOptions.map((item) => {
+                const selected = item === product;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setProduct(item)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      selected
+                        ? "bg-slate-800 text-white"
+                        : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <span aria-hidden />
+          )}
+
+          <div className="shrink-0 text-right">
+            {weekRangeLabel ? (
+              <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                {weekRangeLabel}
+              </p>
+            ) : null}
+            {categoryDescription ? (
+              <p
+                className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
+                  weekRangeLabel ? "mt-[0.1875rem]" : ""
                 }`}
               >
-                <span className="break-keep">{CATEGORY_LABELS[item]}</span>
-              </button>
-            );
-          })}
+                {categoryDescription}
+              </p>
+            ) : null}
+          </div>
         </div>
-
-        {!isHashtagSearch ? (
-          <div className="flex items-center justify-between gap-3 px-1">
-            {productOptions.length > 0 ? (
-              <div
-                role="tablist"
-                aria-label="세부 필터"
-                className="flex min-w-0 flex-wrap justify-start gap-1.5"
-              >
-                {productOptions.map((item) => {
-                  const selected = item === product;
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      onClick={() => setProduct(item)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        selected
-                          ? "bg-slate-800 text-white"
-                          : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <span aria-hidden />
-            )}
-
-            <div className="shrink-0 text-right">
-              {weekRangeLabel ? (
-                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                  {weekRangeLabel}
-                </p>
-              ) : null}
-              {categoryDescription ? (
-                <p
-                  className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
-                    weekRangeLabel ? "mt-[0.1875rem]" : ""
-                  }`}
-                >
-                  {categoryDescription}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ) : categoryDescription ? (
-          <div className="px-1 text-right">
-            <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-              {categoryDescription}
-            </p>
-          </div>
-        ) : null}
-      </div>
+      ) : categoryDescription ? (
+        <div className="px-1 text-right">
+          <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+            {categoryDescription}
+          </p>
+        </div>
+      ) : null}
 
       {isHashtagSearch ? (
         <HashtagSearchPanel />
