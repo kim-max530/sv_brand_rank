@@ -61,13 +61,13 @@ export const MISSING_RANK_FALLBACK = 100;
 /** 추천·인기 랭킹 상위 N명 (계산용) */
 export const RECOMMEND_TOP_N = 30;
 
-/** 화면 노출 상한: 영어 15위, 국어 10위 */
+/** 화면 노출 상한: 영어 15위, 국어 10위 (NEW 뱃지·리스트 slice 공통) */
 export const DISPLAY_RANK_LIMIT: Record<Subject, number> = {
   영어: 15,
   국어: 10,
 };
 
-/** NEW 뱃지: 과거 없음/15위 초과 → 현재 15위 이내 진입 */
+/** @deprecated DISPLAY_RANK_LIMIT 사용 — 과목별 노출권과 동일 */
 export const NEW_BADGE_RANK_THRESHOLD = 15;
 
 /** 해시태그 목록 페이지당 개수 */

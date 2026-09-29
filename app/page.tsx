@@ -56,7 +56,7 @@ export default async function HomePage() {
       />
 
       <div className="w-full border-b border-slate-200/70 bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-4 sm:h-16 sm:px-6">
+        <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:h-16 sm:px-6">
           <a
             href="https://solvook.com"
             target="_blank"
@@ -77,11 +77,11 @@ export default async function HomePage() {
       </div>
 
       <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
-        <header className="mx-auto mb-8 w-full max-w-6xl text-center sm:mb-10">
+        <header className="mx-auto mb-8 w-full max-w-5xl text-center sm:mb-10">
           <h1 className="break-keep font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            <span className="relative inline-block pr-10">
+            <span className="relative inline-block">
               쏠북, 좋은 자료의 발견
-              <span className="absolute -top-2 -right-2 rounded-md bg-blue-50 px-2 py-[0.2rem] text-[12px] font-bold leading-none text-blue-500 sm:-right-3">
+              <span className="pointer-events-none absolute -top-2 left-full ml-1 rounded-md bg-blue-50 px-2 py-[0.2rem] text-[12px] font-bold leading-none text-blue-500 sm:ml-1.5">
                 Beta
               </span>
             </span>
@@ -92,7 +92,7 @@ export default async function HomePage() {
         </header>
 
         {errorMessage ? (
-          <div className="mx-auto w-full max-w-6xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
+          <div className="mx-auto w-full max-w-5xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
             <p className="font-medium break-keep">
               데이터를 불러오는 중 문제가 발생했습니다.
             </p>
@@ -101,7 +101,7 @@ export default async function HomePage() {
         ) : (
           <Suspense
             fallback={
-              <p className="mx-auto w-full max-w-6xl px-4 py-12 text-center text-sm text-slate-500">
+              <p className="mx-auto w-full max-w-5xl px-4 py-12 text-center text-sm text-slate-500">
                 불러오는 중…
               </p>
             }

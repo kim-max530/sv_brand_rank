@@ -11,6 +11,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
 
 const REFRESH_MS = 5 * 60 * 1000;
+const PULSE_MS = 30 * 1000;
 const MOBILE_INITIAL = 6;
 
 type Row = LiveHashtagRankItem & {
@@ -39,6 +40,7 @@ export default function LiveHashtagPanel({
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
+  const [pulse, setPulse] = useState(false);
   const prevRanksRef = useRef<Map<string, number>>(new Map());
 
   const load = useCallback(async () => {
@@ -70,6 +72,15 @@ export default function LiveHashtagPanel({
     return () => window.clearInterval(id);
   }, [load]);
 
+  /** 30초마다 페이드 모션으로 갱신 중임을 시각 전달 (데이터는 5분 주기) */
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setPulse(true);
+      window.setTimeout(() => setPulse(false), 700);
+    }, PULSE_MS);
+    return () => window.clearInterval(id);
+  }, []);
+
   const visible =
     variant === "strip" && !expanded ? rows.slice(0, MOBILE_INITIAL) : rows;
 
@@ -77,37 +88,40 @@ export default function LiveHashtagPanel({
     <aside
       className={
         variant === "sidebar"
-          ? "hidden w-full shrink-0 lg:block lg:w-[38%] lg:max-w-sm"
+          ? "hidden w-full shrink-0 lg:block lg:w-[19%] lg:max-w-[10.5rem]"
           : "w-full lg:hidden"
       }
     >
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]">
-        <div className="border-b border-slate-100 px-3 py-2.5 sm:px-4">
-          <h2 className="text-sm font-semibold text-slate-800">
+        <div className="border-b border-slate-100 px-2.5 py-2 sm:px-3">
+          <h2 className="text-xs font-semibold leading-snug text-slate-800 sm:text-sm">
             실시간 해시태그 Top 10
           </h2>
-          <p className="text-[11px] text-slate-400">5분마다 자동 갱신</p>
         </div>
 
         {loading && rows.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-slate-500">
+          <p className="px-3 py-8 text-center text-xs text-slate-500">
             불러오는 중…
           </p>
         ) : visible.length === 0 ? (
-          <p className="px-4 py-8 text-center text-sm text-slate-500">
+          <p className="px-3 py-8 text-center text-xs text-slate-500">
             최근 클릭된 해시태그가 없습니다.
           </p>
         ) : (
-          <ul>
+          <ul
+            className={`transition-opacity duration-700 ease-in-out ${
+              pulse ? "opacity-40" : "opacity-100"
+            }`}
+          >
             {visible.map((item) => (
               <li key={item.tag}>
                 <Link
                   href={hashtagHref(item.tag)}
                   onClick={() => trackAnalyticsEvent("hashtag_click", item.tag)}
-                  className="flex items-center gap-2 border-b border-slate-100 px-3 py-2.5 transition hover:bg-slate-50/80 sm:gap-3 sm:px-4"
+                  className="flex items-center gap-1.5 border-b border-slate-100 px-2 py-2 transition hover:bg-slate-50/80 sm:gap-2 sm:px-2.5"
                 >
                   <span
-                    className={`w-7 shrink-0 text-center text-[11px] font-semibold tabular-nums ${
+                    className={`w-5 shrink-0 text-center text-[10px] font-semibold tabular-nums ${
                       item.changeText.startsWith("▲")
                         ? "text-red-500"
                         : item.changeText.startsWith("▼")
@@ -117,17 +131,17 @@ export default function LiveHashtagPanel({
                   >
                     {item.changeText}
                   </span>
-                  <span className="w-6 shrink-0 text-center font-display text-base font-semibold tabular-nums text-slate-800">
+                  <span className="w-4 shrink-0 text-center font-display text-sm font-semibold tabular-nums text-slate-800">
                     {item.rank}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-teal-700">
+                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-teal-700">
                     #{item.tag}
                   </span>
                   <span
-                    className="inline-flex shrink-0 items-center gap-0.5 text-xs tabular-nums text-slate-500"
+                    className="inline-flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-slate-500"
                     title={`저자 ${item.authorCount}명`}
                   >
-                    <Users className="h-3.5 w-3.5" aria-hidden />
+                    <Users className="h-3 w-3" aria-hidden />
                     {item.authorCount}
                   </span>
                 </Link>

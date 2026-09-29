@@ -105,8 +105,8 @@ function RankMeta({
     <span
       className={
         isUnchanged
-          ? "text-[11px] font-medium text-gray-400"
-          : `text-[11px] font-semibold tabular-nums ${
+          ? "text-[11px] font-medium leading-none text-gray-400"
+          : `text-[11px] font-semibold leading-none tabular-nums ${
               rawChange.startsWith("▲")
                 ? "text-red-500"
                 : rawChange.startsWith("▼")
@@ -120,13 +120,13 @@ function RankMeta({
   ) : null;
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-0.5 md:flex-row md:gap-2">
-      {/* 모바일: 순위 → 변동 / 데스크탑: 변동 | 순위 */}
-      <div className="order-2 flex flex-col items-center justify-center gap-0.5 md:order-1 md:w-11">
+    <div className="flex shrink-0 flex-col items-center gap-0.5 md:flex-row md:items-center md:gap-2">
+      {/* 모바일: 순위 아래 변동 / 데스크탑: 변동 | 순위 — 저자명과 동일 라인 높이 */}
+      <div className="order-2 flex flex-col items-center justify-center gap-0.5 md:order-1 md:w-10">
         {changeEl}
         {badge ? <StatusBadge badge={badge} /> : null}
       </div>
-      <span className="order-1 w-7 shrink-0 text-center font-display text-lg font-semibold tabular-nums text-slate-800 md:order-2 sm:w-8">
+      <span className="order-1 flex h-[1.5rem] w-7 shrink-0 items-center justify-center text-center font-display text-base font-bold leading-none tabular-nums text-slate-800 sm:h-6 sm:w-8 sm:text-lg md:order-2">
         {safeRank || "-"}
       </span>
     </div>
@@ -284,6 +284,7 @@ export function RankingRow({
   const medals = buildSystemMedals(item);
   void layout;
   void range3;
+  void medals; // 시스템 뱃지 일시 숨김 — 렌더 주석 보존용
 
   const openProfile = () => {
     if (!hasAuthorDetail && !hasYoutube) return;
@@ -312,9 +313,9 @@ export function RankingRow({
   const profileClickable = hasAuthorDetail || hasYoutube;
 
   return (
-    <div className="flex w-full items-center gap-3 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-4 sm:px-5">
+    <div className="flex w-full items-start gap-2 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-2.5 sm:px-5">
       {showRank ? (
-        <div className="flex shrink-0 items-center">
+        <div className="flex h-6 shrink-0 items-center self-start sm:h-6">
           <RankMeta
             rank={item.rank}
             badge={item.badge ?? null}
@@ -323,11 +324,12 @@ export function RankingRow({
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden pr-2 sm:gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-1.5 overflow-hidden pr-1 sm:gap-2">
+        {/* 프로필: 고정 높이 + 상단 고정 — 하단 뱃지와 무관하게 Y축 유지 */}
         <div
-          className={`flex shrink-0 items-center justify-center rounded-lg ${
+          className={`relative h-16 w-[52px] shrink-0 ${
             profileClickable
-              ? "cursor-pointer transition hover:bg-slate-50/80"
+              ? "cursor-pointer transition hover:opacity-90"
               : ""
           }`}
           onClick={profileClickable ? openProfile : undefined}
@@ -347,11 +349,13 @@ export function RankingRow({
             profileClickable ? `${authorName} 저자 소개 열기` : undefined
           }
         >
-          <ProfileAvatar
-            uid={item.UID}
-            name={authorName}
-            priority={priority}
-          />
+          <div className="absolute top-0 left-0">
+            <ProfileAvatar
+              uid={item.UID}
+              name={authorName}
+              priority={priority}
+            />
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 overflow-hidden">
@@ -378,9 +382,10 @@ export function RankingRow({
               profileClickable ? `${authorName} 저자 소개 열기` : undefined
             }
           >
-            <span className="shrink-0 font-bold text-slate-900 text-sm sm:text-base">
+            <span className="flex h-6 shrink-0 items-center font-bold leading-none text-slate-900 text-sm sm:text-base">
               {authorName}
             </span>
+            {/* 시스템 뱃지(판매급등/재구매많음/인기검색어) — 일시 숨김, 코드 보존
             {medals.map((medal) => (
               <span
                 key={medal.key}
@@ -390,19 +395,23 @@ export function RankingRow({
                 {medal.label}
               </span>
             ))}
+            */}
           </div>
 
           {intro ? (
-            <p className="relative w-fit max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-4 py-2 text-[0.7rem] leading-snug text-gray-700 before:absolute before:top-0 before:left-1.5 before:text-xl before:leading-none before:font-serif before:text-gray-300 before:content-['\201C'] after:absolute after:right-1.5 after:bottom-0 after:text-xl after:leading-none after:font-serif after:text-gray-300 after:content-['\201D']">
+            <p className="relative w-fit max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-4 py-2 text-[0.7rem] leading-snug text-gray-700 before:absolute before:top-0 before:left-1.5 before:text-xl before:leading-none before:font-black before:text-black before:content-['\201C'] after:absolute after:right-1.5 after:bottom-0 after:text-xl after:leading-none after:font-black after:text-black after:content-['\201D']">
               {intro}
             </p>
           ) : null}
 
-          <HashtagChips record2={item.record2} />
+          {/* 대화창 본문(px-4)과 해시태그 시작선 정렬 */}
+          <div className="w-full pl-4">
+            <HashtagChips record2={item.record2} />
+          </div>
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-3 self-center sm:gap-4">
+      <div className="flex shrink-0 items-start gap-3 self-start pt-0.5 sm:gap-4">
         {hasYoutube ? (
           <button
             type="button"
@@ -491,6 +500,8 @@ export default function RankingBoard({
   const [selectedAuthor, setSelectedAuthor] = useState<MergedRanking | null>(
     null,
   );
+  const [textbookConfirmOpen, setTextbookConfirmOpen] = useState(false);
+  const [dontShowTextbookConfirm, setDontShowTextbookConfirm] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
     for (const item of rankings) {
@@ -564,13 +575,12 @@ export default function RankingBoard({
   const list = useMemo(() => {
     if (!Array.isArray(rankings)) return [];
 
-    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
-
+    // 연산/필터는 전체 데이터 유지 — rank 상한으로 미리 자르지 않음
     return rankings
       .filter((item) => {
         if (!item || item.category !== category) return false;
         if (item.과목 !== subject) return false;
-        if (!Number.isFinite(item.rank) || item.rank > limit) return false;
+        if (!Number.isFinite(item.rank) || item.rank < 1) return false;
         if (!matchesProductFilter(item, product)) return false;
         return matchesTextbookGroupFilter(item, textbookGroup);
       })
@@ -579,6 +589,12 @@ export default function RankingBoard({
           a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
       );
   }, [rankings, subject, product, textbookGroup, category]);
+
+  /** 화면 렌더링만 영어 15 / 국어 10으로 제한 */
+  const displayList = useMemo(() => {
+    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
+    return list.slice(0, limit);
+  }, [list, subject]);
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
 
@@ -592,26 +608,42 @@ export default function RankingBoard({
     }
   };
 
-  const metaLabel =
-    weekRangeLabel || categoryDescription ? (
-      <div className="w-full text-right">
-        {weekRangeLabel ? (
-          <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-            {weekRangeLabel}
-          </p>
-        ) : null}
-        {categoryDescription ? (
-          <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-            {categoryDescription}
-          </p>
-        ) : null}
-      </div>
-    ) : null;
+  const TEXTBOOK_SKIP_KEY = "solvook_skip_textbook_ranking_confirm";
+
+  const goTextbookRanking = () => {
+    window.open(TEXTBOOK_RANKING_HREF, "_blank", "noopener,noreferrer");
+  };
+
+  const handleTextbookRankingClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+  ) => {
+    event.preventDefault();
+    try {
+      if (window.localStorage.getItem(TEXTBOOK_SKIP_KEY) === "1") {
+        goTextbookRanking();
+        return;
+      }
+    } catch {
+      // localStorage 불가 시 모달 표시
+    }
+    setDontShowTextbookConfirm(false);
+    setTextbookConfirmOpen(true);
+  };
+
+  const confirmTextbookRanking = () => {
+    if (dontShowTextbookConfirm) {
+      try {
+        window.localStorage.setItem(TEXTBOOK_SKIP_KEY, "1");
+      } catch {
+        // ignore
+      }
+    }
+    setTextbookConfirmOpen(false);
+    goTextbookRanking();
+  };
 
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-1 sm:px-0">
-      {metaLabel}
-
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-1 sm:px-0">
       <div
         role="tablist"
         aria-label="과목"
@@ -666,6 +698,7 @@ export default function RankingBoard({
           href={TEXTBOOK_RANKING_HREF}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={handleTextbookRankingClick}
           className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap text-slate-600 transition hover:text-slate-900 sm:text-sm"
         >
           <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -764,13 +797,27 @@ export default function RankingBoard({
       {/* 모바일: 주요 메뉴와 리스트 사이 해시태그 패널 */}
       <LiveHashtagPanel variant="strip" />
 
-      <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        <div className="min-w-0 w-full lg:w-[62%]">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-stretch justify-center gap-4 lg:flex-row lg:items-start lg:gap-4">
+        <div className="relative mx-auto min-w-0 w-full max-w-3xl lg:mx-0 lg:w-[56%]">
+          {(weekRangeLabel || categoryDescription) && (
+            <div className="mb-1.5 w-full text-right">
+              {weekRangeLabel ? (
+                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                  {weekRangeLabel}
+                </p>
+              ) : null}
+              {categoryDescription ? (
+                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                  {categoryDescription}
+                </p>
+              ) : null}
+            </div>
+          )}
           <div
             role="tabpanel"
             className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]"
           >
-            {list.length === 0 ? (
+            {displayList.length === 0 ? (
               rankings.length === 0 ? (
                 <p className="px-4 py-12 text-center text-sm text-slate-500">
                   표시할 랭킹 데이터가 없습니다.
@@ -791,7 +838,7 @@ export default function RankingBoard({
               )
             ) : (
               <ul>
-                {list.map((item, index) => (
+                {displayList.map((item, index) => (
                   <li
                     key={`${item.category}-${item.과목}-${item.UID}-${item.rank}`}
                   >
@@ -813,6 +860,57 @@ export default function RankingBoard({
 
         <LiveHashtagPanel variant="sidebar" />
       </div>
+
+      {textbookConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="textbook-confirm-title"
+          onClick={() => setTextbookConfirmOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3
+              id="textbook-confirm-title"
+              className="break-keep font-display text-lg font-semibold text-slate-900"
+            >
+              페이지 이동
+            </h3>
+            <p className="mt-3 break-keep text-sm leading-relaxed text-slate-600">
+              지금 보고 있는 랭킹 페이지를 벗어나 교재 별 자료 랭킹 페이지로
+              이동합니다.
+            </p>
+            <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={dontShowTextbookConfirm}
+                onChange={(e) => setDontShowTextbookConfirm(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
+              />
+              다시보지 않기
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setTextbookConfirmOpen(false)}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={confirmTextbookRanking}
+                className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <AuthorModal
         author={

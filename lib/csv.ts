@@ -7,8 +7,8 @@ import {
   fetchAuthorHashtagOverrides,
 } from "@/lib/author-hashtags";
 import {
+  DISPLAY_RANK_LIMIT,
   MISSING_RANK_FALLBACK,
-  NEW_BADGE_RANK_THRESHOLD,
   POPULAR_RANK_CATEGORIES,
   RANKING_FILES,
   RECOMMEND_TOP_N,
@@ -234,23 +234,27 @@ function buildRankMap(rows: Record<string, string>[]): Map<string, number> {
 
 /**
  * prev 파일이 있고 내용이 있을 때만 변동/뱃지 계산.
- * NEW: (과거 없음 또는 과거 > 15위) AND (현재 ≤ 15위)
+ * NEW: 지난주 순위가 노출권(영어 15 / 국어 10) 밖이거나 없으며,
+ *      이번 주 노출권 안으로 진입한 경우.
  * prev 데이터가 없으면 변동 UI를 숨김 (changeText "").
  */
 function calcBadgeAndChangeText(
   currentRank: number,
   prevRank: number | undefined,
   hasPrevFile: boolean,
+  subject: Subject,
 ): { badge: RankBadge; changeText: string } {
   if (!hasPrevFile) {
     return { badge: null, changeText: "" };
   }
 
+  const displayLimit = DISPLAY_RANK_LIMIT[subject] ?? 15;
   const prevMissing = prevRank == null || !Number.isFinite(prevRank);
   const wasOutsideOrMissing =
-    prevMissing || (prevRank as number) > NEW_BADGE_RANK_THRESHOLD;
-  const isNowInside = currentRank <= NEW_BADGE_RANK_THRESHOLD;
+    prevMissing || (prevRank as number) > displayLimit;
+  const isNowInside = currentRank <= displayLimit;
 
+  // 순위권 신규 진입 (과거 없음 / 노출권 밖 → 노출권 안)
   if (wasOutsideOrMissing && isNowInside) {
     return { badge: "NEW", changeText: "-" };
   }
@@ -379,6 +383,7 @@ function buildRecommendRankings(
         rank,
         prevRecommendRanks.get(key),
         hasPrevData,
+        subject,
       );
 
       results.push(
@@ -485,6 +490,7 @@ function buildPopularRankings(
         rank,
         prevPopularRanks.get(key),
         hasPrevPopularData,
+        subject,
       );
 
       results.push(
