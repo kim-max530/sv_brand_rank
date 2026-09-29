@@ -88,13 +88,13 @@ export default function LiveHashtagPanel({
     <aside
       className={
         variant === "sidebar"
-          ? "hidden w-full shrink-0 lg:block lg:w-[19%] lg:max-w-[10.5rem]"
+          ? "hidden w-64 min-w-[240px] shrink-0 lg:block"
           : "w-full lg:hidden"
       }
     >
       <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]">
-        <div className="border-b border-slate-100 px-2.5 py-2 sm:px-3">
-          <h2 className="text-xs font-semibold leading-snug text-slate-800 sm:text-sm">
+        <div className="border-b border-slate-100 px-3 py-2.5">
+          <h2 className="whitespace-nowrap text-sm font-semibold leading-snug text-slate-800">
             실시간 해시태그 Top 10
           </h2>
         </div>
@@ -118,7 +118,7 @@ export default function LiveHashtagPanel({
                 <Link
                   href={hashtagHref(item.tag)}
                   onClick={() => trackAnalyticsEvent("hashtag_click", item.tag)}
-                  className="flex items-center gap-1.5 border-b border-slate-100 px-2 py-2 transition hover:bg-slate-50/80 sm:gap-2 sm:px-2.5"
+                  className="flex items-center gap-x-3 border-b border-slate-100 px-3 py-2.5 transition hover:bg-slate-50/80"
                 >
                   <span
                     className={`w-5 shrink-0 text-center text-[10px] font-semibold tabular-nums ${
@@ -131,17 +131,17 @@ export default function LiveHashtagPanel({
                   >
                     {item.changeText}
                   </span>
-                  <span className="w-4 shrink-0 text-center font-display text-sm font-semibold tabular-nums text-slate-800">
+                  <span className="w-5 shrink-0 text-center font-display text-sm font-semibold tabular-nums text-slate-800">
                     {item.rank}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-xs font-medium text-teal-700">
+                  <span className="min-w-0 max-w-[7.5rem] truncate text-sm font-medium text-teal-700">
                     #{item.tag}
                   </span>
                   <span
-                    className="inline-flex shrink-0 items-center gap-0.5 text-[10px] tabular-nums text-slate-500"
+                    className="inline-flex shrink-0 items-center gap-0.5 text-xs tabular-nums text-slate-500"
                     title={`저자 ${item.authorCount}명`}
                   >
-                    <Users className="h-3 w-3" aria-hidden />
+                    <Users className="h-3.5 w-3.5" aria-hidden />
                     {item.authorCount}
                   </span>
                 </Link>

@@ -313,7 +313,7 @@ export function RankingRow({
   const profileClickable = hasAuthorDetail || hasYoutube;
 
   return (
-    <div className="flex w-full items-start gap-2 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-2.5 sm:px-5">
+    <div className="flex w-full items-start gap-6 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-6 sm:px-5">
       {showRank ? (
         <div className="flex h-6 shrink-0 items-center self-start sm:h-6">
           <RankMeta
@@ -324,7 +324,7 @@ export function RankingRow({
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 items-start gap-1.5 overflow-hidden pr-1 sm:gap-2">
+      <div className="flex min-w-0 flex-1 items-start gap-6 overflow-hidden pr-1 sm:gap-6">
         {/* 프로필: 고정 높이 + 상단 고정 — 하단 뱃지와 무관하게 Y축 유지 */}
         <div
           className={`relative h-16 w-[52px] shrink-0 ${
@@ -399,13 +399,15 @@ export function RankingRow({
           </div>
 
           {intro ? (
-            <p className="relative w-fit max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-4 py-2 text-[0.7rem] leading-snug text-gray-700 before:absolute before:top-0 before:left-1.5 before:text-xl before:leading-none before:font-black before:text-black before:content-['\201C'] after:absolute after:right-1.5 after:bottom-0 after:text-xl after:leading-none after:font-black after:text-black after:content-['\201D']">
+            <p className="relative w-fit max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-5 py-2 text-[0.7rem] leading-snug text-gray-700 before:absolute before:top-0 before:left-2 before:px-0.5 before:text-xl before:leading-none before:font-black before:text-gray-700 before:content-['\201C'] after:absolute after:right-2 after:bottom-0 after:px-0.5 after:text-xl after:leading-none after:font-black after:text-gray-700 after:content-['\201D']">
+              {"\u00A0"}
               {intro}
+              {"\u00A0"}
             </p>
           ) : null}
 
-          {/* 대화창 본문(px-4)과 해시태그 시작선 정렬 */}
-          <div className="w-full pl-4">
+          {/* 대화창 본문(px-5)과 해시태그 시작선 정렬 */}
+          <div className="w-full pl-5">
             <HashtagChips record2={item.record2} />
           </div>
         </div>
@@ -643,7 +645,7 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-1 sm:px-0">
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-1 sm:px-0">
       <div
         role="tablist"
         aria-label="과목"
@@ -797,8 +799,9 @@ export default function RankingBoard({
       {/* 모바일: 주요 메뉴와 리스트 사이 해시태그 패널 */}
       <LiveHashtagPanel variant="strip" />
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-stretch justify-center gap-4 lg:flex-row lg:items-start lg:gap-4">
-        <div className="relative mx-auto min-w-0 w-full max-w-3xl lg:mx-0 lg:w-[56%]">
+      {/* 보드 중앙 정렬 + 우측 패널은 absolute로 흐름에서 분리 */}
+      <div className="relative mx-auto flex w-full max-w-7xl justify-center px-1 sm:px-0">
+        <div className="w-full max-w-3xl">
           {(weekRangeLabel || categoryDescription) && (
             <div className="mb-1.5 w-full text-right">
               {weekRangeLabel ? (
@@ -858,7 +861,12 @@ export default function RankingBoard({
           </div>
         </div>
 
-        <LiveHashtagPanel variant="sidebar" />
+        {/* 데스크탑: 보드 상단과 동일 Y축, 우측 독립 배치 */}
+        <div className="pointer-events-none absolute top-0 right-0 hidden h-full lg:block">
+          <div className="pointer-events-auto sticky top-4 w-64 min-w-[240px]">
+            <LiveHashtagPanel variant="sidebar" />
+          </div>
+        </div>
       </div>
 
       {textbookConfirmOpen ? (
