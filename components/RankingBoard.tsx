@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ExternalLink, Library, Search, UserRound } from "lucide-react";
+import { Library, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
@@ -21,8 +21,12 @@ import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
+  FILTER_PILL_CLASS,
+  FILTER_PILL_IDLE_CLASS,
+  FILTER_PILL_SELECTED_CLASS,
   RANKING_CATEGORIES,
   SUBJECTS,
+  TEXTBOOK_GROUP_FILTERS,
   categoryFromTabParam,
   productFiltersForSubject,
 } from "@/lib/ranking-tabs";
@@ -33,6 +37,7 @@ import type {
   RankBadge,
   RankingCategory,
   Subject,
+  TextbookGroupFilter,
 } from "@/types/ranking";
 
 function YoutubeIcon({ className }: { className?: string }) {
@@ -165,6 +170,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       key: "hot",
       label: "🚀HOT",
       tag: "HOT",
+      title: "지난 주 고객 구매 증가가 가장 많았던 브랜드",
       className:
         "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
     });
@@ -174,6 +180,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       key: "repurchase",
       label: "💖재구매",
       tag: "재구매",
+      title: "지난 주 단골 고객들의 반복 구매가 가장 많았던 브랜드",
       className:
         "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100",
     });
@@ -183,6 +190,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       key: "search",
       label: "🔍검색어",
       tag: "검색어",
+      title: "지난 주 검색이 가장 많았던 브랜드",
       className:
         "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100",
     });
@@ -216,6 +224,18 @@ function matchesProductFilter(
   if (product === "변형문제") return Boolean(item.변형문제);
   if (product === "워크북") return Boolean(item.워크북);
   if (product === "분석지" || product === "분석") return Boolean(item.분석지);
+  return true;
+}
+
+function matchesTextbookGroupFilter(
+  item: MergedRanking,
+  group: TextbookGroupFilter,
+): boolean {
+  if (group === "전체") return true;
+  if (group === "교과서") return Boolean(item.교과서);
+  if (group === "EBS") return Boolean(item.EBS);
+  if (group === "부교재") return Boolean(item.부교재);
+  if (group === "모의고사") return Boolean(item.모의고사);
   return true;
 }
 
@@ -269,7 +289,7 @@ export function RankingRow({
 
   return (
     <div
-      className={`flex w-full gap-3 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-4 sm:px-4 ${
+      className={`flex w-full gap-4 overflow-hidden border-b border-slate-100 px-4 py-3 sm:gap-5 sm:px-5 ${
         hasInfo1 || item.record2 || metricChips.length > 0 || showEventBadge
           ? "items-start"
           : "items-center"
@@ -285,7 +305,7 @@ export function RankingRow({
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 items-start gap-3 overflow-hidden pr-2">
+      <div className="flex min-w-0 flex-1 items-start gap-4 overflow-hidden pr-3">
         <div className="flex w-12 shrink-0 flex-col items-center gap-1.5">
           <div
             className={`flex h-10 w-12 items-center justify-center rounded-lg ${
@@ -399,7 +419,6 @@ export function RankingRow({
               aria-label={`${authorName} 자료보기`}
             >
               <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
               <span className="tabular-nums">{formatClicks(totalClicks)}</span>
             </button>
           ) : (
@@ -433,6 +452,8 @@ export default function RankingBoard({
 
   const [subject, setSubject] = useState<Subject>("영어");
   const [product, setProduct] = useState<ProductFilter>("전체");
+  const [textbookGroup, setTextbookGroup] =
+    useState<TextbookGroupFilter>("전체");
   const [category, setCategory] = useState<RankingCategory>(
     () => tabFromUrl ?? "인기",
   );
@@ -500,6 +521,7 @@ export default function RankingBoard({
   const selectSubject = (next: Subject) => {
     setSubject(next);
     setProduct("전체");
+    setTextbookGroup("전체");
   };
 
   const list = useMemo(() => {
@@ -512,13 +534,21 @@ export default function RankingBoard({
         if (!item || item.category !== category) return false;
         if (item.과목 !== subject) return false;
         if (!Number.isFinite(item.rank) || item.rank > limit) return false;
-        return matchesProductFilter(item, product);
+        if (!matchesProductFilter(item, product)) return false;
+        return matchesTextbookGroupFilter(item, textbookGroup);
       })
       .sort(
         (a, b) =>
           a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
       );
-  }, [rankings, subject, product, category, isHashtagSearch]);
+  }, [
+    rankings,
+    subject,
+    product,
+    textbookGroup,
+    category,
+    isHashtagSearch,
+  ]);
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
 
@@ -547,10 +577,10 @@ export default function RankingBoard({
                 role="tab"
                 aria-selected={selected}
                 onClick={() => selectSubject(item)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`${FILTER_PILL_CLASS} ${
                   selected
-                    ? "bg-teal-700 text-white"
-                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                    ? FILTER_PILL_SELECTED_CLASS
+                    : FILTER_PILL_IDLE_CLASS
                 }`}
               >
                 {item}
@@ -575,75 +605,108 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`relative rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
+              className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
                 selected
                   ? "bg-white text-teal-800 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
-              } ${isSearchTab ? "pr-5" : ""}`}
+              }`}
             >
-              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
               {isSearchTab ? (
-                <span
-                  aria-hidden
-                  className="absolute -top-1.5 -right-1 rotate-12 rounded-full bg-sky-500 px-1.5 py-0.5 text-[10px] font-bold text-white shadow-md"
-                >
-                  #
+                <span className="inline-flex items-center break-keep">
+                  🔍 실시간{" "}
+                  <span
+                    aria-hidden
+                    className="mx-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white"
+                  >
+                    #
+                  </span>{" "}
+                  검색
                 </span>
-              ) : null}
+              ) : (
+                <span className="break-keep">{CATEGORY_LABELS[item]}</span>
+              )}
             </button>
           );
         })}
       </div>
 
       {!isHashtagSearch ? (
-        <div className="flex items-center justify-between gap-3 px-1">
-          {productOptions.length > 0 ? (
-            <div
-              role="tablist"
-              aria-label="세부 필터"
-              className="flex min-w-0 flex-wrap justify-start gap-1.5"
-            >
-              {productOptions.map((item) => {
-                const selected = item === product;
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    onClick={() => setProduct(item)}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      selected
-                        ? "bg-slate-800 text-white"
-                        : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <span aria-hidden />
-          )}
-
-          <div className="shrink-0 text-right">
-            {weekRangeLabel ? (
-              <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                {weekRangeLabel}
-              </p>
-            ) : null}
-            {categoryDescription ? (
-              <p
-                className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
-                  weekRangeLabel ? "mt-[0.1875rem]" : ""
-                }`}
+        <>
+          <div className="flex items-center justify-between gap-3 px-1">
+            {productOptions.length > 0 ? (
+              <div
+                role="tablist"
+                aria-label="자료 종류"
+                className="flex min-w-0 flex-wrap justify-start gap-2"
               >
-                {categoryDescription}
-              </p>
-            ) : null}
+                {productOptions.map((item) => {
+                  const selected = item === product;
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setProduct(item)}
+                      className={`${FILTER_PILL_CLASS} ${
+                        selected
+                          ? FILTER_PILL_SELECTED_CLASS
+                          : FILTER_PILL_IDLE_CLASS
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <span aria-hidden />
+            )}
+
+            <div className="shrink-0 text-right">
+              {weekRangeLabel ? (
+                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+                  {weekRangeLabel}
+                </p>
+              ) : null}
+              {categoryDescription ? (
+                <p
+                  className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
+                    weekRangeLabel ? "mt-[0.1875rem]" : ""
+                  }`}
+                >
+                  {categoryDescription}
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
+
+          <div
+            role="tablist"
+            aria-label="교재 그룹"
+            className="flex flex-wrap gap-2 px-1"
+          >
+            {TEXTBOOK_GROUP_FILTERS.map((item) => {
+              const selected = item === textbookGroup;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setTextbookGroup(item)}
+                  className={`${FILTER_PILL_CLASS} ${
+                    selected
+                      ? FILTER_PILL_SELECTED_CLASS
+                      : FILTER_PILL_IDLE_CLASS
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+        </>
       ) : categoryDescription ? (
         <div className="px-1 text-right">
           <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">

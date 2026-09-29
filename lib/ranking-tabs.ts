@@ -3,6 +3,7 @@ import type {
   RankingCategory,
   Subject,
   SubjectFilter,
+  TextbookGroupFilter,
 } from "@/types/ranking";
 
 /** 클라이언트 UI(탭)에서만 쓰는 상수 — 서버 전용 모듈과 분리 */
@@ -33,6 +34,23 @@ export function productFiltersForSubject(
   if (subject === "국어") return KOREAN_PRODUCT_FILTERS;
   return [];
 }
+
+/** 교재 그룹 필터 */
+export const TEXTBOOK_GROUP_FILTERS: TextbookGroupFilter[] = [
+  "전체",
+  "교과서",
+  "EBS",
+  "부교재",
+  "모의고사",
+];
+
+/** 과목/자료/교재 그룹 공통 pill 버튼 높이 */
+export const FILTER_PILL_CLASS =
+  "rounded-full px-4 py-2 text-sm font-semibold transition";
+
+export const FILTER_PILL_SELECTED_CLASS = "bg-teal-700 text-white";
+export const FILTER_PILL_IDLE_CLASS =
+  "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900";
 
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Library, Search, X } from "lucide-react";
+import { Library, Search, X } from "lucide-react";
 import {
   cacheBannerSrc,
   getBannerImageCandidates,
@@ -136,7 +136,6 @@ export default function AuthorModal({
                     aria-label={`${authorName} 자료보기`}
                   >
                     <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
                     <span className="tabular-nums">
                       {formatClicks(totalClicks)}
                     </span>

@@ -149,6 +149,11 @@ function parseTruthyFlag(value: string): boolean {
   return true;
 }
 
+/** 교재 그룹 열: 대문자 "O"만 true, "X"/빈칸/기타는 false */
+function parseMarkO(value: string): boolean {
+  return value.trim() === "O";
+}
+
 function toBrandInfo(row: Record<string, string>): BrandInfo | null {
   const UID = cell(row, "UID", "uid", "brand_id");
   const 저자명 = cell(row, "저자명", "brand_name", "nickname", "name");
@@ -171,6 +176,10 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
   const 변형문제Raw = cell(row, "변형문제", "변형", "variant");
   const 워크북Raw = cell(row, "워크북", "workbook", "Workbook");
   const 분석지Raw = cell(row, "분석지", "분석", "analysis");
+  const 교과서Raw = cell(row, "교과서", "textbook", "Textbook");
+  const ebsRaw = cell(row, "EBS", "ebs", "Ebs");
+  const 부교재Raw = cell(row, "부교재", "supplement", "부교");
+  const 모의고사Raw = cell(row, "모의고사", "mock", "모의");
 
   return {
     UID,
@@ -186,6 +195,10 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
     ...(parseTruthyFlag(변형문제Raw) ? { 변형문제: true } : {}),
     ...(parseTruthyFlag(워크북Raw) ? { 워크북: true } : {}),
     ...(parseTruthyFlag(분석지Raw) ? { 분석지: true } : {}),
+    ...(parseMarkO(교과서Raw) ? { 교과서: true } : {}),
+    ...(parseMarkO(ebsRaw) ? { EBS: true } : {}),
+    ...(parseMarkO(부교재Raw) ? { 부교재: true } : {}),
+    ...(parseMarkO(모의고사Raw) ? { 모의고사: true } : {}),
   };
 }
 

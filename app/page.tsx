@@ -75,6 +75,9 @@ export default async function HomePage() {
         <header className="mx-auto mb-8 w-full max-w-4xl text-center sm:mb-10">
           <h1 className="break-keep font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
             쏠북, 좋은 브랜드의 발견
+            <span className="align-super ml-1 rounded-md bg-blue-50 px-1.5 py-0.5 text-[10px] font-bold text-blue-500">
+              Beta
+            </span>
           </h1>
         </header>
 

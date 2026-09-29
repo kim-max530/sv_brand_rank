@@ -37,6 +37,11 @@ export interface BrandInfo {
   변형문제?: boolean;
   워크북?: boolean;
   분석지?: boolean;
+  /** brand_info 교재 그룹 플래그 (열 값이 "O") */
+  교과서?: boolean;
+  EBS?: boolean;
+  부교재?: boolean;
+  모의고사?: boolean;
 }
 
 /** 메인 과목 필터 (전체 포함) */
@@ -49,6 +54,14 @@ export type ProductFilter =
   | "워크북"
   | "분석지"
   | "분석";
+
+/** 교재 그룹 필터 */
+export type TextbookGroupFilter =
+  | "전체"
+  | "교과서"
+  | "EBS"
+  | "부교재"
+  | "모의고사";
 
 export interface RankingRecord {
   UID: string;

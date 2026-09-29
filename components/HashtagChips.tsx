@@ -9,6 +9,8 @@ export type MetricChip = {
   label: string;
   tag: string;
   className?: string;
+  /** hover 안내 (시스템 뱃지) */
+  title?: string;
 };
 
 /** record2 해시태그 먼저, metricChips는 맨 뒤에 이어붙임 */
@@ -43,6 +45,7 @@ export default function HashtagChips({
         <Link
           key={chip.key}
           href={hashtagHref(chip.tag)}
+          title={chip.title}
           className={
             chip.className ??
             "inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold transition hover:border-teal-300 hover:bg-teal-50"
