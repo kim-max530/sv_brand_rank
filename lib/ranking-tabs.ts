@@ -72,7 +72,7 @@ export const RANKING_CATEGORIES: RankingCategory[] = [
 export const CATEGORY_LABELS: Record<RankingCategory, string> = {
   추천: "✨ 추천 랭킹",
   인기: "🔥 브랜드 랭킹",
-  해시검색: "🔍 실시간 검색",
+  해시검색: "🔍 실시간 (#)검색",
   급성장: "🚀 급성장",
   많은: "🤝 검색",
   "계속 찾는": "💖 재구매",

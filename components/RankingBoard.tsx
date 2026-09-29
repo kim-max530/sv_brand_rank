@@ -173,7 +173,11 @@ function openAuthorLink(item: MergedRanking) {
 
 function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
   const chips: MetricChip[] = [];
-  if (item.inGrowth) {
+  /** HOT·재구매·검색어는 해당 탭 순위 상위 5명만 노출 */
+  const showTopMetricBadges =
+    Number.isFinite(item.rank) && item.rank >= 1 && item.rank <= 5;
+
+  if (showTopMetricBadges && item.inGrowth) {
     chips.push({
       key: "hot",
       label: "🚀HOT",
@@ -183,7 +187,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
         "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
     });
   }
-  if (item.inRepurchase) {
+  if (showTopMetricBadges && item.inRepurchase) {
     chips.push({
       key: "repurchase",
       label: "💖재구매",
@@ -193,7 +197,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
         "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
     });
   }
-  if (item.inSearch) {
+  if (showTopMetricBadges && item.inSearch) {
     chips.push({
       key: "search",
       label: "🔍검색어",
@@ -434,7 +438,7 @@ export function RankingRow({
             </div>
 
             {/* 우측 열: 자료보기 + 방문수 */}
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-0.5">
               <button
                 type="button"
                 onClick={handleActionClick}
@@ -443,11 +447,9 @@ export function RankingRow({
               >
                 <FileText className="h-5 w-5" aria-hidden />
               </button>
-              <div className="flex h-5 items-center justify-center">
-                <span className="text-[11px] font-semibold tabular-nums text-gray-600">
-                  {formatClicks(totalClicks)}
-                </span>
-              </div>
+              <span className="text-[11px] font-semibold tabular-nums leading-none text-gray-600">
+                {formatClicks(totalClicks)}
+              </span>
             </div>
           </div>
         ) : (
@@ -609,33 +611,25 @@ export default function RankingBoard({
   };
 
   const metaLabel =
-    !isHashtagSearch && (weekRangeLabel || categoryDescription) ? (
-      <div className="pointer-events-none absolute top-[-30px] right-0 z-10 max-w-[min(100%,18rem)] text-right sm:max-w-xs">
-        {weekRangeLabel ? (
+    weekRangeLabel || categoryDescription ? (
+      <div className="w-full text-right">
+        {weekRangeLabel && !isHashtagSearch ? (
           <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
             {weekRangeLabel}
           </p>
         ) : null}
         {categoryDescription ? (
-          <p
-            className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
-              weekRangeLabel ? "mt-[0.1875rem]" : ""
-            }`}
-          >
+          <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
             {categoryDescription}
           </p>
         ) : null}
       </div>
-    ) : isHashtagSearch && categoryDescription ? (
-      <div className="pointer-events-none absolute top-[-30px] right-0 z-10 max-w-[min(100%,18rem)] text-right sm:max-w-xs">
-        <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-          {categoryDescription}
-        </p>
-      </div>
     ) : null;
 
   return (
-    <section className="relative mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
+      {metaLabel}
+
       <div
         role="tablist"
         aria-label="과목"
@@ -673,7 +667,6 @@ export default function RankingBoard({
       >
         {RANKING_CATEGORIES.map((item) => {
           const selected = item === category;
-          const isSearchTab = item === "해시검색";
           return (
             <button
               key={item}
@@ -687,20 +680,7 @@ export default function RankingBoard({
                   : "font-medium text-slate-600 hover:text-slate-900"
               }`}
             >
-              {isSearchTab ? (
-                <span className="inline-flex items-center break-keep">
-                  🔍 실시간{" "}
-                  <span
-                    aria-hidden
-                    className="text-inherit font-bold text-green-500"
-                  >
-                    #
-                  </span>
-                  검색
-                </span>
-              ) : (
-                <span className="break-keep">{CATEGORY_LABELS[item]}</span>
-              )}
+              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
             </button>
           );
         })}
@@ -795,56 +775,53 @@ export default function RankingBoard({
         </div>
       ) : null}
 
-      <div className="relative">
-        {metaLabel}
-        {isHashtagSearch ? (
-          <HashtagSearchPanel />
-        ) : (
-          <div
-            role="tabpanel"
-            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]"
-          >
-            {list.length === 0 ? (
-              rankings.length === 0 ? (
-                <p className="px-4 py-12 text-center text-sm text-slate-500">
-                  표시할 랭킹 데이터가 없습니다.
-                </p>
-              ) : (
-                <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
-                  <p className="break-keep text-sm font-medium text-slate-600 sm:text-base">
-                    앗, 조건에 맞는 브랜드가 없어요 🥲
-                  </p>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
-                  >
-                    필터 초기화
-                  </button>
-                </div>
-              )
+      {isHashtagSearch ? (
+        <HashtagSearchPanel />
+      ) : (
+        <div
+          role="tabpanel"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]"
+        >
+          {list.length === 0 ? (
+            rankings.length === 0 ? (
+              <p className="px-4 py-12 text-center text-sm text-slate-500">
+                표시할 랭킹 데이터가 없습니다.
+              </p>
             ) : (
-              <ul>
-                {list.map((item, index) => (
-                  <li
-                    key={`${item.category}-${item.과목}-${item.UID}-${item.rank}`}
-                  >
-                    <RankingRow
-                      item={item}
-                      onOpenIntro={setSelectedAuthor}
-                      priority={index < 8}
-                      totalClicks={
-                        clickCounts[item.UID] ?? item.totalClicks ?? 0
-                      }
-                      onMaterialsClick={handleMaterialsClick}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-      </div>
+              <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+                <p className="break-keep text-sm font-medium text-slate-600 sm:text-base">
+                  앗, 조건에 맞는 브랜드가 없어요 🥲
+                </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+                >
+                  필터 초기화
+                </button>
+              </div>
+            )
+          ) : (
+            <ul>
+              {list.map((item, index) => (
+                <li
+                  key={`${item.category}-${item.과목}-${item.UID}-${item.rank}`}
+                >
+                  <RankingRow
+                    item={item}
+                    onOpenIntro={setSelectedAuthor}
+                    priority={index < 8}
+                    totalClicks={
+                      clickCounts[item.UID] ?? item.totalClicks ?? 0
+                    }
+                    onMaterialsClick={handleMaterialsClick}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <AuthorModal
         author={

@@ -129,7 +129,7 @@ export default function AuthorModal({
                   </div>
                 ) : null}
                 {address ? (
-                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-row items-center gap-1.5">
                     <button
                       type="button"
                       onClick={openHomepage}
@@ -138,11 +138,9 @@ export default function AuthorModal({
                     >
                       <FileText className="h-5 w-5" aria-hidden />
                     </button>
-                    <div className="flex h-5 items-center justify-center">
-                      <span className="text-[11px] font-semibold tabular-nums text-gray-600">
-                        {formatClicks(totalClicks)}
-                      </span>
-                    </div>
+                    <span className="text-[11px] font-semibold tabular-nums text-gray-600">
+                      {formatClicks(totalClicks)}
+                    </span>
                   </div>
                 ) : (
                   <button
