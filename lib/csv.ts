@@ -2,6 +2,11 @@ import { readFile } from "fs/promises";
 import path from "path";
 import Papa from "papaparse";
 import {
+  applyHashtagOverrides,
+  applyHashtagOverridesToMap,
+  fetchAuthorHashtagOverrides,
+} from "@/lib/author-hashtags";
+import {
   MISSING_RANK_FALLBACK,
   NEW_BADGE_RANK_THRESHOLD,
   POPULAR_RANK_CATEGORIES,
@@ -507,7 +512,9 @@ export function toPrevRankFilename(filename: string): string {
 }
 
 /** brand_info.csv 전체 로드 */
-export async function fetchBrandInfoList(): Promise<BrandInfo[]> {
+export async function fetchBrandInfoList(options?: {
+  applyOverrides?: boolean;
+}): Promise<BrandInfo[]> {
   const bytes = await fetchCsvBytes("brand_info.csv");
   if (!bytes) return [];
 
@@ -520,7 +527,11 @@ export async function fetchBrandInfoList(): Promise<BrandInfo[]> {
     seen.add(info.UID);
     list.push(info);
   }
-  return list;
+
+  if (options?.applyOverrides === false) return list;
+
+  const overrides = await fetchAuthorHashtagOverrides();
+  return applyHashtagOverrides(list, overrides);
 }
 
 /** brand_info.csv에서 저자명 부분일치 검색 */
@@ -540,8 +551,9 @@ export async function searchBrandAuthors(
 }
 
 export async function fetchMergedRankings(): Promise<MergedRanking[]> {
-  const [brandInfoBytes, ...fileBytes] = await Promise.all([
+  const [brandInfoBytes, overrides, ...fileBytes] = await Promise.all([
     fetchCsvBytes("brand_info.csv"),
+    fetchAuthorHashtagOverrides(),
     ...RANKING_FILES.flatMap(({ file }) => [
       fetchCsvBytes(file),
       fetchCsvBytes(toPrevRankFilename(file)),
@@ -560,6 +572,8 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
       "brand_info.csv가 없어 랭킹 파일의 brand_name으로 표시합니다.",
     );
   }
+
+  applyHashtagOverridesToMap(brandMap, overrides);
 
   const categoryRankMaps: CategoryRankMaps = new Map();
   const prevCategoryRankMaps: CategoryRankMaps = new Map();

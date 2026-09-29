@@ -111,7 +111,7 @@ export default function HashtagSearchPanel() {
 
       <aside className="w-full shrink-0 rounded-xl border border-slate-200/80 bg-white/95 p-3 shadow-sm lg:sticky lg:top-4 lg:w-44">
         <p className="text-[11px] font-semibold tracking-tight text-slate-600">
-          다른 유저가 방금 클릭한 해시태그
+          방금 검색된 해시태그
         </p>
         {recentTags.length === 0 ? (
           <p className="mt-2 text-xs text-slate-400">아직 클릭 기록이 없습니다.</p>

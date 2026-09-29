@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FileText, Filter, UserRound } from "lucide-react";
+import { FileText, Filter, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
@@ -21,6 +21,7 @@ import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
+  FILTER_AUX_PILL_CLASS,
   FILTER_PILL_CLASS,
   FILTER_PILL_IDLE_CLASS,
   FILTER_PILL_SELECTED_CLASS,
@@ -404,47 +405,54 @@ export function RankingRow({
           </button>
         ) : null}
 
-        <div className="flex flex-row items-start justify-center gap-4">
-          {/* 좌측 열: 소개(프로필) + Event */}
-          <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={openIntroModal}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
-              aria-label={`${authorName} 저자 소개 열기`}
-            >
-              <UserRound className="h-5 w-5" aria-hidden />
-            </button>
-            <div className="flex h-5 items-center justify-center">
-              {showEventBadge ? (
-                <span className="inline-flex items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
-                  Event
-                </span>
-              ) : null}
+        {address ? (
+          <div className="flex flex-row items-start justify-center gap-4">
+            {/* 좌측 열: 소개(프로필) + Event */}
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                onClick={openIntroModal}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
+                aria-label={`${authorName} 저자 소개 열기`}
+              >
+                <UserRound className="h-5 w-5" aria-hidden />
+              </button>
+              <div className="flex h-5 items-center justify-center">
+                {showEventBadge ? (
+                  <span className="inline-flex items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
+                    Event
+                  </span>
+                ) : null}
+              </div>
             </div>
-          </div>
 
-          {/* 우측 열: 자료보기 + 방문수 */}
-          <div className="flex flex-col items-center gap-1">
-            <button
-              type="button"
-              onClick={handleActionClick}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
-              aria-label={
-                address
-                  ? `${authorName} 자료보기`
-                  : `${authorName} 검색하기`
-              }
-            >
-              <FileText className="h-5 w-5" aria-hidden />
-            </button>
-            <div className="flex h-5 items-center justify-center">
-              <span className="text-[11px] font-semibold tabular-nums text-gray-600">
-                {formatClicks(totalClicks)}
-              </span>
+            {/* 우측 열: 자료보기 + 방문수 */}
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                onClick={handleActionClick}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
+                aria-label={`${authorName} 자료보기`}
+              >
+                <FileText className="h-5 w-5" aria-hidden />
+              </button>
+              <div className="flex h-5 items-center justify-center">
+                <span className="text-[11px] font-semibold tabular-nums text-gray-600">
+                  {formatClicks(totalClicks)}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleActionClick}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
+            aria-label={`${authorName} 검색하기`}
+          >
+            <Search className="h-5 w-5" aria-hidden />
+          </button>
+        )}
 
         {/* 교재 목록(range3) — 일시 비표시
         {range3 ? (
@@ -587,30 +595,36 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-1 sm:px-0">
-      {!isHashtagSearch ? (
-        <div role="tablist" aria-label="과목" className="flex flex-wrap gap-2">
-          {SUBJECTS.map((item) => {
-            const selected = item === subject;
-            return (
-              <button
-                key={item}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => selectSubject(item)}
-                className={`${FILTER_PILL_CLASS} ${
-                  selected
-                    ? FILTER_PILL_SELECTED_CLASS
-                    : FILTER_PILL_IDLE_CLASS
-                }`}
-              >
-                {item}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-1.5 px-1 sm:px-0">
+      <div
+        role="tablist"
+        aria-label="과목"
+        aria-hidden={isHashtagSearch}
+        className={`flex flex-wrap gap-1.5 ${
+          isHashtagSearch ? "pointer-events-none invisible select-none" : ""
+        }`}
+      >
+        {SUBJECTS.map((item) => {
+          const selected = item === subject;
+          return (
+            <button
+              key={item}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              tabIndex={isHashtagSearch ? -1 : undefined}
+              onClick={() => selectSubject(item)}
+              className={`${FILTER_PILL_CLASS} ${
+                selected
+                  ? FILTER_PILL_SELECTED_CLASS
+                  : FILTER_PILL_IDLE_CLASS
+              }`}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
 
       <div
         role="tablist"
@@ -627,10 +641,10 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap transition sm:text-sm ${
+              className={`rounded-lg px-3 py-2 text-center text-xs whitespace-nowrap transition sm:text-sm ${
                 selected
-                  ? "bg-white text-teal-800 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white font-bold text-teal-800 shadow-sm"
+                  : "font-medium text-slate-600 hover:text-slate-900"
               }`}
             >
               {isSearchTab ? (
@@ -638,7 +652,7 @@ export default function RankingBoard({
                   🔍 실시간{" "}
                   <span
                     aria-hidden
-                    className="mx-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white"
+                    className="mx-0.5 text-[10px] font-extrabold text-green-500"
                   >
                     #
                   </span>{" "}
@@ -652,98 +666,29 @@ export default function RankingBoard({
         })}
       </div>
 
-      {!isHashtagSearch ? (
-        <>
-          <div className="flex items-center justify-between gap-3 px-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              {productOptions.length > 0 ? (
-                <div
-                  role="tablist"
-                  aria-label="자료 종류"
-                  className="flex min-w-0 flex-wrap justify-start gap-2"
-                >
-                  {productOptions.map((item) => {
-                    const selected = item === product;
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        role="tab"
-                        aria-selected={selected}
-                        onClick={() => setProduct(item)}
-                        className={`${FILTER_PILL_CLASS} ${
-                          selected
-                            ? FILTER_PILL_SELECTED_CLASS
-                            : FILTER_PILL_IDLE_CLASS
-                        }`}
-                      >
-                        {item}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => setIsDetailOpen((open) => !open)}
-                aria-expanded={isDetailOpen}
-                aria-controls="textbook-group-filters"
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold transition ${
-                  isDetailOpen
-                    ? "bg-slate-800 text-white"
-                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
-                }`}
-              >
-                <Filter className="h-3.5 w-3.5" aria-hidden />
-                세부
-              </button>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-end gap-1 text-right">
-              {weekRangeLabel ? (
-                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                  {weekRangeLabel}
-                </p>
-              ) : null}
-              {categoryDescription ? (
-                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                  {categoryDescription}
-                </p>
-              ) : null}
-              <a
-                href="https://solvook.com/#:~:text=%EC%84%A0%ED%83%9D%ED%95%9C%20%EA%B5%90%EC%9E%AC%EC%9D%98%20%EC%9E%90%EB%A3%8C%EB%A5%BC%20%EB%B3%B4%EC%97%AC%EB%93%9C%EB%A0%A4%EC%9A%94"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="break-keep text-xs font-medium text-blue-600 transition hover:underline sm:text-sm"
-              >
-                내가 찾고있는 교재별 인기 자료 확인하기 ↗
-              </a>
-            </div>
-          </div>
-
-          <div
-            id="textbook-group-filters"
-            className={`overflow-hidden transition-all duration-300 ease-out ${
-              isDetailOpen
-                ? "max-h-24 opacity-100"
-                : "pointer-events-none max-h-0 opacity-0"
-            }`}
-          >
+      <div
+        aria-hidden={isHashtagSearch}
+        className={`flex flex-col gap-0.5 ${
+          isHashtagSearch ? "pointer-events-none invisible select-none" : ""
+        }`}
+      >
+        <div className="flex items-center gap-1.5 px-1">
+          {productOptions.length > 0 ? (
             <div
               role="tablist"
-              aria-label="교재 그룹"
-              className="flex flex-wrap gap-2 px-1 pt-0.5"
+              aria-label="자료 종류"
+              className="flex min-w-0 flex-wrap justify-start gap-1.5"
             >
-              {TEXTBOOK_GROUP_FILTERS.map((item) => {
-                const selected = item === textbookGroup;
+              {productOptions.map((item) => {
+                const selected = item === product;
                 return (
                   <button
                     key={item}
                     type="button"
                     role="tab"
                     aria-selected={selected}
-                    onClick={() => setTextbookGroup(item)}
+                    tabIndex={isHashtagSearch ? -1 : undefined}
+                    onClick={() => setProduct(item)}
                     className={`${FILTER_PILL_CLASS} ${
                       selected
                         ? FILTER_PILL_SELECTED_CLASS
@@ -755,9 +700,89 @@ export default function RankingBoard({
                 );
               })}
             </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => setIsDetailOpen((open) => !open)}
+            aria-expanded={isDetailOpen}
+            aria-controls="textbook-group-filters"
+            tabIndex={isHashtagSearch ? -1 : undefined}
+            className={`${FILTER_AUX_PILL_CLASS} ${
+              isDetailOpen
+                ? "bg-slate-800 text-white"
+                : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+            }`}
+          >
+            <Filter className="h-3 w-3" aria-hidden />
+            세부
+          </button>
+        </div>
+
+        <div
+          id="textbook-group-filters"
+          className={`overflow-hidden transition-all duration-300 ease-out ${
+            isDetailOpen
+              ? "max-h-20 opacity-100"
+              : "pointer-events-none max-h-0 opacity-0"
+          }`}
+        >
+          <div
+            role="tablist"
+            aria-label="교재 그룹"
+            className="flex flex-wrap items-center gap-1.5 px-1"
+          >
+            {TEXTBOOK_GROUP_FILTERS.map((item) => {
+              const selected = item === textbookGroup;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  tabIndex={isHashtagSearch || !isDetailOpen ? -1 : undefined}
+                  onClick={() => setTextbookGroup(item)}
+                  className={`${FILTER_PILL_CLASS} ${
+                    selected
+                      ? FILTER_PILL_SELECTED_CLASS
+                      : FILTER_PILL_IDLE_CLASS
+                  }`}
+                >
+                  {item}
+                </button>
+              );
+            })}
+            <a
+              href="https://solvook.com/#:~:text=%EC%84%A0%ED%83%9D%ED%95%9C%20%EA%B5%90%EC%9E%AC%EC%9D%98%20%EC%9E%90%EB%A3%8C%EB%A5%BC%20%EB%B3%B4%EC%97%AC%EB%93%9C%EB%A0%A4%EC%9A%94"
+              target="_blank"
+              rel="noopener noreferrer"
+              tabIndex={isHashtagSearch || !isDetailOpen ? -1 : undefined}
+              className={`${FILTER_AUX_PILL_CLASS} bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900`}
+            >
+              교재 별 랭킹 확인하기 ↗
+            </a>
           </div>
-        </>
-      ) : categoryDescription ? (
+        </div>
+      </div>
+
+      {(weekRangeLabel || categoryDescription) && !isHashtagSearch ? (
+        <div className="px-1 text-right">
+          {weekRangeLabel ? (
+            <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
+              {weekRangeLabel}
+            </p>
+          ) : null}
+          {categoryDescription ? (
+            <p
+              className={`break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80 ${
+                weekRangeLabel ? "mt-[0.1875rem]" : ""
+              }`}
+            >
+              {categoryDescription}
+            </p>
+          ) : null}
+        </div>
+      ) : isHashtagSearch && categoryDescription ? (
         <div className="px-1 text-right">
           <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
             {categoryDescription}
