@@ -6,7 +6,7 @@ const INITIAL_CLICKS_MIN = 12;
 const INITIAL_CLICKS_MAX = 1000;
 const IN_QUERY_CHUNK = 200;
 
-/** 12 ~ 1000 사이 랜덤 초기 클릭수 */
+/** 신규 UID 전용: 12 ~ 1000 사이 랜덤 초기 클릭수 */
 export function randomInitialClicks(): number {
   return (
     Math.floor(Math.random() * (INITIAL_CLICKS_MAX - INITIAL_CLICKS_MIN + 1)) +
@@ -23,8 +23,10 @@ function chunkArray<T>(items: T[], size: number): T[][] {
 }
 
 /**
- * 랭킹 UID들에 대해 author_stats를 조회하고,
- * DB에 없는 UID는 12~1000 랜덤으로 INSERT한 뒤 Map에 즉시 반영합니다.
+ * 랭킹 UID에 대해 author_stats를 조회한다.
+ * - 기존 UID: total_clicks를 절대 덮어쓰지 않고 그대로 유지
+ * - 신규 UID만: 12~1000 랜덤으로 INSERT (on conflict do nothing)
+ * CSV 업로드/페이지 로드 시에도 누적 클릭수는 보존된다.
  */
 export async function ensureAuthorStatsForUids(
   uids: string[],
@@ -67,29 +69,32 @@ export async function ensureAuthorStatsForUids(
       updated_at: new Date().toISOString(),
     }));
 
-    // 화면 렌더링에 즉시 반영 (DB 실패 여부와 무관)
+    // 화면에는 즉시 반영 (레이스 시 아래에서 DB 실값으로 재동기화)
     for (const row of inserts) {
       result.set(row.uid, row.total_clicks);
     }
 
     for (const chunk of chunkArray(inserts, IN_QUERY_CHUNK)) {
-      const { error: upsertError } = await supabase
+      // ignoreDuplicates = ON CONFLICT DO NOTHING → 기존 total_clicks 보존
+      const { error: insertError } = await supabase
         .from("author_stats")
         .upsert(chunk, { onConflict: "uid", ignoreDuplicates: true });
 
-      if (upsertError) {
-        console.warn("[author_stats] upsert", upsertError.message);
-        // insert 실패 시 일반 upsert로 재시도
-        const { error: retryError } = await supabase
-          .from("author_stats")
-          .upsert(chunk, { onConflict: "uid" });
-        if (retryError) {
-          console.warn("[author_stats] upsert retry", retryError.message);
+      if (insertError) {
+        console.warn("[author_stats] insert-new", insertError.message);
+        // 행 단위 DO NOTHING 재시도 (절대 total_clicks 갱신 upsert 금지)
+        for (const row of chunk) {
+          const { error: rowError } = await supabase
+            .from("author_stats")
+            .upsert(row, { onConflict: "uid", ignoreDuplicates: true });
+          if (rowError) {
+            console.warn("[author_stats] insert-new row", rowError.message);
+          }
         }
       }
     }
 
-    // DB에 실제로 들어간 값으로 재동기화 (누락 UID는 위에서 넣은 랜덤 유지)
+    // DB에 실제로 들어 있는 값으로만 재동기화 (기존 UID 클릭수 보존 확인)
     for (const chunk of chunkArray(
       inserts.map((row) => row.uid),
       IN_QUERY_CHUNK,
@@ -114,7 +119,7 @@ export async function ensureAuthorStatsForUids(
     return result;
   } catch (error) {
     console.warn("[author_stats]", error);
-    // DB 통신 실패 시에도 누락 UID에 랜덤값을 채워 화면이 비지 않게 함
+    // DB 실패 시에만 미존재 UID에 임시 랜덤값 (기존 조회분은 유지)
     for (const uid of unique) {
       if (!result.has(uid)) {
         result.set(uid, randomInitialClicks());
@@ -124,7 +129,7 @@ export async function ensureAuthorStatsForUids(
   }
 }
 
-/** total_clicks +1. 성공 시 새 값, 실패 시 null */
+/** total_clicks +1. 성공 시 새 값, 실패 시 null. 기존 값은 절대 0으로 리셋하지 않음. */
 export async function incrementAuthorClicks(
   uid: string,
 ): Promise<number | null> {
@@ -158,26 +163,50 @@ export async function incrementAuthorClicks(
       return null;
     }
 
-    const next =
-      current == null
-        ? randomInitialClicks()
-        : Math.max(0, Number(current.total_clicks) || 0) + 1;
+    if (current != null) {
+      const next = Math.max(0, Number(current.total_clicks) || 0) + 1;
+      const { error: updateError } = await supabase
+        .from("author_stats")
+        .update({
+          total_clicks: next,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("uid", trimmed);
 
-    const { error: writeError } = await supabase.from("author_stats").upsert(
-      {
-        uid: trimmed,
-        total_clicks: next,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "uid" },
-    );
+      if (updateError) {
+        console.warn("[author_stats] increment update", updateError.message);
+        return null;
+      }
+      return next;
+    }
 
-    if (writeError) {
-      console.warn("[author_stats] increment upsert", writeError.message);
+    // 완전 신규 UID: 초기 랜덤값으로 INSERT만 (덮어쓰기 없음)
+    const initial = randomInitialClicks();
+    const { error: insertError } = await supabase
+      .from("author_stats")
+      .upsert(
+        {
+          uid: trimmed,
+          total_clicks: initial,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "uid", ignoreDuplicates: true },
+      );
+
+    if (insertError) {
+      console.warn("[author_stats] increment insert", insertError.message);
       return null;
     }
 
-    return next;
+    const { data: after } = await supabase
+      .from("author_stats")
+      .select("total_clicks")
+      .eq("uid", trimmed)
+      .maybeSingle();
+
+    return after != null
+      ? Math.max(0, Number(after.total_clicks) || 0)
+      : initial;
   } catch (error) {
     console.warn("[author_stats] increment", error);
     return null;

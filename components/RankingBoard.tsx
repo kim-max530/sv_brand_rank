@@ -190,7 +190,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       tag: "재구매",
       title: "지난 주 단골 고객들의 반복 구매가 가장 많았던 브랜드",
       className:
-        "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100",
+        "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
     });
   }
   if (item.inSearch) {
@@ -200,7 +200,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       tag: "검색어",
       title: "지난 주 검색이 가장 많았던 브랜드",
       className:
-        "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100",
+        "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-600 transition hover:border-sky-300 hover:bg-sky-100",
     });
   }
   if (item.isInPopular) {
@@ -209,7 +209,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       label: "🔥인기Top",
       tag: "인기Top",
       className:
-        "inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 transition hover:border-amber-300 hover:bg-amber-100",
+        "inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-600 transition hover:border-sky-300 hover:bg-sky-100",
     });
   }
   if (item.isInRecommend) {
@@ -218,7 +218,7 @@ function buildSystemBadgeChips(item: MergedRanking): MetricChip[] {
       label: "✨쏠북Pick",
       tag: "쏠북Pick",
       className:
-        "inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-700 transition hover:border-violet-300 hover:bg-violet-100",
+        "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100",
     });
   }
   return chips;
@@ -561,6 +561,13 @@ export default function RankingBoard({
     setTextbookGroup("전체");
   };
 
+  const resetFilters = () => {
+    setSubject("영어");
+    setProduct("전체");
+    setTextbookGroup("전체");
+    setIsDetailOpen(false);
+  };
+
   const list = useMemo(() => {
     if (isHashtagSearch || !Array.isArray(rankings)) return [];
 
@@ -603,7 +610,7 @@ export default function RankingBoard({
 
   const metaLabel =
     !isHashtagSearch && (weekRangeLabel || categoryDescription) ? (
-      <div className="absolute right-0 bottom-full z-10 mb-1 max-w-[min(100%,18rem)] text-right sm:max-w-xs">
+      <div className="pointer-events-none absolute top-[-30px] right-0 z-10 max-w-[min(100%,18rem)] text-right sm:max-w-xs">
         {weekRangeLabel ? (
           <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
             {weekRangeLabel}
@@ -620,7 +627,7 @@ export default function RankingBoard({
         ) : null}
       </div>
     ) : isHashtagSearch && categoryDescription ? (
-      <div className="absolute right-0 bottom-full z-10 mb-1 max-w-[min(100%,18rem)] text-right sm:max-w-xs">
+      <div className="pointer-events-none absolute top-[-30px] right-0 z-10 max-w-[min(100%,18rem)] text-right sm:max-w-xs">
         <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
           {categoryDescription}
         </p>
@@ -628,7 +635,7 @@ export default function RankingBoard({
     ) : null;
 
   return (
-    <section className="relative mx-auto flex w-full max-w-4xl flex-col gap-y-4 px-1 sm:px-0">
+    <section className="relative mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
       <div
         role="tablist"
         aria-label="과목"
@@ -683,7 +690,10 @@ export default function RankingBoard({
               {isSearchTab ? (
                 <span className="inline-flex items-center break-keep">
                   🔍 실시간{" "}
-                  <span aria-hidden className="text-inherit font-bold text-green-500">
+                  <span
+                    aria-hidden
+                    className="text-inherit font-bold text-green-500"
+                  >
                     #
                   </span>
                   검색
@@ -744,7 +754,7 @@ export default function RankingBoard({
           }`}
         >
           <Filter className="h-3.5 w-3.5" aria-hidden />
-          세부
+          세부 {isDetailOpen ? "▴" : "▾"}
         </button>
       </div>
 
@@ -795,9 +805,24 @@ export default function RankingBoard({
             className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]"
           >
             {list.length === 0 ? (
-              <p className="px-4 py-12 text-center text-sm text-slate-500">
-                표시할 랭킹 데이터가 없습니다.
-              </p>
+              rankings.length === 0 ? (
+                <p className="px-4 py-12 text-center text-sm text-slate-500">
+                  표시할 랭킹 데이터가 없습니다.
+                </p>
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+                  <p className="break-keep text-sm font-medium text-slate-600 sm:text-base">
+                    앗, 조건에 맞는 브랜드가 없어요 🥲
+                  </p>
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+                  >
+                    필터 초기화
+                  </button>
+                </div>
+              )
             ) : (
               <ul>
                 {list.map((item, index) => (
@@ -808,7 +833,9 @@ export default function RankingBoard({
                       item={item}
                       onOpenIntro={setSelectedAuthor}
                       priority={index < 8}
-                      totalClicks={clickCounts[item.UID] ?? item.totalClicks ?? 0}
+                      totalClicks={
+                        clickCounts[item.UID] ?? item.totalClicks ?? 0
+                      }
                       onMaterialsClick={handleMaterialsClick}
                     />
                   </li>

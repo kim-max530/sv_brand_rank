@@ -1,5 +1,7 @@
 -- Supabase SQL Editor에서 실행하세요.
 -- 저자별 누적 클릭수 (자료보기)
+-- 주의: total_clicks는 CSV 업로드/동기화 시 덮어쓰지 마세요.
+--       신규 UID INSERT만 허용하고, 기존 행은 increment_author_clicks로만 증가시킵니다.
 
 create table if not exists public.author_stats (
   uid text primary key,

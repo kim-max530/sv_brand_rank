@@ -32,7 +32,7 @@ export default function HashtagChips({
         <Link
           key={tag}
           href={hashtagHref(tag)}
-          className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-teal-700 transition hover:border-teal-300 hover:bg-teal-50"
+          className="inline-flex items-center rounded-full border border-slate-200 bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-200 hover:text-gray-800"
           onClick={(event) => {
             event.stopPropagation();
             trackAnalyticsEvent("hashtag_click", tag);
@@ -48,7 +48,7 @@ export default function HashtagChips({
           title={chip.title}
           className={
             chip.className ??
-            "inline-flex items-center rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-bold transition hover:border-teal-300 hover:bg-teal-50"
+            "inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100"
           }
           onClick={(event) => {
             event.stopPropagation();
