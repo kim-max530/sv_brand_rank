@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { FileText, Search, X } from "lucide-react";
+import { ExternalLink, Library, Search, X } from "lucide-react";
 import {
   cacheBannerSrc,
   getBannerImageCandidates,
@@ -132,12 +132,12 @@ export default function AuthorModal({
                   <button
                     type="button"
                     onClick={openHomepage}
-                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 transition-colors hover:text-gray-900"
                     aria-label={`${authorName} 자료보기`}
                   >
-                    <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span>[자료보기]</span>
-                    <span className="tabular-nums text-blue-500/90">
+                    <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+                    <span className="tabular-nums">
                       {formatClicks(totalClicks)}
                     </span>
                   </button>
@@ -145,7 +145,7 @@ export default function AuthorModal({
                   <button
                     type="button"
                     onClick={openHomepage}
-                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+                    className="rounded-lg p-1.5 text-gray-500 transition hover:text-gray-900"
                     aria-label={`${authorName} 검색하기`}
                   >
                     <Search className="h-5 w-5" />

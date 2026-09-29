@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FileText, Search, UserRound } from "lucide-react";
+import { ExternalLink, Library, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
@@ -385,7 +385,7 @@ export function RankingRow({
           </button>
         ) : null}
 
-        <div className="flex max-w-[7.5rem] flex-col items-end justify-center gap-1.5 sm:max-w-[10rem] sm:w-[10rem]">
+        <div className="flex w-40 flex-col items-center justify-center gap-1.5 sm:w-48">
           {range3 ? (
             <span className="line-clamp-3 w-full break-keep text-center text-xs leading-snug text-gray-500">
               {range3.endsWith("등") ? range3 : `${range3} 등`}
@@ -395,20 +395,18 @@ export function RankingRow({
             <button
               type="button"
               onClick={handleActionClick}
-              className="flex max-w-full items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 transition-colors hover:text-gray-900"
               aria-label={`${authorName} 자료보기`}
             >
-              <FileText className="h-3 w-3 shrink-0" aria-hidden />
-              <span className="truncate">[자료보기]</span>
-              <span className="tabular-nums text-blue-500/90">
-                {formatClicks(totalClicks)}
-              </span>
+              <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="tabular-nums">{formatClicks(totalClicks)}</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleActionClick}
-              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+              className="rounded-lg p-1.5 text-gray-500 transition hover:text-gray-900"
               aria-label={`${authorName} 검색하기`}
             >
               <Search className="h-5 w-5" />
