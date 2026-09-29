@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ExternalLink, UserRound } from "lucide-react";
+import { FileText, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips, { type MetricChip } from "@/components/HashtagChips";
 import HashtagSearchPanel from "@/components/HashtagSearchPanel";
@@ -15,6 +15,8 @@ import {
   initialCandidateIndex,
 } from "@/lib/brand-images";
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
+import { formatClicks } from "@/lib/format-clicks";
+import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
@@ -223,12 +225,16 @@ export function RankingRow({
   priority,
   showRank = true,
   layout = "default",
+  totalClicks = 0,
+  onMaterialsClick,
 }: {
   item: MergedRanking;
   onOpenIntro: (item: MergedRanking) => void;
   priority?: boolean;
   showRank?: boolean;
   layout?: "default" | "hashtag";
+  totalClicks?: number;
+  onMaterialsClick?: (item: MergedRanking) => void;
 }) {
   const authorName = safeText(item.저자명) || safeText(item.UID) || "이름 없음";
   const intro = safeText(item.intro);
@@ -243,6 +249,7 @@ export function RankingRow({
   const hasInfo1 = Boolean(info1);
   const showEventBadge = Boolean(item.hasEvent);
   const metricChips = buildSystemBadgeChips(item);
+  void layout;
 
   const openProfile = () => {
     if (!hasAuthorDetail && !hasYoutube) return;
@@ -250,12 +257,20 @@ export function RankingRow({
     onOpenIntro(item);
   };
 
+  const handleActionClick = () => {
+    if (address && onMaterialsClick) {
+      onMaterialsClick(item);
+      return;
+    }
+    openAuthorLink(item);
+  };
+
   const profileClickable = hasAuthorDetail || hasYoutube;
 
   return (
     <div
       className={`flex w-full gap-3 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-4 sm:px-4 ${
-        hasInfo1 || item.record2 || metricChips.length > 0
+        hasInfo1 || item.record2 || metricChips.length > 0 || showEventBadge
           ? "items-start"
           : "items-center"
       }`}
@@ -271,34 +286,41 @@ export function RankingRow({
       ) : null}
 
       <div className="flex min-w-0 flex-1 items-start gap-3 overflow-hidden pr-2">
-        <div
-          className={`relative flex h-10 w-12 shrink-0 items-center justify-center rounded-lg ${
-            profileClickable
-              ? "cursor-pointer transition hover:bg-slate-50/80"
-              : ""
-          }`}
-          onClick={profileClickable ? openProfile : undefined}
-          onKeyDown={
-            profileClickable
-              ? (event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    openProfile();
+        <div className="flex w-12 shrink-0 flex-col items-center gap-1.5">
+          <div
+            className={`flex h-10 w-12 items-center justify-center rounded-lg ${
+              profileClickable
+                ? "cursor-pointer transition hover:bg-slate-50/80"
+                : ""
+            }`}
+            onClick={profileClickable ? openProfile : undefined}
+            onKeyDown={
+              profileClickable
+                ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openProfile();
+                    }
                   }
-                }
-              : undefined
-          }
-          role={profileClickable ? "button" : undefined}
-          tabIndex={profileClickable ? 0 : undefined}
-          aria-label={
-            profileClickable ? `${authorName} 저자 소개 열기` : undefined
-          }
-        >
-          <ProfileAvatar
-            uid={item.UID}
-            name={authorName}
-            priority={priority}
-          />
+                : undefined
+            }
+            role={profileClickable ? "button" : undefined}
+            tabIndex={profileClickable ? 0 : undefined}
+            aria-label={
+              profileClickable ? `${authorName} 저자 소개 열기` : undefined
+            }
+          >
+            <ProfileAvatar
+              uid={item.UID}
+              name={authorName}
+              priority={priority}
+            />
+          </div>
+          {showEventBadge ? (
+            <span className="inline-flex items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
+              Event
+            </span>
+          ) : null}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 overflow-hidden">
@@ -341,26 +363,16 @@ export function RankingRow({
             )}
           </div>
 
-          {hasInfo1 || showEventBadge ? (
-            <div className="flex w-full items-start gap-2">
-              {showEventBadge ? (
-                <span className="inline-flex shrink-0 items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm">
-                  Event
-                </span>
-              ) : null}
-              {hasInfo1 ? (
-                <p className="min-w-0 flex-1 break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700">
-                  {info1}
-                </p>
-              ) : null}
-            </div>
+          {hasInfo1 ? (
+            <p className="w-fit max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-3 py-2 text-[0.7rem] leading-snug text-gray-700">
+              {info1}
+            </p>
           ) : null}
 
           <HashtagChips record2={item.record2} metricChips={metricChips} />
         </div>
       </div>
 
-      {/* 교재목록(상) · 보러가기(하) · 유튜브 */}
       <div className="flex shrink-0 items-center gap-1.5 self-center">
         {hasYoutube ? (
           <button
@@ -373,25 +385,35 @@ export function RankingRow({
           </button>
         ) : null}
 
-        <div className="flex max-w-[6.75rem] flex-col items-end justify-center gap-1.5 sm:max-w-[9rem] sm:w-[9rem]">
+        <div className="flex max-w-[7.5rem] flex-col items-end justify-center gap-1.5 sm:max-w-[10rem] sm:w-[10rem]">
           {range3 ? (
-            <span className="line-clamp-3 w-full break-keep text-right text-xs leading-snug text-gray-500">
+            <span className="line-clamp-3 w-full break-keep text-center text-xs leading-snug text-gray-500">
               {range3.endsWith("등") ? range3 : `${range3} 등`}
             </span>
           ) : null}
-          <button
-            type="button"
-            onClick={() => openAuthorLink(item)}
-            className="flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
-            aria-label={
-              address
-                ? `${authorName} 브랜드관 보러가기`
-                : `${authorName} 검색하러 가기`
-            }
-          >
-            보러가기
-            <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-          </button>
+          {address ? (
+            <button
+              type="button"
+              onClick={handleActionClick}
+              className="flex max-w-full items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+              aria-label={`${authorName} 자료보기`}
+            >
+              <FileText className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="truncate">[자료보기]</span>
+              <span className="tabular-nums text-blue-500/90">
+                {formatClicks(totalClicks)}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleActionClick}
+              className="rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+              aria-label={`${authorName} 검색하기`}
+            >
+              <Search className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -419,9 +441,52 @@ export default function RankingBoard({
   const [selectedAuthor, setSelectedAuthor] = useState<MergedRanking | null>(
     null,
   );
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {};
+    for (const item of rankings) {
+      initial[item.UID] = item.totalClicks ?? 0;
+    }
+    return initial;
+  });
+
+  useEffect(() => {
+    setClickCounts((prev) => {
+      const next = { ...prev };
+      for (const item of rankings) {
+        if (next[item.UID] == null) {
+          next[item.UID] = item.totalClicks ?? 0;
+        }
+      }
+      return next;
+    });
+  }, [rankings]);
 
   const isHashtagSearch = category === "해시검색";
   const productOptions = productFiltersForSubject(subject);
+
+  const handleMaterialsClick = (item: MergedRanking) => {
+    openAuthorLink(item);
+    if (!safeText(item.address)) return;
+
+    setClickCounts((prev) => ({
+      ...prev,
+      [item.UID]: (prev[item.UID] ?? item.totalClicks ?? 0) + 1,
+    }));
+    setSelectedAuthor((current) =>
+      current && current.UID === item.UID
+        ? { ...current, totalClicks: (current.totalClicks ?? 0) + 1 }
+        : current,
+    );
+    void bumpAuthorClicks(item.UID).then((serverCount) => {
+      if (serverCount == null) return;
+      setClickCounts((prev) => ({ ...prev, [item.UID]: serverCount }));
+      setSelectedAuthor((current) =>
+        current && current.UID === item.UID
+          ? { ...current, totalClicks: serverCount }
+          : current,
+      );
+    });
+  };
 
   useEffect(() => {
     trackAnalyticsEvent("page_view");
@@ -610,6 +675,8 @@ export default function RankingBoard({
                     item={item}
                     onOpenIntro={setSelectedAuthor}
                     priority={index < 8}
+                    totalClicks={clickCounts[item.UID] ?? item.totalClicks ?? 0}
+                    onMaterialsClick={handleMaterialsClick}
                   />
                 </li>
               ))}
@@ -619,8 +686,19 @@ export default function RankingBoard({
       )}
 
       <AuthorModal
-        author={selectedAuthor}
+        author={
+          selectedAuthor
+            ? {
+                ...selectedAuthor,
+                totalClicks:
+                  clickCounts[selectedAuthor.UID] ??
+                  selectedAuthor.totalClicks ??
+                  0,
+              }
+            : null
+        }
         onClose={() => setSelectedAuthor(null)}
+        onMaterialsClick={handleMaterialsClick}
       />
     </section>
   );

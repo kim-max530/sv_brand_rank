@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import { RankingRow } from "@/components/RankingBoard";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import { HASHTAG_PAGE_SIZE } from "@/lib/constants";
 import { hashtagHref } from "@/lib/hashtags";
 import { homeHrefWithTab, SUBJECTS } from "@/lib/ranking-tabs";
+import { openAuthorExternalLink } from "@/lib/solvook-links";
 import type { MergedRanking, Subject } from "@/types/ranking";
 
 type SubjectFilter = "전체" | Subject;
@@ -24,6 +27,25 @@ export default function HashtagAuthorList({
   const [selected, setSelected] = useState<MergedRanking | null>(null);
   const [subjectFilter, setSubjectFilter] = useState<SubjectFilter>("전체");
   const [limit, setLimit] = useState(HASHTAG_PAGE_SIZE);
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {};
+    for (const item of authors) {
+      initial[item.UID] = item.totalClicks ?? 0;
+    }
+    return initial;
+  });
+
+  useEffect(() => {
+    setClickCounts((prev) => {
+      const next = { ...prev };
+      for (const item of authors) {
+        if (next[item.UID] == null) {
+          next[item.UID] = item.totalClicks ?? 0;
+        }
+      }
+      return next;
+    });
+  }, [authors]);
 
   const filtered = useMemo(() => {
     if (subjectFilter === "전체") return authors;
@@ -38,6 +60,32 @@ export default function HashtagAuthorList({
   const onFilterChange = (next: SubjectFilter) => {
     setSubjectFilter(next);
     setLimit(HASHTAG_PAGE_SIZE);
+  };
+
+  const handleMaterialsClick = (item: MergedRanking) => {
+    const name = item.저자명?.trim() || item.UID;
+    trackAnalyticsEvent("homepage_click", name);
+    openAuthorExternalLink(item);
+    if (!item.address?.trim()) return;
+
+    setClickCounts((prev) => ({
+      ...prev,
+      [item.UID]: (prev[item.UID] ?? item.totalClicks ?? 0) + 1,
+    }));
+    setSelected((current) =>
+      current && current.UID === item.UID
+        ? { ...current, totalClicks: (current.totalClicks ?? 0) + 1 }
+        : current,
+    );
+    void bumpAuthorClicks(item.UID).then((serverCount) => {
+      if (serverCount == null) return;
+      setClickCounts((prev) => ({ ...prev, [item.UID]: serverCount }));
+      setSelected((current) =>
+        current && current.UID === item.UID
+          ? { ...current, totalClicks: serverCount }
+          : current,
+      );
+    });
   };
 
   return (
@@ -113,6 +161,8 @@ export default function HashtagAuthorList({
                   onOpenIntro={setSelected}
                   showRank={false}
                   layout="hashtag"
+                  totalClicks={clickCounts[item.UID] ?? item.totalClicks ?? 0}
+                  onMaterialsClick={handleMaterialsClick}
                 />
               </li>
             ))}
@@ -132,7 +182,19 @@ export default function HashtagAuthorList({
         </div>
       ) : null}
 
-      <AuthorModal author={selected} onClose={() => setSelected(null)} />
+      <AuthorModal
+        author={
+          selected
+            ? {
+                ...selected,
+                totalClicks:
+                  clickCounts[selected.UID] ?? selected.totalClicks ?? 0,
+              }
+            : null
+        }
+        onClose={() => setSelected(null)}
+        onMaterialsClick={handleMaterialsClick}
+      />
     </>
   );
 }

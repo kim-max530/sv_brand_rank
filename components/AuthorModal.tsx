@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Search, Store, X } from "lucide-react";
+import { FileText, Search, X } from "lucide-react";
 import {
   cacheBannerSrc,
   getBannerImageCandidates,
@@ -11,6 +11,7 @@ import {
 } from "@/lib/brand-images";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import HashtagChips from "@/components/HashtagChips";
+import { formatClicks } from "@/lib/format-clicks";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import { toYouTubeEmbedUrl } from "@/lib/youtube";
 import type { MergedRanking } from "@/types/ranking";
@@ -47,9 +48,14 @@ function BannerImage({ uid, name }: { uid: string; name: string }) {
 interface AuthorModalProps {
   author: MergedRanking | null;
   onClose: () => void;
+  onMaterialsClick?: (author: MergedRanking) => void;
 }
 
-export default function AuthorModal({ author, onClose }: AuthorModalProps) {
+export default function AuthorModal({
+  author,
+  onClose,
+  onMaterialsClick,
+}: AuthorModalProps) {
   useEffect(() => {
     if (!author) return;
 
@@ -76,8 +82,13 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
   const address = author.address?.trim() ?? "";
   const embedUrl = toYouTubeEmbedUrl(author.youtube_url);
   const showEventCue = Boolean(author.hasEvent);
+  const totalClicks = author.totalClicks ?? 0;
 
   const openHomepage = () => {
+    if (address && onMaterialsClick) {
+      onMaterialsClick(author);
+      return;
+    }
     trackAnalyticsEvent("homepage_click", authorName);
     openAuthorExternalLink(author);
   };
@@ -117,22 +128,29 @@ export default function AuthorModal({ author, onClose }: AuthorModalProps) {
                     </div>
                   </div>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={openHomepage}
-                  className="rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
-                  aria-label={
-                    address
-                      ? `${authorName} 브랜드관 열기`
-                      : `${authorName} 검색하기`
-                  }
-                >
-                  {address ? (
-                    <Store className="h-5 w-5" />
-                  ) : (
+                {address ? (
+                  <button
+                    type="button"
+                    onClick={openHomepage}
+                    className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-600 transition-colors hover:bg-blue-100"
+                    aria-label={`${authorName} 자료보기`}
+                  >
+                    <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span>[자료보기]</span>
+                    <span className="tabular-nums text-blue-500/90">
+                      {formatClicks(totalClicks)}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openHomepage}
+                    className="rounded-lg p-1.5 text-slate-400 transition hover:bg-teal-50 hover:text-teal-700"
+                    aria-label={`${authorName} 검색하기`}
+                  >
                     <Search className="h-5 w-5" />
-                  )}
-                </button>
+                  </button>
+                )}
               </div>
             </div>
             <button

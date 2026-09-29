@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import HashtagAuthorList from "@/components/HashtagAuthorList";
+import { ensureAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
 import {
   authorHasHashtag,
@@ -164,6 +165,14 @@ export default async function HashtagPage({
         }
         return a.저자명.localeCompare(b.저자명, "ko");
       });
+
+    const clickMap = await ensureAuthorStatsForUids(
+      authors.map((item) => item.UID),
+    );
+    authors = authors.map((item) => ({
+      ...item,
+      totalClicks: clickMap.get(item.UID) ?? 0,
+    }));
   } catch (error) {
     console.error(error);
     return (

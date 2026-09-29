@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Suspense } from "react";
 import RankingBoard from "@/components/RankingBoard";
 import { fetchActiveAuthorEventUids } from "@/lib/author-events";
+import { ensureAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchMergedRankings } from "@/lib/csv";
 import { getPreviousWeekDateRange } from "@/lib/date";
 import type { MergedRanking } from "@/types/ranking";
@@ -19,9 +20,18 @@ export default async function HomePage() {
       fetchActiveAuthorEventUids(),
     ]);
 
-    rankings = merged.map((item) =>
+    const withEvents = merged.map((item) =>
       eventUids.has(item.UID) ? { ...item, hasEvent: true } : item,
     );
+
+    const clickMap = await ensureAuthorStatsForUids(
+      withEvents.map((item) => item.UID),
+    );
+
+    rankings = withEvents.map((item) => ({
+      ...item,
+      totalClicks: clickMap.get(item.UID) ?? item.totalClicks ?? 0,
+    }));
   } catch (error) {
     console.error(error);
     errorMessage =
