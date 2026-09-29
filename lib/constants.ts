@@ -25,6 +25,29 @@ export const RANKING_FILES = [
   weight: number;
 }>;
 
+/** 이번 주 서비스 노출용 (rank_*.csv) */
+export const CURR_RANKING_UPLOAD_FILES = RANKING_FILES.map(
+  ({ file, category }) => ({
+    file,
+    category,
+    label: `${category} · 이번 주 (${file})`,
+  }),
+);
+
+/** 지난주 비교용 (prev_rank_*.csv) — ranking_prev 역할 */
+export const PREV_RANKING_UPLOAD_FILES = RANKING_FILES.map(
+  ({ file, category }) => ({
+    file: `prev_${file}`,
+    category,
+    label: `${category} · 지난주 (prev_${file})`,
+  }),
+);
+
+export function toPrevRankFilename(filename: string): string {
+  if (filename.startsWith("prev_")) return filename;
+  return `prev_${filename}`;
+}
+
 /** 인기 랭킹에 합산하는 지표 (가중치 없이 순위 합) */
 export const POPULAR_RANK_CATEGORIES: readonly SourceRankingCategory[] = [
   "많은",

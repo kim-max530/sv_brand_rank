@@ -13,6 +13,7 @@ import {
   RANKING_FILES,
   RECOMMEND_TOP_N,
   SUBJECTS,
+  toPrevRankFilename,
 } from "@/lib/constants";
 import type {
   BrandInfo,
@@ -232,9 +233,9 @@ function buildRankMap(rows: Record<string, string>[]): Map<string, number> {
 }
 
 /**
- * prev 파일이 있을 때만 변동/뱃지 계산.
+ * prev 파일이 있고 내용이 있을 때만 변동/뱃지 계산.
  * NEW: (과거 없음 또는 과거 > 15위) AND (현재 ≤ 15위)
- * HOT(상승폭) 뱃지는 사용하지 않음.
+ * prev 데이터가 없으면 변동 UI를 숨김 (changeText "").
  */
 function calcBadgeAndChangeText(
   currentRank: number,
@@ -507,10 +508,6 @@ function buildPopularRankings(
   return results;
 }
 
-export function toPrevRankFilename(filename: string): string {
-  return `prev_${filename}`;
-}
-
 /** brand_info.csv 전체 로드 */
 export async function fetchBrandInfoList(options?: {
   applyOverrides?: boolean;
@@ -548,6 +545,13 @@ export async function searchBrandAuthors(
     if (matches.length >= 20) break;
   }
   return matches;
+}
+
+function hasAnyPrevRanks(prevMaps: CategoryRankMaps): boolean {
+  for (const map of prevMaps.values()) {
+    if (map.size > 0) return true;
+  }
+  return false;
 }
 
 export async function fetchMergedRankings(): Promise<MergedRanking[]> {
@@ -601,12 +605,11 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
     categoryRankMaps.set(category, buildRankMap(rows));
 
     if (prevBytes) {
-      prevCategoryRankMaps.set(
-        category,
-        buildRankMap(parseCsv(decodeCsvBytes(prevBytes))),
-      );
+      const prevMap = buildRankMap(parseCsv(decodeCsvBytes(prevBytes)));
+      prevCategoryRankMaps.set(category, prevMap);
       if (
-        (POPULAR_RANK_CATEGORIES as readonly string[]).includes(category)
+        (POPULAR_RANK_CATEGORIES as readonly string[]).includes(category) &&
+        prevMap.size > 0
       ) {
         loadedPrevPopularFiles += 1;
       }
@@ -633,14 +636,14 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
   );
   const searchUids = collectPresentUids(categoryRankMaps.get("자꾸 찾는"));
 
-  const hasPrevRecommend = prevCategoryRankMaps.size > 0;
+  const hasPrevData = hasAnyPrevRanks(prevCategoryRankMaps);
 
   return [
     ...buildRecommendRankings(
       brandMap,
       categoryRankMaps,
       prevCategoryRankMaps,
-      hasPrevRecommend,
+      hasPrevData,
       growthUids,
       repurchaseUids,
       searchUids,
@@ -649,7 +652,7 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
       brandMap,
       categoryRankMaps,
       prevCategoryRankMaps,
-      loadedPrevPopularFiles > 0,
+      hasPrevData && loadedPrevPopularFiles > 0,
       growthUids,
       repurchaseUids,
       searchUids,
