@@ -22,6 +22,7 @@ import {
   CATEGORY_LABELS,
   CATEGORY_TO_TAB,
   FILTER_AUX_PILL_CLASS,
+  FILTER_AUX_PILL_INVERSE_CLASS,
   FILTER_PILL_CLASS,
   FILTER_PILL_IDLE_CLASS,
   FILTER_PILL_SELECTED_CLASS,
@@ -595,89 +596,89 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-4xl flex-col gap-1.5 px-1 sm:px-0">
-      <div
-        role="tablist"
-        aria-label="과목"
-        aria-hidden={isHashtagSearch}
-        className={`flex flex-wrap gap-1.5 ${
-          isHashtagSearch ? "pointer-events-none invisible select-none" : ""
-        }`}
-      >
-        {SUBJECTS.map((item) => {
-          const selected = item === subject;
-          return (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              tabIndex={isHashtagSearch ? -1 : undefined}
-              onClick={() => selectSubject(item)}
-              className={`${FILTER_PILL_CLASS} ${
-                selected
-                  ? FILTER_PILL_SELECTED_CLASS
-                  : FILTER_PILL_IDLE_CLASS
-              }`}
-            >
-              {item}
-            </button>
-          );
-        })}
-      </div>
+    <section className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-1 sm:px-0">
+      <div className="flex w-full flex-col gap-4">
+        <div
+          role="tablist"
+          aria-label="과목"
+          aria-hidden={isHashtagSearch}
+          className={`flex flex-wrap justify-start gap-2 pl-1.5 ${
+            isHashtagSearch ? "pointer-events-none invisible select-none" : ""
+          }`}
+        >
+          {SUBJECTS.map((item) => {
+            const selected = item === subject;
+            return (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                tabIndex={isHashtagSearch ? -1 : undefined}
+                onClick={() => selectSubject(item)}
+                className={`${FILTER_PILL_CLASS} ${
+                  selected
+                    ? FILTER_PILL_SELECTED_CLASS
+                    : FILTER_PILL_IDLE_CLASS
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
+        </div>
 
-      <div
-        role="tablist"
-        aria-label="랭킹 기준"
-        className="flex flex-wrap justify-start gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
-      >
-        {RANKING_CATEGORIES.map((item) => {
-          const selected = item === category;
-          const isSearchTab = item === "해시검색";
-          return (
-            <button
-              key={item}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              onClick={() => selectCategory(item)}
-              className={`rounded-lg px-3 py-2 text-center text-xs whitespace-nowrap transition sm:text-sm ${
-                selected
-                  ? "bg-white font-bold text-teal-800 shadow-sm"
-                  : "font-medium text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              {isSearchTab ? (
-                <span className="inline-flex items-center break-keep">
-                  🔍 실시간{" "}
-                  <span
-                    aria-hidden
-                    className="mx-0.5 text-[10px] font-extrabold text-green-500"
-                  >
-                    #
-                  </span>{" "}
-                  검색
-                </span>
-              ) : (
-                <span className="break-keep">{CATEGORY_LABELS[item]}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+        <div
+          role="tablist"
+          aria-label="랭킹 기준"
+          className="flex flex-wrap justify-start gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
+        >
+          {RANKING_CATEGORIES.map((item) => {
+            const selected = item === category;
+            const isSearchTab = item === "해시검색";
+            return (
+              <button
+                key={item}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => selectCategory(item)}
+                className={`rounded-lg px-3 py-2 text-center text-xs whitespace-nowrap transition sm:text-sm ${
+                  selected
+                    ? "bg-white font-bold text-teal-800 shadow-sm"
+                    : "font-medium text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {isSearchTab ? (
+                  <span className="inline-flex items-center break-keep">
+                    🔍 실시간{" "}
+                    <span
+                      aria-hidden
+                      className="mx-0.5 text-[10px] font-extrabold text-green-500"
+                    >
+                      #
+                    </span>{" "}
+                    검색
+                  </span>
+                ) : (
+                  <span className="break-keep">{CATEGORY_LABELS[item]}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-      <div
-        aria-hidden={isHashtagSearch}
-        className={`flex flex-col gap-0.5 ${
-          isHashtagSearch ? "pointer-events-none invisible select-none" : ""
-        }`}
-      >
-        <div className="flex items-center gap-1.5 px-1">
+        <div
+          aria-hidden={isHashtagSearch}
+          className={`flex flex-wrap items-center justify-start gap-2 pl-1.5 ${
+            isHashtagSearch ? "pointer-events-none invisible select-none" : ""
+          }`}
+        >
           {productOptions.length > 0 ? (
             <div
               role="tablist"
               aria-label="자료 종류"
-              className="flex min-w-0 flex-wrap justify-start gap-1.5"
+              className="flex min-w-0 flex-wrap justify-start gap-2"
             >
               {productOptions.map((item) => {
                 const selected = item === product;
@@ -710,27 +711,21 @@ export default function RankingBoard({
             tabIndex={isHashtagSearch ? -1 : undefined}
             className={`${FILTER_AUX_PILL_CLASS} ${
               isDetailOpen
-                ? "bg-slate-800 text-white"
+                ? FILTER_AUX_PILL_INVERSE_CLASS
                 : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
             }`}
           >
-            <Filter className="h-3 w-3" aria-hidden />
+            <Filter className="h-3.5 w-3.5" aria-hidden />
             세부
           </button>
         </div>
 
-        <div
-          id="textbook-group-filters"
-          className={`overflow-hidden transition-all duration-300 ease-out ${
-            isDetailOpen
-              ? "max-h-20 opacity-100"
-              : "pointer-events-none max-h-0 opacity-0"
-          }`}
-        >
+        {isDetailOpen && !isHashtagSearch ? (
           <div
+            id="textbook-group-filters"
             role="tablist"
             aria-label="교재 그룹"
-            className="flex flex-wrap items-center gap-1.5 px-1"
+            className="flex flex-wrap items-center justify-start gap-2 pl-1.5"
           >
             {TEXTBOOK_GROUP_FILTERS.map((item) => {
               const selected = item === textbookGroup;
@@ -740,7 +735,6 @@ export default function RankingBoard({
                   type="button"
                   role="tab"
                   aria-selected={selected}
-                  tabIndex={isHashtagSearch || !isDetailOpen ? -1 : undefined}
                   onClick={() => setTextbookGroup(item)}
                   className={`${FILTER_PILL_CLASS} ${
                     selected
@@ -756,17 +750,16 @@ export default function RankingBoard({
               href="https://solvook.com/#:~:text=%EC%84%A0%ED%83%9D%ED%95%9C%20%EA%B5%90%EC%9E%AC%EC%9D%98%20%EC%9E%90%EB%A3%8C%EB%A5%BC%20%EB%B3%B4%EC%97%AC%EB%93%9C%EB%A0%A4%EC%9A%94"
               target="_blank"
               rel="noopener noreferrer"
-              tabIndex={isHashtagSearch || !isDetailOpen ? -1 : undefined}
-              className={`${FILTER_AUX_PILL_CLASS} bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900`}
+              className={`${FILTER_AUX_PILL_CLASS} ${FILTER_AUX_PILL_INVERSE_CLASS}`}
             >
-              교재 별 랭킹 확인하기 ↗
+              내 교재 랭킹 확인하기 ↗
             </a>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {(weekRangeLabel || categoryDescription) && !isHashtagSearch ? (
-        <div className="px-1 text-right">
+        <div className="text-right">
           {weekRangeLabel ? (
             <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
               {weekRangeLabel}
@@ -783,7 +776,7 @@ export default function RankingBoard({
           ) : null}
         </div>
       ) : isHashtagSearch && categoryDescription ? (
-        <div className="px-1 text-right">
+        <div className="text-right">
           <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
             {categoryDescription}
           </p>

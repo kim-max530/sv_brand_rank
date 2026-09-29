@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Library, Search, X } from "lucide-react";
+import { FileText, Search, X } from "lucide-react";
 import {
   cacheBannerSrc,
   getBannerImageCandidates,
@@ -129,25 +129,29 @@ export default function AuthorModal({
                   </div>
                 ) : null}
                 {address ? (
-                  <button
-                    type="button"
-                    onClick={openHomepage}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-600 transition-colors hover:text-gray-900"
-                    aria-label={`${authorName} 자료보기`}
-                  >
-                    <Library className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span className="tabular-nums">
-                      {formatClicks(totalClicks)}
-                    </span>
-                  </button>
+                  <div className="flex flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={openHomepage}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
+                      aria-label={`${authorName} 자료보기`}
+                    >
+                      <FileText className="h-5 w-5" aria-hidden />
+                    </button>
+                    <div className="flex h-5 items-center justify-center">
+                      <span className="text-[11px] font-semibold tabular-nums text-gray-600">
+                        {formatClicks(totalClicks)}
+                      </span>
+                    </div>
+                  </div>
                 ) : (
                   <button
                     type="button"
                     onClick={openHomepage}
-                    className="rounded-lg p-1.5 text-gray-500 transition hover:text-gray-900"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
                     aria-label={`${authorName} 검색하기`}
                   >
-                    <Search className="h-5 w-5" />
+                    <Search className="h-5 w-5" aria-hidden />
                   </button>
                 )}
               </div>

@@ -44,9 +44,9 @@ export const TEXTBOOK_GROUP_FILTERS: TextbookGroupFilter[] = [
   "모의고사",
 ];
 
-/** 과목/자료/교재 그룹 공통 pill 버튼 (~15% 축소) */
+/** 과목/자료/교재 그룹 공통 pill 버튼 */
 export const FILTER_PILL_CLASS =
-  "rounded-full px-3 py-1.5 text-xs font-semibold transition";
+  "rounded-full px-4 py-2 text-sm font-semibold transition";
 
 export const FILTER_PILL_SELECTED_CLASS = "bg-teal-700 text-white";
 export const FILTER_PILL_IDLE_CLASS =
@@ -54,7 +54,10 @@ export const FILTER_PILL_IDLE_CLASS =
 
 /** 세부 토글·외부 링크 등 보조 pill (필터와 동일 스케일) */
 export const FILTER_AUX_PILL_CLASS =
-  "inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold transition";
+  "inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold transition";
+
+export const FILTER_AUX_PILL_INVERSE_CLASS =
+  "bg-slate-800 text-white hover:bg-slate-700";
 
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";
