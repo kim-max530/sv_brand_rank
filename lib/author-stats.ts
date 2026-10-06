@@ -22,6 +22,39 @@ function chunkArray<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+/** 캐시/목록 사전 집계용 읽기 전용 조회 — 누락 UID를 생성하지 않는다. */
+export async function fetchAuthorStatsForUids(
+  uids: string[],
+): Promise<AuthorStatsMap> {
+  const unique = [
+    ...new Set(uids.map((uid) => String(uid ?? "").trim()).filter(Boolean)),
+  ];
+  const result: AuthorStatsMap = new Map();
+  if (unique.length === 0) return result;
+
+  try {
+    const supabase = getSupabaseAdminClient();
+    for (const chunk of chunkArray(unique, IN_QUERY_CHUNK)) {
+      const { data, error } = await supabase
+        .from("author_stats")
+        .select("uid, total_clicks")
+        .in("uid", chunk);
+      if (error) {
+        console.warn("[author_stats] read-only select", error.message);
+        continue;
+      }
+      for (const row of data ?? []) {
+        const uid = String(row.uid ?? "").trim();
+        if (!uid) continue;
+        result.set(uid, Math.max(0, Number(row.total_clicks) || 0));
+      }
+    }
+  } catch (error) {
+    console.warn("[author_stats] read-only", error);
+  }
+  return result;
+}
+
 /**
  * 랭킹 UID에 대해 author_stats를 조회한다.
  * - 기존 UID: total_clicks를 절대 덮어쓰지 않고 그대로 유지

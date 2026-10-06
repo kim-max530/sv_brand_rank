@@ -51,12 +51,12 @@ export default async function HomePage() {
   const weekRangeLabel = getPreviousWeekDateRange();
 
   return (
-    <main className="relative flex flex-1 flex-col bg-white">
+    <main className="relative flex flex-1 flex-col overflow-x-clip bg-[#F7F8FC]">
       <SiteHeader />
 
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-8 pb-10 sm:px-6 sm:pt-10">
-        <header className="mb-8 text-center sm:mb-10">
-          <h1 className="break-keep text-[1.375rem] font-bold tracking-tight text-gray-900 sm:text-[1.75rem]">
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-14 sm:px-6 sm:pt-10">
+        <header className="mb-9 text-center sm:mb-10">
+          <h1 className="break-keep text-2xl font-extrabold tracking-[-0.035em] text-[#171B2B] sm:text-[1.75rem]">
             <span className="relative inline-block">
               지금 주목할 만한 인기 저자
               <span className="pointer-events-none absolute -top-1 left-full ml-1.5 rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[10px] font-bold leading-none text-[#2B7FFF] sm:text-[11px]">
@@ -64,9 +64,12 @@ export default async function HomePage() {
               </span>
             </span>
           </h1>
-          <p className="mx-auto mt-3 max-w-lg break-keep text-[13px] leading-relaxed text-gray-500 sm:text-sm">
-            자료 선택이 고민된다면? #태그를 클릭해서 내게 맞는 브랜드를 탐색해
-            보세요.
+          <p className="mx-auto mt-4 max-w-[23rem] break-keep text-sm font-medium leading-[1.75] text-[#747B91] sm:mt-3 sm:max-w-lg sm:leading-relaxed">
+            자료 선택이 고민된다면?{" "}
+            <span className="font-semibold text-[#245AB8] underline decoration-[1.5px] underline-offset-2">
+              #태그
+            </span>
+            를 클릭해서 내게 맞는 브랜드를 탐색해 보세요.
           </p>
         </header>
 

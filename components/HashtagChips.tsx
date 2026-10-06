@@ -27,13 +27,13 @@ export default function HashtagChips({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-1.5 ${className}`.trim()}
+      className={`flex flex-wrap items-center gap-2 ${className}`.trim()}
     >
       {tags.map((tag) => (
         <Link
           key={tag}
           href={hashtagHref(tag)}
-          className="inline-flex items-center rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[11px] font-medium text-[#2B7FFF] transition hover:bg-[#d9ebff]"
+          className="inline-flex items-center rounded-[5px] bg-[#F2F6FF] px-2.5 py-1 text-[13px] font-bold leading-none text-[#245AB8] underline decoration-[1.5px] underline-offset-2 transition hover:bg-[#E7EFFF] lg:py-0.5 lg:text-xs"
           onClick={(event) => {
             event.stopPropagation();
             trackAnalyticsEvent("hashtag_click", tag);
@@ -49,7 +49,7 @@ export default function HashtagChips({
           title={chip.title}
           className={
             chip.className ??
-            "inline-flex items-center rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[11px] font-semibold text-[#2B7FFF]"
+            "inline-flex items-center rounded-[5px] bg-[#F2F6FF] px-2.5 py-0.5 text-xs font-bold text-[#245AB8] underline decoration-[1.5px] underline-offset-2"
           }
           onClick={(event) => {
             event.stopPropagation();

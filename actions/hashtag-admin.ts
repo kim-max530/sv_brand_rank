@@ -8,9 +8,10 @@ import {
   saveOverrideTagsForUid,
 } from "@/lib/author-hashtags";
 import { fetchBrandInfoList } from "@/lib/csv";
+import { warmHashtagAuthorIndex } from "@/lib/hashtag-index";
 import { parseHashtags } from "@/lib/hashtags";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export type HashtagRankRow = {
   tag: string;
@@ -233,9 +234,15 @@ export async function appendAuthorHashtagAction(
     const saved = await saveOverrideTagsForUid(trimmedUid, nextOverrides);
     if (!saved.ok) return saved;
 
+    revalidateTag("hashtag-data", { expire: 0 });
     revalidatePath("/");
     revalidatePath(`/hashtag/${encodeURIComponent(tag)}`);
     revalidatePath("/admin");
+    try {
+      await warmHashtagAuthorIndex();
+    } catch (error) {
+      console.warn("[hashtag-index] warm failed", error);
+    }
 
     const record2 = mergeRecord2Tags(author.record2, nextOverrides) ?? "";
     return {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import Banner from "@/components/Banner";
 import { RankingRow } from "@/components/RankingBoard";
@@ -96,29 +96,29 @@ export default function HashtagAuthorList({
   };
 
   return (
-    <>
-      <header className="mb-6">
+    <div className="mx-auto w-full max-w-3xl">
+      <header className="mb-8">
         <div className="flex items-center gap-2">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-teal-700 transition hover:text-teal-900"
+            className="inline-flex items-center gap-1 text-lg font-bold text-[#245AB8] transition hover:text-[#184A9E]"
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            홈
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+            돌아가기
           </Link>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <h1 className="break-keep font-display text-2xl font-semibold text-slate-900 sm:text-3xl">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center">
+          <h1 className="rounded-[6px] bg-[#F2F6FF] px-3 py-1.5 text-2xl font-bold text-[#245AB8] underline decoration-[1.5px] underline-offset-2 sm:text-3xl">
             #{tag}
           </h1>
           {relatedTags.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               {relatedTags.map((related) => (
                 <Link
                   key={related}
                   href={hashtagHref(related)}
-                  className="rounded-full px-1.5 py-0.5 text-teal-700/80 transition hover:bg-teal-50 hover:text-teal-900"
+                  className="rounded-[5px] bg-[#F2F6FF] px-2.5 py-0.5 text-xs font-bold text-[#245AB8] underline decoration-[1.5px] underline-offset-2 transition hover:bg-[#E7EFFF]"
                 >
                   #{related}
                 </Link>
@@ -130,7 +130,7 @@ export default function HashtagAuthorList({
         <div
           role="tablist"
           aria-label="과목 필터"
-          className="mt-4 flex flex-wrap gap-2"
+          className="mx-auto mt-6 flex w-fit items-center rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(15,23,42,0.14)]"
         >
           {(["전체", ...SUBJECTS] as SubjectFilter[]).map((item) => {
             const selectedFilter = item === subjectFilter;
@@ -141,10 +141,14 @@ export default function HashtagAuthorList({
                 role="tab"
                 aria-selected={selectedFilter}
                 onClick={() => onFilterChange(item)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`min-w-[4.5rem] rounded-full px-4 py-2 text-sm font-bold transition ${
                   selectedFilter
-                    ? "bg-teal-700 text-white"
-                    : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900"
+                    ? item === "영어"
+                      ? "bg-[#FF5520] text-white shadow-[0_2px_7px_rgba(255,85,32,0.3)]"
+                      : item === "국어"
+                        ? "bg-[#FFBE18] text-[#171B2B] shadow-[0_2px_7px_rgba(255,190,24,0.38)]"
+                        : "bg-[#245AB8] text-white shadow-[0_2px_7px_rgba(36,90,184,0.25)]"
+                    : "bg-white text-[#AEB6CC]"
                 }`}
               >
                 {item}
@@ -154,7 +158,7 @@ export default function HashtagAuthorList({
         </div>
       </header>
 
-      <div className="overflow-hidden border-t border-gray-100 bg-white">
+      <div className="overflow-hidden border-t border-[#E1E4EA] bg-white">
         {visible.length === 0 ? (
           <p className="px-4 py-12 text-center text-sm text-gray-500">
             해당 조건의 브랜드관 저자가 없습니다.
@@ -210,6 +214,6 @@ export default function HashtagAuthorList({
         onClose={() => setSelected(null)}
         onMaterialsClick={handleMaterialsClick}
       />
-    </>
+    </div>
   );
 }

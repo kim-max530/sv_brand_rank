@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import {
   fetchLiveHashtagRanking,
   type LiveHashtagRankItem,
@@ -105,12 +105,16 @@ export default function LiveHashtagPanel({
 
   return (
     <aside
-      className={variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"}
+      className={variant === "sidebar" ? "w-[300px] shrink-0" : "w-full"}
     >
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-100 px-4 py-3">
-          <h2 className="text-sm font-bold text-gray-900">
-            실시간 <span className={TAG_BLUE}>#</span>태그 검색량 Top 5
+      <div className="overflow-hidden rounded-[8px] border border-[#D9DDE6] bg-white shadow-[0_4px_14px_rgba(15,23,42,0.08)]">
+        <div className="px-6 pt-5">
+          <h2 className="border-b border-[#E1E4EA] pb-3 text-base font-bold text-[#252833]">
+            실시간{" "}
+            <span className={`rounded-[4px] bg-[#F2F6FF] px-1 py-0.5 ${TAG_BLUE} underline decoration-[1.5px] underline-offset-2`}>
+              #태그
+            </span>{" "}
+            검색량 Top 5
           </h2>
         </div>
 
@@ -124,7 +128,7 @@ export default function LiveHashtagPanel({
           </p>
         ) : (
           <ul
-            className={`transition-opacity duration-700 ease-in-out ${
+            className={`px-6 py-2 transition-opacity duration-700 ease-in-out ${
               pulse ? "opacity-40" : "opacity-100"
             }`}
           >
@@ -139,7 +143,7 @@ export default function LiveHashtagPanel({
                     onClick={() =>
                       trackAnalyticsEvent("hashtag_click", item.tag)
                     }
-                    className="flex items-center gap-1 border-b border-gray-100 px-3 py-2.5 transition hover:bg-gray-50"
+                    className="flex items-center gap-1 py-1.5 transition hover:opacity-75"
                   >
                     <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-gray-900">
                       {item.rank}
@@ -155,11 +159,14 @@ export default function LiveHashtagPanel({
                     >
                       {item.changeText}
                     </span>
-                    <span
-                      className={`min-w-0 flex-1 truncate text-sm font-medium ${TAG_BLUE}`}
-                    >
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#3E414B] underline decoration-1 underline-offset-2">
                       #{item.tag}
                     </span>
+                    <ExternalLink
+                      className="h-3 w-3 shrink-0 text-[#8D929F]"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
                     <span className="flex w-16 shrink-0 items-center justify-start gap-1 text-[11px] tabular-nums text-gray-500">
                       <Users
                         className="h-3.5 w-3.5 shrink-0"
@@ -176,7 +183,7 @@ export default function LiveHashtagPanel({
         )}
 
         {updatedLabel ? (
-          <p className="px-4 py-2 text-right text-[10px] text-gray-400">
+          <p className="border-t border-[#E1E4EA] px-6 py-2.5 text-right text-[10px] text-gray-400">
             {updatedLabel} 갱신
           </p>
         ) : null}

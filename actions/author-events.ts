@@ -5,8 +5,9 @@ import {
   type AuthorEventRow,
 } from "@/lib/author-events";
 import { searchBrandAuthors } from "@/lib/csv";
+import { warmHashtagAuthorIndex } from "@/lib/hashtag-index";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 export type AuthorEventActionResult =
   | { ok: true; message: string; events?: AuthorEventRow[] }
@@ -90,7 +91,14 @@ export async function upsertAuthorEventAction(
 
     if (error) return { ok: false, error: error.message };
 
+    revalidateTag("author-events", { expire: 0 });
     revalidatePath("/");
+    revalidatePath("/hashtag", "layout");
+    try {
+      await warmHashtagAuthorIndex();
+    } catch (error) {
+      console.warn("[hashtag-index] warm failed", error);
+    }
     const events = await listAuthorEvents();
     return { ok: true, message: "이벤트가 저장되었습니다.", events };
   } catch (error) {
@@ -117,7 +125,14 @@ export async function deleteAuthorEventAction(
 
     if (error) return { ok: false, error: error.message };
 
+    revalidateTag("author-events", { expire: 0 });
     revalidatePath("/");
+    revalidatePath("/hashtag", "layout");
+    try {
+      await warmHashtagAuthorIndex();
+    } catch (error) {
+      console.warn("[hashtag-index] warm failed", error);
+    }
     const events = await listAuthorEvents();
     return { ok: true, message: "이벤트가 삭제되었습니다.", events };
   } catch (error) {

@@ -1,17 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import HashtagAuthorList from "@/components/HashtagAuthorList";
-import { ensureAuthorStatsForUids } from "@/lib/author-stats";
-import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
-import {
-  authorHasHashtag,
-  collectRelatedHashtags,
-  normalizeHashtagParam,
-  resolveSystemBadgeTag,
-} from "@/lib/hashtags";
+import SiteHeader from "@/components/SiteHeader";
+import { getHashtagPageData } from "@/lib/hashtag-index";
+import { normalizeHashtagParam } from "@/lib/hashtags";
 import { fetchPromoBanner } from "@/lib/promo-banner";
-import type { MergedRanking, Subject } from "@/types/ranking";
 
 export const revalidate = false;
 
@@ -27,54 +20,6 @@ export async function generateMetadata({
     description: tag
       ? `#${tag} 해시태그가 포함된 저자 목록`
       : "해시태그 저자 목록",
-  };
-}
-
-function safeAddress(value: string | null | undefined): boolean {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-type AuthorMeta = {
-  isInPopular: boolean;
-  isInRecommend: boolean;
-  inGrowth: boolean;
-  inRepurchase: boolean;
-  inSearch: boolean;
-  subjects: Set<Subject>;
-};
-
-function toAuthorView(
-  info: {
-    UID: string;
-    저자명: string;
-    address?: string;
-    info1?: string;
-    info2?: string;
-    intro?: string;
-    record?: string;
-    record2?: string;
-    range3?: string;
-    youtube_url?: string;
-    변형문제?: boolean;
-    워크북?: boolean;
-    분석지?: boolean;
-  },
-  meta: AuthorMeta | undefined,
-): MergedRanking {
-  const subjects = meta ? [...meta.subjects] : [];
-  return {
-    ...info,
-    과목: (subjects[0] ?? "영어") as Subject,
-    subjects,
-    rank: 0,
-    category: "인기",
-    badge: null,
-    changeText: "",
-    isInPopular: meta?.isInPopular ?? false,
-    isInRecommend: meta?.isInRecommend ?? false,
-    inGrowth: meta?.inGrowth ?? false,
-    inRepurchase: meta?.inRepurchase ?? false,
-    inSearch: meta?.inSearch ?? false,
   };
 }
 
@@ -103,78 +48,25 @@ export default async function HashtagPage({
     );
   }
 
-  let authors: MergedRanking[] = [];
-  let relatedTags: string[] = [];
-  const promoBanner = await fetchPromoBanner();
-
   try {
-    const [all, rankings] = await Promise.all([
-      fetchBrandInfoList(),
-      fetchMergedRankings(),
+    const [{ authors, relatedTags }, promoBanner] = await Promise.all([
+      getHashtagPageData(tag),
+      fetchPromoBanner(),
     ]);
 
-    const metaByUid = new Map<string, AuthorMeta>();
-
-    for (const row of rankings) {
-      const current = metaByUid.get(row.UID) ?? {
-        isInPopular: false,
-        isInRecommend: false,
-        inGrowth: false,
-        inRepurchase: false,
-        inSearch: false,
-        subjects: new Set<Subject>(),
-      };
-      if (row.category === "인기") current.isInPopular = true;
-      if (row.category === "추천") current.isInRecommend = true;
-      if (row.inGrowth) current.inGrowth = true;
-      if (row.inRepurchase) current.inRepurchase = true;
-      if (row.inSearch) current.inSearch = true;
-      current.subjects.add(row.과목);
-      metaByUid.set(row.UID, current);
-    }
-
-    const systemTag = resolveSystemBadgeTag(tag);
-
-    const matched = all.filter((info) => {
-      const meta = metaByUid.get(info.UID);
-
-      if (systemTag === "재구매") {
-        return Boolean(meta?.inRepurchase);
-      }
-      if (systemTag === "HOT") {
-        return Boolean(meta?.inGrowth);
-      }
-      if (systemTag === "검색어") {
-        return Boolean(meta?.inSearch);
-      }
-      if (systemTag === "인기Top") {
-        return Boolean(meta?.isInPopular);
-      }
-      if (systemTag === "쏠북Pick") {
-        return Boolean(meta?.isInRecommend);
-      }
-
-      return authorHasHashtag(info.record2, tag) && safeAddress(info.address);
-    });
-
-    relatedTags = systemTag ? [] : collectRelatedHashtags(matched, tag, 7);
-
-    authors = matched
-      .map((info) => toAuthorView(info, metaByUid.get(info.UID)))
-      .sort((a, b) => {
-        if (a.isInPopular !== b.isInPopular) {
-          return a.isInPopular ? -1 : 1;
-        }
-        return a.저자명.localeCompare(b.저자명, "ko");
-      });
-
-    const clickMap = await ensureAuthorStatsForUids(
-      authors.map((item) => item.UID),
+    return (
+      <main className="relative flex flex-1 flex-col overflow-x-clip bg-[#F8F9FC]">
+        <SiteHeader />
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+          <HashtagAuthorList
+            authors={authors}
+            tag={tag}
+            relatedTags={relatedTags}
+            promoBanner={promoBanner}
+          />
+        </div>
+      </main>
     );
-    authors = authors.map((item) => ({
-      ...item,
-      totalClicks: clickMap.get(item.UID) ?? 0,
-    }));
   } catch (error) {
     console.error(error);
     return (
@@ -189,40 +81,4 @@ export default async function HashtagPage({
     );
   }
 
-  return (
-    <main className="relative flex flex-1 flex-col">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_rgba(14,116,144,0.12),_transparent_50%)]"
-      />
-
-      <div className="w-full border-b border-slate-200/70 bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center px-4 sm:h-16 sm:px-6">
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-md transition hover:opacity-80"
-            aria-label="홈으로 이동"
-          >
-            <Image
-              src="/Logo.png"
-              alt="쏠북"
-              width={140}
-              height={40}
-              className="h-[1.2rem] w-auto sm:h-[1.35rem]"
-              priority
-            />
-          </Link>
-        </div>
-      </div>
-
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col overflow-hidden px-4 py-8 sm:px-6 sm:py-10">
-        <HashtagAuthorList
-          authors={authors}
-          tag={tag}
-          relatedTags={relatedTags}
-          promoBanner={promoBanner}
-        />
-      </div>
-    </main>
-  );
 }

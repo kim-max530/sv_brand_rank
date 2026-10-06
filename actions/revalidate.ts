@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
+import { warmHashtagAuthorIndex } from "@/lib/hashtag-index";
 
 export async function revalidateHomePage(): Promise<
   { ok: true } | { ok: false; error: string }
@@ -10,6 +11,11 @@ export async function revalidateHomePage(): Promise<
     revalidateTag("ranking-data", { expire: 0 });
     revalidatePath("/");
     revalidatePath("/hashtag", "layout");
+    try {
+      await warmHashtagAuthorIndex();
+    } catch (error) {
+      console.warn("[hashtag-index] warm failed", error);
+    }
     return { ok: true };
   } catch (error) {
     const message =
