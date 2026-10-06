@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ExternalLink, Filter, Home, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips from "@/components/HashtagChips";
-import HashtagSearchPanel from "@/components/HashtagSearchPanel";
+import HashtagSearchPanel, {
+  type HashtagSearchReadyData,
+} from "@/components/HashtagSearchPanel";
 import LiveHashtagPanel from "@/components/LiveHashtagPanel";
+import { fetchHashtagSearchData } from "@/actions/analytics";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   cacheAvatarSrc,
@@ -17,6 +20,7 @@ import {
 } from "@/lib/brand-images";
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
 import { bumpAuthorClicks } from "@/lib/author-stats-client";
+import { parseHashtags } from "@/lib/hashtags";
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
@@ -56,6 +60,13 @@ function tabTargetName(category: RankingCategory): string {
     .trim();
 }
 
+/** 순위·변동·아바타 열 고정폭 — 리스트 X축 정렬 기준 */
+const RANK_COL = "w-10";
+const CHANGE_COL = "w-12";
+const AVATAR_COL = "w-[52px]";
+/** showRank=false(태그 저자 목록)일 때 순위열만큼 좌측 여백 */
+const RANK_META_WIDTH = "w-[5.5rem]"; // w-10 + w-12
+
 function StatusBadge({ badge }: { badge: RankBadge }) {
   if (badge === "NEW") {
     return (
@@ -81,35 +92,46 @@ function RankMeta({
   const showChange = Boolean(rawChange) && badge !== "NEW";
   const isUnchanged = rawChange === "-";
 
-  const changeEl = showChange ? (
-    <span
-      className={
-        isUnchanged
-          ? "text-[11px] font-medium leading-none text-gray-400"
-          : `text-[11px] font-semibold leading-none tabular-nums ${
-              rawChange.startsWith("▲")
-                ? "text-red-500"
-                : rawChange.startsWith("▼")
-                  ? "text-blue-500"
-                  : "text-gray-400"
-            }`
-      }
-    >
-      {isUnchanged ? "-" : rawChange}
-    </span>
-  ) : badge === "NEW" ? (
-    <StatusBadge badge={badge} />
-  ) : (
-    <span className="text-[11px] font-medium leading-none text-gray-400">-</span>
-  );
+  let changeInner: ReactNode;
+  if (badge === "NEW") {
+    changeInner = <StatusBadge badge={badge} />;
+  } else if (showChange) {
+    changeInner = (
+      <span
+        className={
+          isUnchanged
+            ? "text-[11px] font-medium leading-none text-gray-400"
+            : `text-[11px] font-semibold leading-none tabular-nums ${
+                rawChange.startsWith("▲")
+                  ? "text-red-500"
+                  : rawChange.startsWith("▼")
+                    ? "text-blue-500"
+                    : "text-gray-400"
+              }`
+        }
+      >
+        {isUnchanged ? "-" : rawChange}
+      </span>
+    );
+  } else {
+    changeInner = (
+      <span className="text-[11px] font-medium leading-none text-gray-400">
+        -
+      </span>
+    );
+  }
 
   return (
-    <div className="flex w-7 shrink-0 flex-col items-center gap-0.5 sm:w-8 lg:w-auto lg:flex-row lg:items-baseline lg:gap-2">
-      <span className="text-center text-lg font-bold leading-none tabular-nums text-gray-900 sm:text-xl">
+    <div className="flex shrink-0 flex-col items-center gap-0.5 lg:flex-row lg:items-center lg:gap-0">
+      <div
+        className={`${RANK_COL} flex shrink-0 items-center justify-center text-center text-lg font-bold leading-none tabular-nums text-gray-900 sm:text-xl`}
+      >
         {safeRank || "-"}
-      </span>
-      <div className="flex flex-col items-center gap-0.5 lg:items-start">
-        {changeEl}
+      </div>
+      <div
+        className={`${CHANGE_COL} flex shrink-0 items-center justify-center`}
+      >
+        {changeInner}
       </div>
     </div>
   );
@@ -264,9 +286,12 @@ export function RankingRow({
   const showEventBadge = Boolean(item.hasEvent);
   const eventDiscount = item.eventDiscount ?? 35;
   const medals = buildSystemMedals(item);
-  void layout;
+  const isHashtagLayout = layout === "hashtag" || !showRank;
+  /** address 없음 → 검색 아이콘만 (사람 아이콘 숨김) */
+  const showUserIcon = Boolean(address);
   void range3;
-  void medals; // 시스템 뱃지 일시 숨김 — 렌더 주석 보존용
+  void medals;
+  void totalClicks;
 
   const openProfile = () => {
     if (!hasAuthorDetail && !hasYoutube) return;
@@ -293,24 +318,24 @@ export function RankingRow({
   };
 
   const profileClickable = hasAuthorDetail || hasYoutube;
-  void totalClicks;
-  void openCoupons;
-  void showEventBadge;
-  void eventDiscount;
-  void hasYoutube;
 
   return (
-    <div className="flex w-full items-center gap-3 border-b border-gray-100 px-1 py-4 sm:gap-4 sm:px-2 lg:items-start lg:gap-5 lg:px-0 lg:py-5">
+    <div className="flex w-full items-center gap-3 border-b border-gray-100 py-4 lg:items-start lg:gap-4 lg:py-5">
       {showRank ? (
         <RankMeta
           rank={item.rank}
           badge={item.badge ?? null}
           changeText={item.changeText ?? ""}
         />
-      ) : null}
+      ) : (
+        <div
+          className={`${RANK_META_WIDTH} shrink-0`}
+          aria-hidden
+        />
+      )}
 
       <div
-        className={`shrink-0 ${
+        className={`${AVATAR_COL} flex h-[52px] shrink-0 items-center justify-center ${
           profileClickable ? "cursor-pointer transition hover:opacity-90" : ""
         }`}
         onClick={profileClickable ? openProfile : undefined}
@@ -337,8 +362,12 @@ export function RankingRow({
         />
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 overflow-hidden">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <div
+        className={`flex min-w-0 flex-1 flex-col items-start gap-1.5 overflow-hidden text-left ${
+          isHashtagLayout ? "pl-0" : ""
+        }`}
+      >
+        <div className="flex min-w-0 w-full flex-wrap items-center gap-x-2 gap-y-1">
           <button
             type="button"
             onClick={profileClickable ? openProfile : openIntroModal}
@@ -361,35 +390,52 @@ export function RankingRow({
         </div>
 
         {intro ? (
-          <p className="hidden max-w-xl break-keep rounded-lg bg-gray-100 px-3 py-2 text-xs leading-relaxed text-gray-600 lg:block">
+          <p className="hidden w-full max-w-xl break-keep rounded-lg bg-gray-100 px-3 py-2 text-left text-xs leading-relaxed text-gray-600 lg:block">
             {intro}
           </p>
         ) : null}
       </div>
 
-      <div className="flex shrink-0 items-center gap-1 self-center lg:self-start lg:pt-1">
-        <button
-          type="button"
-          onClick={openIntroModal}
-          className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:text-gray-800"
-          aria-label={`${authorName} 저자 소개 열기`}
-        >
-          <UserRound className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-        </button>
-        <button
-          type="button"
-          onClick={handleActionClick}
-          className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:text-gray-800"
-          aria-label={
-            address ? `${authorName} 홈페이지 열기` : `${authorName} 검색하기`
-          }
-        >
-          {address ? (
-            <Home className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          ) : (
-            <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          )}
-        </button>
+      <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-1 self-center lg:self-start lg:pt-0.5">
+        <div className="flex h-9 items-center justify-center gap-0.5">
+          {showUserIcon ? (
+            <button
+              type="button"
+              onClick={openIntroModal}
+              className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:text-gray-800"
+              aria-label={`${authorName} 저자 소개 열기`}
+            >
+              <UserRound className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleActionClick}
+            className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:text-gray-800"
+            aria-label={
+              address
+                ? `${authorName} 홈페이지 열기`
+                : `${authorName} 검색하기`
+            }
+          >
+            {address ? (
+              <Home className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+            ) : (
+              <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+            )}
+          </button>
+        </div>
+        <div className="flex h-5 w-full items-center justify-center">
+          {showEventBadge ? (
+            <button
+              type="button"
+              onClick={openCoupons}
+              className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm transition hover:brightness-110"
+            >
+              {eventDiscount}% 이벤트
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -428,6 +474,9 @@ export default function RankingBoard({
     }
     return initial;
   });
+  /** 태그 탭 즉시 전환용 — 페이지 로드 시 사전 fetch */
+  const [hashtagPrefetch, setHashtagPrefetch] =
+    useState<HashtagSearchReadyData | null>(null);
 
   useEffect(() => {
     setClickCounts((prev) => {
@@ -439,6 +488,47 @@ export default function RankingBoard({
       }
       return next;
     });
+  }, [rankings]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await fetchHashtagSearchData();
+        if (cancelled || !result.ok) return;
+        setHashtagPrefetch({
+          topTags: result.data.topTags,
+          recentTags: result.data.recentTags,
+        });
+      } catch {
+        // 패널 자체 재시도에 맡김
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** 태그 → 보유 저자 수 (랭킹 데이터 기반 사전 집계) */
+  const tagAuthorCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    const seenUidByTag = new Map<string, Set<string>>();
+    for (const item of rankings) {
+      const uid = item.UID;
+      if (!uid) continue;
+      for (const tag of parseHashtags(item.record2)) {
+        const key = tag.toLowerCase();
+        let set = seenUidByTag.get(key);
+        if (!set) {
+          set = new Set();
+          seenUidByTag.set(key, set);
+        }
+        if (set.has(uid)) continue;
+        set.add(uid);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+    return counts;
   }, [rankings]);
 
   const productOptions = productFiltersForSubject(subject);
@@ -607,19 +697,21 @@ export default function RankingBoard({
               onClick={() => selectCategory(item)}
               className={`relative shrink-0 px-3 py-3 text-sm whitespace-nowrap transition sm:px-4 sm:text-[15px] ${
                 selected
-                  ? "font-bold text-gray-900"
+                  ? "font-bold text-[#2B7FFF]"
                   : "font-medium text-gray-400 hover:text-gray-600"
               }`}
             >
               {item === "해시검색" ? (
                 <span className="break-keep">
-                  인기 <span className="text-[#2B7FFF]">#</span>태그
+                  인기{" "}
+                  <span className="text-[#2B7FFF]">#</span>
+                  태그
                 </span>
               ) : (
                 <span className="break-keep">{label}</span>
               )}
               {selected ? (
-                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-full bg-gray-900" />
+                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-full bg-[#2B7FFF]" />
               ) : null}
             </button>
           );
@@ -739,18 +831,13 @@ export default function RankingBoard({
         ) : null}
       </div>
 
-      {isHashtagSearch ? (
-        <div className="relative flex w-full items-start gap-8">
-          <div className="min-w-0 flex-1">
-            <HashtagSearchPanel />
+      <div className="relative flex w-full items-start gap-8">
+        <div role="tabpanel" className="min-w-0 flex-1">
+          {/* 태그 탭도 항상 마운트 — 전환 시 재fetch 지연 방지 */}
+          <div className={isHashtagSearch ? "block" : "hidden"} aria-hidden={!isHashtagSearch}>
+            <HashtagSearchPanel initialData={hashtagPrefetch} />
           </div>
-          <div className="sticky top-4 hidden shrink-0 lg:block">
-            <LiveHashtagPanel variant="sidebar" />
-          </div>
-        </div>
-      ) : (
-        <div className="relative flex w-full items-start gap-8">
-          <div role="tabpanel" className="min-w-0 flex-1">
+          <div className={isHashtagSearch ? "hidden" : "block"} aria-hidden={isHashtagSearch}>
             {displayList.length === 0 ? (
               rankings.length === 0 ? (
                 <p className="px-4 py-12 text-center text-sm text-gray-500">
@@ -790,12 +877,15 @@ export default function RankingBoard({
               </ul>
             )}
           </div>
-
-          <div className="sticky top-4 hidden shrink-0 lg:block">
-            <LiveHashtagPanel variant="sidebar" />
-          </div>
         </div>
-      )}
+
+        <div className="sticky top-4 hidden shrink-0 lg:block">
+          <LiveHashtagPanel
+            variant="sidebar"
+            authorCountByTag={tagAuthorCounts}
+          />
+        </div>
+      </div>
 
       {textbookConfirmOpen ? (
         <div

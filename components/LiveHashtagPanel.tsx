@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Users } from "lucide-react";
 import {
   fetchLiveHashtagRanking,
   type LiveHashtagRankItem,
@@ -12,6 +13,7 @@ import { hashtagHref } from "@/lib/hashtags";
 const REFRESH_MS = 5 * 60 * 1000;
 const PULSE_MS = 30 * 1000;
 const TOP_N = 5;
+const TAG_BLUE = "text-[#2B7FFF]";
 
 type Row = LiveHashtagRankItem & {
   changeText: string;
@@ -32,8 +34,11 @@ function calcChange(
 
 export default function LiveHashtagPanel({
   variant = "sidebar",
+  authorCountByTag,
 }: {
   variant?: "sidebar" | "strip";
+  /** 클라이언트 사전 집계 저자 수 (있으면 API 값보다 우선) */
+  authorCountByTag?: Map<string, number>;
 }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,14 +85,12 @@ export default function LiveHashtagPanel({
 
   return (
     <aside
-      className={
-        variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"
-      }
+      className={variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"}
     >
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-100 px-4 py-3">
           <h2 className="text-sm font-bold text-gray-900">
-            실시간 #태그 검색량 Top 5
+            실시간 <span className={TAG_BLUE}>#</span>태그 검색량 Top 5
           </h2>
         </div>
 
@@ -105,33 +108,46 @@ export default function LiveHashtagPanel({
               pulse ? "opacity-40" : "opacity-100"
             }`}
           >
-            {rows.map((item) => (
-              <li key={item.tag}>
-                <Link
-                  href={hashtagHref(item.tag)}
-                  onClick={() => trackAnalyticsEvent("hashtag_click", item.tag)}
-                  className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3 transition hover:bg-gray-50"
-                >
-                  <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-gray-900">
-                    {item.rank}
-                  </span>
-                  <span
-                    className={`w-8 shrink-0 text-[11px] font-semibold tabular-nums ${
-                      item.changeText.startsWith("▲")
-                        ? "text-red-500"
-                        : item.changeText.startsWith("▼")
-                          ? "text-blue-500"
-                          : "text-gray-400"
-                    }`}
+            {rows.map((item) => {
+              const count =
+                authorCountByTag?.get(item.tag.toLowerCase()) ??
+                item.authorCount;
+              return (
+                <li key={item.tag}>
+                  <Link
+                    href={hashtagHref(item.tag)}
+                    onClick={() =>
+                      trackAnalyticsEvent("hashtag_click", item.tag)
+                    }
+                    className="flex items-center gap-1 border-b border-gray-100 px-3 py-2.5 transition hover:bg-gray-50"
                   >
-                    {item.changeText}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">
-                    #{item.tag}
-                  </span>
-                </Link>
-              </li>
-            ))}
+                    <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-gray-900">
+                      {item.rank}
+                    </span>
+                    <span
+                      className={`w-7 shrink-0 text-center text-[11px] font-semibold tabular-nums ${
+                        item.changeText.startsWith("▲")
+                          ? "text-red-500"
+                          : item.changeText.startsWith("▼")
+                            ? "text-blue-500"
+                            : "text-gray-400"
+                      }`}
+                    >
+                      {item.changeText}
+                    </span>
+                    <span
+                      className={`min-w-0 flex-1 truncate text-sm font-medium ${TAG_BLUE}`}
+                    >
+                      #{item.tag}
+                    </span>
+                    <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 text-[11px] tabular-nums text-gray-500">
+                      <Users className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                      {count}명
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
 

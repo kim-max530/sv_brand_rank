@@ -147,9 +147,9 @@ export default function HashtagAuthorList({
         </div>
       </header>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]">
+      <div className="overflow-hidden border-t border-gray-100 bg-white">
         {visible.length === 0 ? (
-          <p className="px-4 py-12 text-center text-sm text-slate-500">
+          <p className="px-4 py-12 text-center text-sm text-gray-500">
             해당 조건의 브랜드관 저자가 없습니다.
           </p>
         ) : (

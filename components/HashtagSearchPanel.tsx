@@ -6,19 +6,34 @@ import { fetchHashtagSearchData } from "@/actions/analytics";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
 
+export type HashtagSearchReadyData = {
+  topTags: Array<{ tag: string; count: number }>;
+  recentTags: Array<{ tag: string; created_at: string }>;
+};
+
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | {
-      status: "ready";
-      topTags: Array<{ tag: string; count: number }>;
-      recentTags: Array<{ tag: string; created_at: string }>;
-    };
+  | { status: "ready"; data: HashtagSearchReadyData };
 
-export default function HashtagSearchPanel() {
-  const [state, setState] = useState<LoadState>({ status: "loading" });
+export default function HashtagSearchPanel({
+  initialData = null,
+}: {
+  /** 부모에서 사전 fetch한 데이터 — 탭 전환 즉시 노출 */
+  initialData?: HashtagSearchReadyData | null;
+}) {
+  const [state, setState] = useState<LoadState>(() =>
+    initialData
+      ? { status: "ready", data: initialData }
+      : { status: "loading" },
+  );
 
   useEffect(() => {
+    if (initialData) {
+      setState({ status: "ready", data: initialData });
+      return;
+    }
+
     let cancelled = false;
 
     void (async () => {
@@ -34,8 +49,10 @@ export default function HashtagSearchPanel() {
         }
         setState({
           status: "ready",
-          topTags: result.data.topTags,
-          recentTags: result.data.recentTags,
+          data: {
+            topTags: result.data.topTags,
+            recentTags: result.data.recentTags,
+          },
         });
       } catch (error) {
         if (cancelled) return;
@@ -52,7 +69,7 @@ export default function HashtagSearchPanel() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialData]);
 
   const onTagClick = (tag: string) => {
     trackAnalyticsEvent("hashtag_click", tag);
@@ -75,7 +92,7 @@ export default function HashtagSearchPanel() {
     );
   }
 
-  const { topTags } = state;
+  const { topTags } = state.data;
 
   if (topTags.length === 0) {
     return (
@@ -92,15 +109,15 @@ export default function HashtagSearchPanel() {
           <Link
             href={hashtagHref(item.tag)}
             onClick={() => onTagClick(item.tag)}
-            className="flex w-full items-center gap-3 border-b border-gray-100 px-1 py-4 transition hover:bg-gray-50 sm:gap-4 sm:px-2"
+            className="flex w-full items-center gap-1 border-b border-gray-100 py-4 transition hover:bg-gray-50"
           >
-            <span className="w-7 shrink-0 text-center text-lg font-bold tabular-nums text-gray-900 sm:w-8 sm:text-xl">
+            <span className="flex w-10 shrink-0 items-center justify-center text-lg font-bold tabular-nums text-gray-900 sm:text-xl">
               {index + 1}
             </span>
-            <span className="w-8 shrink-0 text-[11px] font-medium text-gray-400">
+            <span className="flex w-12 shrink-0 items-center justify-center text-[11px] font-medium text-gray-400">
               -
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[#2B7FFF] sm:text-base">
+            <span className="min-w-0 flex-1 truncate pl-3 text-left text-sm font-semibold text-[#2B7FFF] sm:text-base">
               #{item.tag}
             </span>
           </Link>

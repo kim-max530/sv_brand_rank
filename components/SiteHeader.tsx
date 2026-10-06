@@ -3,10 +3,11 @@
 import Image from "next/image";
 import { Menu, Search } from "lucide-react";
 
+/** 본문(max-w-5xl + px-4/6) 좌측 시작선과 BI 정렬 */
 export default function SiteHeader() {
   return (
     <header className="w-full border-b border-gray-100 bg-white">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:justify-center">
+      <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:h-16 sm:px-6">
         <a
           href="https://solvook.com"
           target="_blank"
@@ -24,7 +25,7 @@ export default function SiteHeader() {
           />
         </a>
 
-        <div className="flex items-center gap-3 lg:absolute lg:right-6">
+        <div className="flex items-center gap-2 sm:gap-3">
           <a
             href="https://solvook.com/search"
             target="_blank"
