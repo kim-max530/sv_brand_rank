@@ -44,15 +44,14 @@ export const TEXTBOOK_GROUP_FILTERS: TextbookGroupFilter[] = [
   "모의고사",
 ];
 
-/** 과목/자료/교재 그룹 공통 pill 버튼 */
+/** 과목 토글 (시안: 주황 active) */
 export const FILTER_PILL_CLASS =
-  "rounded-full px-4 py-2 text-sm font-semibold transition";
+  "rounded-full px-5 py-2 text-sm font-semibold transition";
 
-export const FILTER_PILL_SELECTED_CLASS = "bg-teal-700 text-white";
-export const FILTER_PILL_IDLE_CLASS =
-  "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:text-slate-900";
+export const FILTER_PILL_SELECTED_CLASS = "bg-[#FF5520] text-white";
+export const FILTER_PILL_IDLE_CLASS = "bg-gray-100 text-gray-600 hover:bg-gray-200";
 
-/** 세부 토글·외부 링크 등 보조 pill (필터와 동일 스케일) */
+/** 세부 토글·외부 링크 등 보조 pill */
 export const FILTER_AUX_PILL_CLASS =
   "inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold transition";
 
@@ -62,18 +61,22 @@ export const FILTER_AUX_PILL_INVERSE_CLASS =
 /** URL ?tab= 값 */
 export type RankingTabParam = "brand" | "recommend" | "search";
 
-/** 화면에 노출하는 탭: 브랜드 랭킹, 추천 랭킹 (+ 교재 별 랭킹은 외부 링크) */
-export const RANKING_CATEGORIES: RankingCategory[] = ["인기", "추천"];
+/** 화면에 노출하는 탭 */
+export const RANKING_CATEGORIES: RankingCategory[] = [
+  "인기",
+  "추천",
+  "해시검색",
+];
 
 export const CATEGORY_LABELS: Record<RankingCategory, string> = {
-  추천: "✨ 추천 랭킹",
-  인기: "🔥 브랜드 랭킹",
-  해시검색: "🔍 실시간 (#)검색",
-  급성장: "🚀 급성장",
-  많은: "🤝 검색",
-  "계속 찾는": "💖 재구매",
-  높은: "💎 프리미엄",
-  "자꾸 찾는": "🔥 인기",
+  추천: "추천 랭킹",
+  인기: "브랜드 랭킹",
+  해시검색: "인기 #태그",
+  급성장: "급성장",
+  많은: "검색",
+  "계속 찾는": "재구매",
+  높은: "프리미엄",
+  "자꾸 찾는": "인기",
 };
 
 /** 교재 별 랭킹 바로가기 */
@@ -82,16 +85,21 @@ export const TEXTBOOK_RANKING_HREF =
 
 export const COUPONS_HREF = "https://solvook.com/coupons";
 
-/** 탭 선택 시 리스트 위에 보여줄 설명 */
+/** 탭 선택 시 리스트 위 안내문 (시안 카피) */
 export const CATEGORY_DESCRIPTIONS: Partial<Record<RankingCategory, string>> = {
-  추천: "고객 피드백, 다양한 판매 지수 등으로 재구성한 쏠북 추천 지수 상위 저자",
-  인기: "브랜드관이 있는 저자 중 판매·금액·검색 지표를 합산한 상위 저자",
-  해시검색: "최근 7일간 가장 많이 클릭된 해시태그",
+  추천:
+    "고객 피드백과 판매 지표를 바탕으로 쏠북이 추천하는 브랜드를 보여드려요.",
+  인기: "집계 기간 중 쏠북 마켓에서 가장 많이 검색된 브랜드를 보여드려요.",
+  해시검색: "최근 많이 클릭된 인기 #태그를 보여드려요.",
 };
 
-export const CATEGORY_TO_TAB: Record<"인기" | "추천", RankingTabParam> = {
+export const CATEGORY_TO_TAB: Record<
+  "인기" | "추천" | "해시검색",
+  RankingTabParam
+> = {
   인기: "brand",
   추천: "recommend",
+  해시검색: "search",
 };
 
 export function categoryFromTabParam(
@@ -101,7 +109,7 @@ export function categoryFromTabParam(
     .trim()
     .toLowerCase();
   if (value === "search" || value === "해시검색" || value === "hashtag") {
-    return "인기";
+    return "해시검색";
   }
   if (value === "recommend" || value === "추천" || value === "발견") {
     return "추천";
@@ -113,6 +121,7 @@ export function categoryFromTabParam(
 }
 
 export function homeHrefWithTab(category: RankingCategory): string {
+  if (category === "해시검색") return "/?tab=search";
   if (category === "추천") return "/?tab=recommend";
   if (category === "인기") return "/?tab=brand";
   return "/";

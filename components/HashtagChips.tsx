@@ -9,11 +9,10 @@ export type MetricChip = {
   label: string;
   tag: string;
   className?: string;
-  /** hover 안내 (시스템 뱃지) */
   title?: string;
 };
 
-/** 일반 해시태그: 버튼이 아닌 심플 인라인 텍스트 */
+/** 시안: 연파란 뱃지 + 파란 텍스트 */
 export default function HashtagChips({
   record2,
   className = "",
@@ -28,13 +27,13 @@ export default function HashtagChips({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${className}`.trim()}
+      className={`flex flex-wrap items-center gap-1.5 ${className}`.trim()}
     >
       {tags.map((tag) => (
         <Link
           key={tag}
           href={hashtagHref(tag)}
-          className="text-[11px] font-medium text-teal-700/90 transition hover:text-teal-900 hover:underline"
+          className="inline-flex items-center rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[11px] font-medium text-[#2B7FFF] transition hover:bg-[#d9ebff]"
           onClick={(event) => {
             event.stopPropagation();
             trackAnalyticsEvent("hashtag_click", tag);
@@ -50,7 +49,7 @@ export default function HashtagChips({
           title={chip.title}
           className={
             chip.className ??
-            "text-[11px] font-semibold text-orange-600 transition hover:underline"
+            "inline-flex items-center rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[11px] font-semibold text-[#2B7FFF]"
           }
           onClick={(event) => {
             event.stopPropagation();

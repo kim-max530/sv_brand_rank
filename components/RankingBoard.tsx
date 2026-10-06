@@ -3,16 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ExternalLink,
-  FileText,
-  Filter,
-  Home,
-  Search,
-  UserRound,
-} from "lucide-react";
+import { ExternalLink, Filter, Home, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
 import HashtagChips from "@/components/HashtagChips";
+import HashtagSearchPanel from "@/components/HashtagSearchPanel";
 import LiveHashtagPanel from "@/components/LiveHashtagPanel";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
@@ -22,7 +16,6 @@ import {
   initialCandidateIndex,
 } from "@/lib/brand-images";
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
-import { formatClicks } from "@/lib/format-clicks";
 import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import {
   CATEGORY_DESCRIPTIONS,
@@ -52,19 +45,6 @@ import type {
 } from "@/types/ranking";
 
 const AVATAR_PX = 52; // 40 * 1.3
-
-function YoutubeIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="currentColor"
-      aria-hidden
-    >
-      <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.8 15.5v-7L16 12l-6.2 3.5Z" />
-    </svg>
-  );
-}
 
 function safeText(value: string | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
@@ -117,18 +97,20 @@ function RankMeta({
     >
       {isUnchanged ? "-" : rawChange}
     </span>
-  ) : null;
+  ) : badge === "NEW" ? (
+    <StatusBadge badge={badge} />
+  ) : (
+    <span className="text-[11px] font-medium leading-none text-gray-400">-</span>
+  );
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-0.5 md:flex-row md:items-center md:gap-2">
-      {/* 모바일: 순위 아래 변동 / 데스크탑: 변동 | 순위 — 저자명과 동일 라인 높이 */}
-      <div className="order-2 flex flex-col items-center justify-center gap-0.5 md:order-1 md:w-10">
-        {changeEl}
-        {badge ? <StatusBadge badge={badge} /> : null}
-      </div>
-      <span className="order-1 flex h-[1.5rem] w-7 shrink-0 items-center justify-center text-center font-display text-base font-bold leading-none tabular-nums text-slate-800 sm:h-6 sm:w-8 sm:text-lg md:order-2">
+    <div className="flex w-7 shrink-0 flex-col items-center gap-0.5 sm:w-8 lg:w-auto lg:flex-row lg:items-baseline lg:gap-2">
+      <span className="text-center text-lg font-bold leading-none tabular-nums text-gray-900 sm:text-xl">
         {safeRank || "-"}
       </span>
+      <div className="flex flex-col items-center gap-0.5 lg:items-start">
+        {changeEl}
+      </div>
     </div>
   );
 }
@@ -153,7 +135,7 @@ function ProfileAvatar({
   if (!src || failed) {
     return (
       <span
-        className={`flex ${sizeClass} items-center justify-center rounded-full bg-slate-100 text-slate-400`}
+        className={`flex ${sizeClass} items-center justify-center rounded-[10px] bg-slate-100 text-slate-400`}
         aria-hidden
       >
         <UserRound className="h-6 w-6" />
@@ -169,7 +151,7 @@ function ProfileAvatar({
       height={AVATAR_PX}
       sizes={`${AVATAR_PX}px`}
       quality={60}
-      className={`${sizeClass} rounded-full object-cover ring-1 ring-slate-200`}
+      className={`${sizeClass} rounded-[10px] object-cover`}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
       onLoad={() => cacheAvatarSrc(uid, src)}
@@ -311,168 +293,103 @@ export function RankingRow({
   };
 
   const profileClickable = hasAuthorDetail || hasYoutube;
+  void totalClicks;
+  void openCoupons;
+  void showEventBadge;
+  void eventDiscount;
+  void hasYoutube;
 
   return (
-    <div className="flex w-full items-start gap-6 overflow-hidden border-b border-slate-100 px-3 py-3 sm:gap-6 sm:px-5">
+    <div className="flex w-full items-center gap-3 border-b border-gray-100 px-1 py-4 sm:gap-4 sm:px-2 lg:items-start lg:gap-5 lg:px-0 lg:py-5">
       {showRank ? (
-        <div className="flex h-6 shrink-0 items-center self-start sm:h-6">
-          <RankMeta
-            rank={item.rank}
-            badge={item.badge ?? null}
-            changeText={item.changeText ?? ""}
-          />
-        </div>
+        <RankMeta
+          rank={item.rank}
+          badge={item.badge ?? null}
+          changeText={item.changeText ?? ""}
+        />
       ) : null}
 
-      <div className="flex min-w-0 flex-1 items-start gap-6 overflow-hidden pr-1 sm:gap-6">
-        {/* 프로필: 고정 높이 + 상단 고정 — 하단 뱃지와 무관하게 Y축 유지 */}
-        <div
-          className={`relative h-16 w-[52px] shrink-0 ${
-            profileClickable
-              ? "cursor-pointer transition hover:opacity-90"
-              : ""
-          }`}
-          onClick={profileClickable ? openProfile : undefined}
-          onKeyDown={
-            profileClickable
-              ? (event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    openProfile();
-                  }
+      <div
+        className={`shrink-0 ${
+          profileClickable ? "cursor-pointer transition hover:opacity-90" : ""
+        }`}
+        onClick={profileClickable ? openProfile : undefined}
+        onKeyDown={
+          profileClickable
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openProfile();
                 }
-              : undefined
-          }
-          role={profileClickable ? "button" : undefined}
-          tabIndex={profileClickable ? 0 : undefined}
-          aria-label={
-            profileClickable ? `${authorName} 저자 소개 열기` : undefined
-          }
-        >
-          <div className="absolute top-0 left-0">
-            <ProfileAvatar
-              uid={item.UID}
-              name={authorName}
-              priority={priority}
-            />
-          </div>
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5 overflow-hidden">
-          <div
-            className={`flex min-w-0 w-full flex-wrap items-center gap-1.5 ${
-              profileClickable
-                ? "cursor-pointer rounded-lg transition hover:bg-slate-50/80"
-                : ""
-            }`}
-            onClick={profileClickable ? openProfile : undefined}
-            onKeyDown={
-              profileClickable
-                ? (event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openProfile();
-                    }
-                  }
-                : undefined
-            }
-            role={profileClickable ? "button" : undefined}
-            tabIndex={profileClickable ? 0 : undefined}
-            aria-label={
-              profileClickable ? `${authorName} 저자 소개 열기` : undefined
-            }
-          >
-            <span className="flex h-6 shrink-0 items-center font-bold leading-none text-slate-900 text-sm sm:text-base">
-              {authorName}
-            </span>
-            {/* 시스템 뱃지(판매급등/재구매많음/인기검색어) — 일시 숨김, 코드 보존
-            {medals.map((medal) => (
-              <span
-                key={medal.key}
-                title={medal.title}
-                className={medal.className}
-              >
-                {medal.label}
-              </span>
-            ))}
-            */}
-          </div>
-
-          {intro ? (
-            <p className="relative w-fit max-w-full break-keep rounded-2xl rounded-tl-none bg-gray-100 px-5 py-2 text-[0.7rem] leading-snug text-gray-700 before:absolute before:top-0 before:left-2 before:px-0.5 before:text-xl before:leading-none before:font-black before:text-gray-700 before:content-['\201C'] after:absolute after:right-2 after:bottom-0 after:px-0.5 after:text-xl after:leading-none after:font-black after:text-gray-700 after:content-['\201D']">
-              {"\u00A0"}
-              {intro}
-              {"\u00A0"}
-            </p>
-          ) : null}
-
-          {/* 대화창 본문(px-5)과 해시태그 시작선 정렬 */}
-          <div className="w-full pl-5">
-            <HashtagChips record2={item.record2} />
-          </div>
-        </div>
+              }
+            : undefined
+        }
+        role={profileClickable ? "button" : undefined}
+        tabIndex={profileClickable ? 0 : undefined}
+        aria-label={
+          profileClickable ? `${authorName} 저자 소개 열기` : undefined
+        }
+      >
+        <ProfileAvatar
+          uid={item.UID}
+          name={authorName}
+          priority={priority}
+        />
       </div>
 
-      <div className="flex shrink-0 items-start gap-3 self-start pt-0.5 sm:gap-4">
-        {hasYoutube ? (
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 overflow-hidden">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <button
             type="button"
-            onClick={openProfile}
-            className="shrink-0 rounded-lg p-1.5 text-red-500 transition hover:bg-red-50 hover:text-red-600"
-            aria-label={`${authorName} 유튜브 소개 열기`}
+            onClick={profileClickable ? openProfile : openIntroModal}
+            className="shrink-0 text-left text-sm font-bold leading-none text-gray-900 sm:text-base"
           >
-            <YoutubeIcon className="h-5 w-5" />
+            {authorName}
           </button>
+          {/* 시스템 뱃지(판매급등/재구매많음/인기검색어) — 일시 숨김, 코드 보존
+          {medals.map((medal) => (
+            <span
+              key={medal.key}
+              title={medal.title}
+              className={medal.className}
+            >
+              {medal.label}
+            </span>
+          ))}
+          */}
+          <HashtagChips record2={item.record2} />
+        </div>
+
+        {intro ? (
+          <p className="hidden max-w-xl break-keep rounded-lg bg-gray-100 px-3 py-2 text-xs leading-relaxed text-gray-600 lg:block">
+            {intro}
+          </p>
         ) : null}
+      </div>
 
-        {address ? (
-          <div className="flex flex-row items-start justify-center gap-4">
-            <div className="flex flex-col items-center gap-1">
-              <button
-                type="button"
-                onClick={openIntroModal}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
-                aria-label={`${authorName} 저자 소개 열기`}
-              >
-                <UserRound className="h-5 w-5" aria-hidden />
-              </button>
-              <div className="flex h-5 items-center justify-center">
-                {showEventBadge ? (
-                  <button
-                    type="button"
-                    onClick={openCoupons}
-                    className="inline-flex items-center rounded-full border-none bg-gradient-to-r from-violet-500 to-fuchsia-500 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase shadow-sm transition hover:brightness-110"
-                  >
-                    {eventDiscount}% 이벤트
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-0.5">
-              <button
-                type="button"
-                onClick={handleActionClick}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
-                aria-label={`${authorName} 홈페이지 열기`}
-              >
-                <Home className="h-5 w-5" aria-hidden />
-              </button>
-              <span className="text-[11px] font-semibold tabular-nums leading-none text-gray-600">
-                {formatClicks(totalClicks)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={handleActionClick}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
-            aria-label={`${authorName} 검색하기`}
-          >
-            <Search className="h-5 w-5" aria-hidden />
-          </button>
-        )}
+      <div className="flex shrink-0 items-center gap-1 self-center lg:self-start lg:pt-1">
+        <button
+          type="button"
+          onClick={openIntroModal}
+          className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:text-gray-800"
+          aria-label={`${authorName} 저자 소개 열기`}
+        >
+          <UserRound className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={handleActionClick}
+          className="flex h-9 w-9 items-center justify-center text-gray-500 transition hover:text-gray-800"
+          aria-label={
+            address ? `${authorName} 홈페이지 열기` : `${authorName} 검색하기`
+          }
+        >
+          {address ? (
+            <Home className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          ) : (
+            <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          )}
+        </button>
       </div>
     </div>
   );
@@ -575,7 +492,7 @@ export default function RankingBoard({
   };
 
   const list = useMemo(() => {
-    if (!Array.isArray(rankings)) return [];
+    if (category === "해시검색" || !Array.isArray(rankings)) return [];
 
     // 연산/필터는 전체 데이터 유지 — rank 상한으로 미리 자르지 않음
     return rankings
@@ -599,9 +516,10 @@ export default function RankingBoard({
   }, [list, subject]);
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
+  const isHashtagSearch = category === "해시검색";
 
   const selectCategory = (next: RankingCategory) => {
-    if (next !== "인기" && next !== "추천") return;
+    if (next !== "인기" && next !== "추천" && next !== "해시검색") return;
     setCategory(next);
     trackAnalyticsEvent("tab_click", tabTargetName(next));
     const tab = CATEGORY_TO_TAB[next];
@@ -645,11 +563,11 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-1 sm:px-0">
+    <section className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-0">
       <div
         role="tablist"
         aria-label="과목"
-        className="flex flex-wrap justify-start gap-2 pl-1.5"
+        className="flex flex-wrap justify-center gap-2"
       >
         {SUBJECTS.map((item) => {
           const selected = item === subject;
@@ -675,10 +593,11 @@ export default function RankingBoard({
       <div
         role="tablist"
         aria-label="랭킹 기준"
-        className="flex flex-wrap justify-center gap-1.5 rounded-xl bg-slate-100/80 p-1.5"
+        className="flex w-full items-end gap-0 overflow-x-auto border-b border-gray-200"
       >
         {RANKING_CATEGORIES.map((item) => {
           const selected = item === category;
+          const label = CATEGORY_LABELS[item];
           return (
             <button
               key={item}
@@ -686,13 +605,22 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`rounded-lg px-3 py-2 text-center text-xs whitespace-nowrap transition sm:text-sm ${
+              className={`relative shrink-0 px-3 py-3 text-sm whitespace-nowrap transition sm:px-4 sm:text-[15px] ${
                 selected
-                  ? "bg-white font-bold text-teal-800 shadow-sm"
-                  : "font-medium text-slate-600 hover:text-slate-900"
+                  ? "font-bold text-gray-900"
+                  : "font-medium text-gray-400 hover:text-gray-600"
               }`}
             >
-              <span className="break-keep">{CATEGORY_LABELS[item]}</span>
+              {item === "해시검색" ? (
+                <span className="break-keep">
+                  인기 <span className="text-[#2B7FFF]">#</span>태그
+                </span>
+              ) : (
+                <span className="break-keep">{label}</span>
+              )}
+              {selected ? (
+                <span className="absolute inset-x-0 -bottom-px h-[3px] rounded-full bg-gray-900" />
+              ) : null}
             </button>
           );
         })}
@@ -701,11 +629,13 @@ export default function RankingBoard({
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleTextbookRankingClick}
-          className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-center text-xs font-medium whitespace-nowrap text-slate-600 transition hover:text-slate-900 sm:text-sm"
+          className="relative shrink-0 px-3 py-3 text-sm font-medium whitespace-nowrap text-gray-400 transition hover:text-gray-600 sm:px-4 sm:text-[15px]"
         >
-          <FileText className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          <span className="break-keep">교재 별 랭킹</span>
-          <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          <span className="break-keep">교재별 랭킹</span>
+          <ExternalLink
+            className="ml-0.5 inline-block h-3 w-3 -translate-y-1 align-middle"
+            aria-hidden
+          />
         </a>
       </div>
 
@@ -796,44 +726,45 @@ export default function RankingBoard({
         </>
       )}
 
-      {/* 모바일: 주요 메뉴와 리스트 사이 해시태그 패널 */}
-      <LiveHashtagPanel variant="strip" />
+      <div className="-mt-2 mb-1 flex items-start justify-between gap-3">
+        {categoryDescription ? (
+          <p className="break-keep text-xs leading-relaxed text-gray-400 sm:text-[13px]">
+            {categoryDescription}
+          </p>
+        ) : (
+          <span />
+        )}
+        {weekRangeLabel ? (
+          <p className="shrink-0 text-[11px] text-gray-400">{weekRangeLabel}</p>
+        ) : null}
+      </div>
 
-      {/* 보드 중앙 정렬 + 우측 패널은 absolute로 흐름에서 분리 */}
-      <div className="relative mx-auto flex w-full max-w-7xl justify-center px-1 sm:px-0">
-        <div className="w-full max-w-3xl">
-          {(weekRangeLabel || categoryDescription) && (
-            <div className="mb-1.5 w-full text-right">
-              {weekRangeLabel ? (
-                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                  {weekRangeLabel}
-                </p>
-              ) : null}
-              {categoryDescription ? (
-                <p className="break-keep text-[0.525rem] leading-snug font-normal text-gray-400/80">
-                  {categoryDescription}
-                </p>
-              ) : null}
-            </div>
-          )}
-          <div
-            role="tabpanel"
-            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]"
-          >
+      {isHashtagSearch ? (
+        <div className="relative flex w-full items-start gap-8">
+          <div className="min-w-0 flex-1">
+            <HashtagSearchPanel />
+          </div>
+          <div className="sticky top-4 hidden shrink-0 lg:block">
+            <LiveHashtagPanel variant="sidebar" />
+          </div>
+        </div>
+      ) : (
+        <div className="relative flex w-full items-start gap-8">
+          <div role="tabpanel" className="min-w-0 flex-1">
             {displayList.length === 0 ? (
               rankings.length === 0 ? (
-                <p className="px-4 py-12 text-center text-sm text-slate-500">
+                <p className="px-4 py-12 text-center text-sm text-gray-500">
                   표시할 랭킹 데이터가 없습니다.
                 </p>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-4 px-4 py-16 text-center">
-                  <p className="break-keep text-sm font-medium text-slate-600 sm:text-base">
-                    앗, 조건에 맞는 브랜드가 없어요 🥲
+                  <p className="break-keep text-sm font-medium text-gray-600 sm:text-base">
+                    앗, 조건에 맞는 브랜드가 없어요
                   </p>
                   <button
                     type="button"
                     onClick={resetFilters}
-                    className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"
+                    className="rounded-full bg-[#FF5520] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
                   >
                     필터 초기화
                   </button>
@@ -859,15 +790,12 @@ export default function RankingBoard({
               </ul>
             )}
           </div>
-        </div>
 
-        {/* 데스크탑: 보드 상단과 동일 Y축, 우측 독립 배치 */}
-        <div className="pointer-events-none absolute top-0 right-0 hidden h-full lg:block">
-          <div className="pointer-events-auto sticky top-4 w-64 min-w-[240px]">
+          <div className="sticky top-4 hidden shrink-0 lg:block">
             <LiveHashtagPanel variant="sidebar" />
           </div>
         </div>
-      </div>
+      )}
 
       {textbookConfirmOpen ? (
         <div

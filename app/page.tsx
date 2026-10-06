@@ -1,6 +1,7 @@
-import Image from "next/image";
 import { Suspense } from "react";
+import PromoFooterBanner from "@/components/PromoFooterBanner";
 import RankingBoard from "@/components/RankingBoard";
+import SiteHeader from "@/components/SiteHeader";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { ensureAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchMergedRankings } from "@/lib/csv";
@@ -49,50 +50,27 @@ export default async function HomePage() {
   const weekRangeLabel = getPreviousWeekDateRange();
 
   return (
-    <main className="relative flex flex-1 flex-col">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(45,212,191,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_rgba(14,116,144,0.12),_transparent_50%)]"
-      />
+    <main className="relative flex flex-1 flex-col bg-white">
+      <SiteHeader />
 
-      <div className="w-full border-b border-slate-200/70 bg-white/70 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 w-full max-w-7xl items-center px-4 sm:h-16 sm:px-6">
-          <a
-            href="https://solvook.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center rounded-md transition hover:opacity-80"
-            aria-label="쏠북 홈으로 이동"
-          >
-            <Image
-              src="/Logo.png"
-              alt="쏠북"
-              width={140}
-              height={40}
-              className="h-[1.2rem] w-auto sm:h-[1.35rem]"
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
-        <header className="mx-auto mb-8 w-full max-w-7xl text-center sm:mb-10">
-          <h1 className="break-keep font-display text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-8 pb-10 sm:px-6 sm:pt-10">
+        <header className="mb-8 text-center sm:mb-10">
+          <h1 className="break-keep text-[1.375rem] font-bold tracking-tight text-gray-900 sm:text-[1.75rem]">
             <span className="relative inline-block">
-              쏠북, 좋은 자료의 발견
-              <span className="pointer-events-none absolute -top-2 left-full ml-1 rounded-md bg-blue-50 px-2 py-[0.2rem] text-[12px] font-bold leading-none text-blue-500 sm:ml-1.5">
+              지금 주목할 만한 인기 저자
+              <span className="pointer-events-none absolute -top-1 left-full ml-1.5 rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[10px] font-bold leading-none text-[#2B7FFF] sm:text-[11px]">
                 Beta
               </span>
             </span>
           </h1>
-          <p className="mx-auto mt-3 max-w-xl break-keep text-sm text-slate-500 sm:text-base">
-            인기/추천, 해시태그 목록으로 좋은 자료 더 잘 쓰이게
+          <p className="mx-auto mt-3 max-w-lg break-keep text-[13px] leading-relaxed text-gray-500 sm:text-sm">
+            자료 선택이 고민된다면? #태그를 클릭해서 내게 맞는 브랜드를 탐색해
+            보세요.
           </p>
         </header>
 
         {errorMessage ? (
-          <div className="mx-auto w-full max-w-7xl rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-6 text-sm text-rose-700">
             <p className="font-medium break-keep">
               데이터를 불러오는 중 문제가 발생했습니다.
             </p>
@@ -101,7 +79,7 @@ export default async function HomePage() {
         ) : (
           <Suspense
             fallback={
-              <p className="mx-auto w-full max-w-7xl px-4 py-12 text-center text-sm text-slate-500">
+              <p className="px-4 py-12 text-center text-sm text-gray-500">
                 불러오는 중…
               </p>
             }
@@ -113,6 +91,8 @@ export default async function HomePage() {
           </Suspense>
         )}
       </div>
+
+      <PromoFooterBanner />
     </main>
   );
 }

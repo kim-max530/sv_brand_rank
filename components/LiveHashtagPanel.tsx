@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
 import {
   fetchLiveHashtagRanking,
   type LiveHashtagRankItem,
@@ -12,7 +11,7 @@ import { hashtagHref } from "@/lib/hashtags";
 
 const REFRESH_MS = 5 * 60 * 1000;
 const PULSE_MS = 30 * 1000;
-const MOBILE_INITIAL = 6;
+const TOP_N = 5;
 
 type Row = LiveHashtagRankItem & {
   changeText: string;
@@ -34,12 +33,10 @@ function calcChange(
 export default function LiveHashtagPanel({
   variant = "sidebar",
 }: {
-  /** sidebar: 데스크탑 우측 / strip: 모바일 상단 */
   variant?: "sidebar" | "strip";
 }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
   const [pulse, setPulse] = useState(false);
   const prevRanksRef = useRef<Map<string, number>>(new Map());
 
@@ -51,13 +48,14 @@ export default function LiveHashtagPanel({
     }
 
     const prev = prevRanksRef.current;
-    const nextRows = result.data.map((item) => ({
+    const top = result.data.slice(0, TOP_N);
+    const nextRows = top.map((item) => ({
       ...item,
       changeText: calcChange(item.tag, item.rank, prev),
     }));
 
     const nextPrev = new Map<string, number>();
-    for (const item of result.data) {
+    for (const item of top) {
       nextPrev.set(item.tag.toLowerCase(), item.rank);
     }
     prevRanksRef.current = nextPrev;
@@ -72,7 +70,6 @@ export default function LiveHashtagPanel({
     return () => window.clearInterval(id);
   }, [load]);
 
-  /** 30초마다 페이드 모션으로 갱신 중임을 시각 전달 (데이터는 5분 주기) */
   useEffect(() => {
     const id = window.setInterval(() => {
       setPulse(true);
@@ -81,30 +78,25 @@ export default function LiveHashtagPanel({
     return () => window.clearInterval(id);
   }, []);
 
-  const visible =
-    variant === "strip" && !expanded ? rows.slice(0, MOBILE_INITIAL) : rows;
-
   return (
     <aside
       className={
-        variant === "sidebar"
-          ? "hidden w-64 min-w-[240px] shrink-0 lg:block"
-          : "w-full lg:hidden"
+        variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"
       }
     >
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)]">
-        <div className="border-b border-slate-100 px-3 py-2.5">
-          <h2 className="whitespace-nowrap text-sm font-semibold leading-snug text-slate-800">
-            실시간 해시태그 Top 10
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-4 py-3">
+          <h2 className="text-sm font-bold text-gray-900">
+            실시간 #태그 검색량 Top 5
           </h2>
         </div>
 
         {loading && rows.length === 0 ? (
-          <p className="px-3 py-8 text-center text-xs text-slate-500">
+          <p className="px-4 py-8 text-center text-xs text-gray-500">
             불러오는 중…
           </p>
-        ) : visible.length === 0 ? (
-          <p className="px-3 py-8 text-center text-xs text-slate-500">
+        ) : rows.length === 0 ? (
+          <p className="px-4 py-8 text-center text-xs text-gray-500">
             최근 클릭된 해시태그가 없습니다.
           </p>
         ) : (
@@ -113,15 +105,18 @@ export default function LiveHashtagPanel({
               pulse ? "opacity-40" : "opacity-100"
             }`}
           >
-            {visible.map((item) => (
+            {rows.map((item) => (
               <li key={item.tag}>
                 <Link
                   href={hashtagHref(item.tag)}
                   onClick={() => trackAnalyticsEvent("hashtag_click", item.tag)}
-                  className="flex items-center gap-x-3 border-b border-slate-100 px-3 py-2.5 transition hover:bg-slate-50/80"
+                  className="flex items-center gap-2.5 border-b border-gray-100 px-4 py-3 transition hover:bg-gray-50"
                 >
+                  <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-gray-900">
+                    {item.rank}
+                  </span>
                   <span
-                    className={`w-5 shrink-0 text-center text-[10px] font-semibold tabular-nums ${
+                    className={`w-8 shrink-0 text-[11px] font-semibold tabular-nums ${
                       item.changeText.startsWith("▲")
                         ? "text-red-500"
                         : item.changeText.startsWith("▼")
@@ -131,18 +126,8 @@ export default function LiveHashtagPanel({
                   >
                     {item.changeText}
                   </span>
-                  <span className="w-5 shrink-0 text-center font-display text-sm font-semibold tabular-nums text-slate-800">
-                    {item.rank}
-                  </span>
-                  <span className="min-w-0 max-w-[7.5rem] truncate text-sm font-medium text-teal-700">
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800">
                     #{item.tag}
-                  </span>
-                  <span
-                    className="inline-flex shrink-0 items-center gap-0.5 text-xs tabular-nums text-slate-500"
-                    title={`저자 ${item.authorCount}명`}
-                  >
-                    <Users className="h-3.5 w-3.5" aria-hidden />
-                    {item.authorCount}
                   </span>
                 </Link>
               </li>
@@ -150,15 +135,9 @@ export default function LiveHashtagPanel({
           </ul>
         )}
 
-        {variant === "strip" && rows.length > MOBILE_INITIAL ? (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="flex w-full items-center justify-center gap-1 border-t border-slate-100 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-          >
-            {expanded ? "접기 ▴" : "더보기 ▾"}
-          </button>
-        ) : null}
+        <p className="px-4 py-2 text-right text-[10px] text-gray-400">
+          30초마다 갱신 표시
+        </p>
       </div>
     </aside>
   );
