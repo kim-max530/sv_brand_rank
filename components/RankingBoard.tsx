@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ExternalLink, Filter, Home, Search, UserRound } from "lucide-react";
+import { Filter, Home, Search, UserRound } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
+import Banner from "@/components/Banner";
 import HashtagChips from "@/components/HashtagChips";
 import HashtagSearchPanel, {
   type HashtagSearchReadyData,
@@ -21,6 +22,11 @@ import {
 import { DISPLAY_RANK_LIMIT } from "@/lib/constants";
 import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import { parseHashtags } from "@/lib/hashtags";
+import {
+  bannerVisibleForPlacement,
+  type BannerPlacement,
+  type PromoBanner,
+} from "@/lib/promo-banner";
 import {
   CATEGORY_DESCRIPTIONS,
   CATEGORY_LABELS,
@@ -47,6 +53,13 @@ import type {
   Subject,
   TextbookGroupFilter,
 } from "@/types/ranking";
+
+function placementForCategory(category: RankingCategory): BannerPlacement | null {
+  if (category === "인기") return "brand";
+  if (category === "추천") return "recommend";
+  if (category === "해시검색") return "hashtag_tab";
+  return null;
+}
 
 const AVATAR_PX = 52; // 40 * 1.3
 
@@ -444,11 +457,13 @@ export function RankingRow({
 interface RankingBoardProps {
   rankings: MergedRanking[];
   weekRangeLabel: string;
+  promoBanner: PromoBanner;
 }
 
 export default function RankingBoard({
   rankings,
   weekRangeLabel,
+  promoBanner,
 }: RankingBoardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -607,6 +622,10 @@ export default function RankingBoard({
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
   const isHashtagSearch = category === "해시검색";
+  const bannerPlacement = placementForCategory(category);
+  const showPromoBanner =
+    bannerPlacement != null &&
+    bannerVisibleForPlacement(promoBanner, bannerPlacement);
 
   const selectCategory = (next: RankingCategory) => {
     if (next !== "인기" && next !== "추천" && next !== "해시검색") return;
@@ -724,10 +743,6 @@ export default function RankingBoard({
           className="relative shrink-0 px-3 py-3 text-sm font-medium whitespace-nowrap text-gray-400 transition hover:text-gray-600 sm:px-4 sm:text-[15px]"
         >
           <span className="break-keep">교재별 랭킹</span>
-          <ExternalLink
-            className="ml-0.5 inline-block h-3 w-3 -translate-y-1 align-middle"
-            aria-hidden
-          />
         </a>
       </div>
 
@@ -886,6 +901,14 @@ export default function RankingBoard({
           />
         </div>
       </div>
+
+      {showPromoBanner ? (
+        <Banner
+          title={promoBanner.title}
+          buttonText={promoBanner.buttonText}
+          buttonUrl={promoBanner.buttonUrl}
+        />
+      ) : null}
 
       {textbookConfirmOpen ? (
         <div

@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import AuthorModal from "@/components/AuthorModal";
+import Banner from "@/components/Banner";
 import { RankingRow } from "@/components/RankingBoard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import { HASHTAG_PAGE_SIZE } from "@/lib/constants";
 import { hashtagHref } from "@/lib/hashtags";
+import {
+  bannerVisibleForPlacement,
+  type PromoBanner,
+} from "@/lib/promo-banner";
 import { SUBJECTS } from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
 import type { MergedRanking, Subject } from "@/types/ranking";
@@ -19,10 +24,12 @@ export default function HashtagAuthorList({
   authors,
   tag,
   relatedTags,
+  promoBanner,
 }: {
   authors: MergedRanking[];
   tag: string;
   relatedTags: string[];
+  promoBanner: PromoBanner;
 }) {
   const [selected, setSelected] = useState<MergedRanking | null>(null);
   const [subjectFilter, setSubjectFilter] = useState<SubjectFilter>("전체");
@@ -180,6 +187,14 @@ export default function HashtagAuthorList({
             더보기
           </button>
         </div>
+      ) : null}
+
+      {bannerVisibleForPlacement(promoBanner, "hashtag_list") ? (
+        <Banner
+          title={promoBanner.title}
+          buttonText={promoBanner.buttonText}
+          buttonUrl={promoBanner.buttonUrl}
+        />
       ) : null}
 
       <AuthorModal

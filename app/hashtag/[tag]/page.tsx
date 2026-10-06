@@ -10,6 +10,7 @@ import {
   normalizeHashtagParam,
   resolveSystemBadgeTag,
 } from "@/lib/hashtags";
+import { fetchPromoBanner } from "@/lib/promo-banner";
 import type { MergedRanking, Subject } from "@/types/ranking";
 
 export const revalidate = false;
@@ -104,6 +105,7 @@ export default async function HashtagPage({
 
   let authors: MergedRanking[] = [];
   let relatedTags: string[] = [];
+  const promoBanner = await fetchPromoBanner();
 
   try {
     const [all, rankings] = await Promise.all([
@@ -218,6 +220,7 @@ export default async function HashtagPage({
           authors={authors}
           tag={tag}
           relatedTags={relatedTags}
+          promoBanner={promoBanner}
         />
       </div>
     </main>

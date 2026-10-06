@@ -32,17 +32,35 @@ function calcChange(
   return `▼ ${Math.abs(delta)}`;
 }
 
+/** KST 기준 M월 D일 HH:mm */
+function formatUpdatedAt(date: Date): string {
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const month = parts.find((p) => p.type === "month")?.value ?? "";
+  const day = parts.find((p) => p.type === "day")?.value ?? "";
+  const hour = parts.find((p) => p.type === "hour")?.value ?? "00";
+  const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
+  return `${month}월 ${day}일 ${hour}:${minute}`;
+}
+
 export default function LiveHashtagPanel({
   variant = "sidebar",
   authorCountByTag,
 }: {
   variant?: "sidebar" | "strip";
-  /** 클라이언트 사전 집계 저자 수 (있으면 API 값보다 우선) */
   authorCountByTag?: Map<string, number>;
 }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(false);
+  const [updatedLabel, setUpdatedLabel] = useState<string | null>(null);
   const prevRanksRef = useRef<Map<string, number>>(new Map());
 
   const load = useCallback(async () => {
@@ -66,6 +84,7 @@ export default function LiveHashtagPanel({
     prevRanksRef.current = nextPrev;
 
     setRows(nextRows);
+    setUpdatedLabel(formatUpdatedAt(new Date()));
     setLoading(false);
   }, []);
 
@@ -78,6 +97,7 @@ export default function LiveHashtagPanel({
   useEffect(() => {
     const id = window.setInterval(() => {
       setPulse(true);
+      setUpdatedLabel(formatUpdatedAt(new Date()));
       window.setTimeout(() => setPulse(false), 700);
     }, PULSE_MS);
     return () => window.clearInterval(id);
@@ -140,8 +160,12 @@ export default function LiveHashtagPanel({
                     >
                       #{item.tag}
                     </span>
-                    <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 text-[11px] tabular-nums text-gray-500">
-                      <Users className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                    <span className="flex w-16 shrink-0 items-center justify-start gap-1 text-[11px] tabular-nums text-gray-500">
+                      <Users
+                        className="h-3.5 w-3.5 shrink-0"
+                        strokeWidth={1.75}
+                        aria-hidden
+                      />
                       {count}명
                     </span>
                   </Link>
@@ -151,9 +175,11 @@ export default function LiveHashtagPanel({
           </ul>
         )}
 
-        <p className="px-4 py-2 text-right text-[10px] text-gray-400">
-          30초마다 갱신 표시
-        </p>
+        {updatedLabel ? (
+          <p className="px-4 py-2 text-right text-[10px] text-gray-400">
+            {updatedLabel} 갱신
+          </p>
+        ) : null}
       </div>
     </aside>
   );

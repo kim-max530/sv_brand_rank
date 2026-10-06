@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
 import AuthorEventsPanel from "@/components/admin/AuthorEventsPanel";
+import BannerAdminPanel from "@/components/admin/BannerAdminPanel";
 import HashtagAdminPanel from "@/components/admin/HashtagAdminPanel";
 import UploadPanel from "@/components/admin/UploadPanel";
 import { ADMIN_ID, ADMIN_PW } from "@/lib/admin-auth";
@@ -12,13 +13,14 @@ import {
   setAdminAuthCookie,
 } from "@/lib/admin-auth-client";
 
-type AdminTab = "upload" | "analytics" | "events" | "hashtags";
+type AdminTab = "upload" | "analytics" | "events" | "hashtags" | "banner";
 
 const TABS: Array<{ id: AdminTab; label: string }> = [
   { id: "upload", label: "파일 업로드" },
   { id: "analytics", label: "사용 데이터" },
   { id: "events", label: "저자 이벤트" },
   { id: "hashtags", label: "해시태그 관리" },
+  { id: "banner", label: "배너 관리" },
 ];
 
 function LoginForm({ onSuccess }: { onSuccess: () => void }) {
@@ -142,6 +144,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         {tab === "analytics" ? <AnalyticsPanel /> : null}
         {tab === "events" ? <AuthorEventsPanel /> : null}
         {tab === "hashtags" ? <HashtagAdminPanel /> : null}
+        {tab === "banner" ? <BannerAdminPanel /> : null}
       </div>
     </div>
   );

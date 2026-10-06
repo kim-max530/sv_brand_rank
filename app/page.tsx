@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import PromoFooterBanner from "@/components/PromoFooterBanner";
 import RankingBoard from "@/components/RankingBoard";
 import SiteHeader from "@/components/SiteHeader";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { ensureAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchMergedRankings } from "@/lib/csv";
 import { getPreviousWeekDateRange } from "@/lib/date";
+import { fetchPromoBanner } from "@/lib/promo-banner";
 import type { MergedRanking } from "@/types/ranking";
 
 /** 시간 기반 재검증 없음 — /admin의 revalidatePath('/')로만 갱신 */
@@ -14,6 +14,7 @@ export const revalidate = false;
 export default async function HomePage() {
   let rankings: MergedRanking[] = [];
   let errorMessage: string | null = null;
+  const promoBanner = await fetchPromoBanner();
 
   try {
     const [merged, eventMap] = await Promise.all([
@@ -87,12 +88,11 @@ export default async function HomePage() {
             <RankingBoard
               rankings={rankings}
               weekRangeLabel={weekRangeLabel}
+              promoBanner={promoBanner}
             />
           </Suspense>
         )}
       </div>
-
-      <PromoFooterBanner />
     </main>
   );
 }
