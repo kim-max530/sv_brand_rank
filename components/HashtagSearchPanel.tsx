@@ -109,15 +109,15 @@ export default function HashtagSearchPanel({
           <Link
             href={hashtagHref(item.tag)}
             onClick={() => onTagClick(item.tag)}
-            className="flex w-full items-center gap-1 border-b border-[#E1E4EA] py-6 transition hover:bg-gray-50"
+            className="flex w-full items-center gap-2 border-b border-[#E5E7EB] py-5 transition hover:bg-gray-50"
           >
-            <span className="flex w-10 shrink-0 items-center justify-center text-base font-semibold tabular-nums text-[#252833] sm:text-lg">
+            <span className="flex w-6 shrink-0 items-center justify-center text-lg font-bold tabular-nums text-[#1A1E27]">
               {index + 1}
             </span>
-            <span className="flex w-12 shrink-0 items-center justify-center text-base font-semibold text-[#AEB6CC] sm:text-lg">
+            <span className="flex w-10 shrink-0 items-center justify-center text-xs font-bold text-[#9E9E9E]">
               -
             </span>
-            <span className="min-w-0 flex-1 truncate pl-2 text-left text-sm font-bold text-[#245AB8] underline decoration-[1.5px] underline-offset-2 sm:text-base">
+            <span className="inline-flex min-w-0 items-center rounded-md bg-[#E8F2FF] px-2 py-1 text-sm font-bold text-[#2B7FFF] underline decoration-2 underline-offset-2">
               #{item.tag}
             </span>
           </Link>

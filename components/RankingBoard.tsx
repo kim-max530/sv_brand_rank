@@ -62,8 +62,6 @@ function placementForCategory(category: RankingCategory): BannerPlacement | null
   return null;
 }
 
-const AVATAR_PX = 84;
-
 function safeText(value: string | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -74,18 +72,14 @@ function StoreHeartIcon({ className = "" }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
       aria-hidden
     >
       <path d="M3.5 8.5 12 2l8.5 6.5v10.25A2.25 2.25 0 0 1 18.25 21H5.75a2.25 2.25 0 0 1-2.25-2.25V8.5Z" />
-      <path
-        d="M12 17.1c-2.8-1.65-4.2-2.95-4.2-4.65A2.35 2.35 0 0 1 12 11a2.35 2.35 0 0 1 4.2 1.45c0 1.7-1.4 3-4.2 4.65Z"
-        fill="currentColor"
-        stroke="none"
-      />
+      <path d="M12 17.1c-2.8-1.65-4.2-2.95-4.2-4.65A2.35 2.35 0 0 1 12 11a2.35 2.35 0 0 1 4.2 1.45c0 1.7-1.4 3-4.2 4.65Z" />
     </svg>
   );
 }
@@ -97,15 +91,15 @@ function tabTargetName(category: RankingCategory): string {
 }
 
 /** 순위·변동·아바타 열 고정폭 — 리스트 X축 정렬 기준 */
-const RANK_COL = "w-10";
-const CHANGE_COL = "w-12";
-const AVATAR_COL = "w-[72px] lg:w-[84px]";
+const RANK_COL = "w-6";
+const CHANGE_COL = "w-10";
+const AVATAR_COL = "w-16";
 
 function StatusBadge({ badge }: { badge: RankBadge }) {
   if (badge === "NEW") {
     return (
-      <span className="inline-flex items-center rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-sky-700">
-        NEW
+      <span className="inline-flex items-center text-xs font-bold leading-none text-[#FF9500]">
+        New
       </span>
     );
   }
@@ -133,33 +127,29 @@ function RankMeta({
   } else if (showChange) {
     changeInner = (
       <span
-        className={
+        className={`flex items-center gap-0.5 text-xs font-bold leading-none tabular-nums ${
           isUnchanged
-            ? "text-base font-semibold leading-none text-[#AEB6CC] sm:text-lg"
-            : `text-base font-bold leading-none tabular-nums sm:text-lg ${
-                rawChange.startsWith("▲")
-                  ? "text-[#FF3045]"
-                  : rawChange.startsWith("▼")
-                    ? "text-[#0D63FF]"
-                    : "text-gray-400"
-              }`
-        }
+            ? "text-[#9E9E9E]"
+            : rawChange.startsWith("▲")
+              ? "text-[#FF3B30]"
+              : rawChange.startsWith("▼")
+                ? "text-[#2B7FFF]"
+                : "text-[#9E9E9E]"
+        }`}
       >
         {isUnchanged ? "-" : compactChange}
       </span>
     );
   } else {
     changeInner = (
-      <span className="text-base font-semibold leading-none text-[#AEB6CC] sm:text-lg">
-        -
-      </span>
+      <span className="text-xs font-bold leading-none text-[#9E9E9E]">-</span>
     );
   }
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-0.5 lg:flex-row lg:items-center lg:gap-0">
+    <div className="flex shrink-0 flex-col items-center gap-0.5 lg:flex-row lg:items-center lg:gap-1">
       <div
-        className={`${RANK_COL} flex shrink-0 items-center justify-center text-center text-xl font-semibold leading-none tabular-nums text-[#252833]`}
+        className={`${RANK_COL} flex shrink-0 items-center justify-center text-center text-lg font-bold leading-none tabular-nums text-[#1A1E27]`}
       >
         {safeRank || "-"}
       </div>
@@ -187,15 +177,16 @@ function ProfileAvatar({
   );
   const src = candidates[index] ?? null;
   const failed = candidates.length === 0 || index >= candidates.length;
-  const sizeClass = "h-[72px] w-[72px] lg:h-[84px] lg:w-[84px]";
+  const sizeClass =
+    "h-16 w-16 shrink-0 rounded-full border border-pink-200 bg-pink-50";
 
   if (!src || failed) {
     return (
       <span
-        className={`flex ${sizeClass} items-center justify-center rounded-full bg-slate-100 text-slate-400`}
+        className={`flex ${sizeClass} items-center justify-center text-slate-400`}
         aria-hidden
       >
-        <UserRound className="h-6 w-6" />
+        <UserRound className="h-6 w-6" strokeWidth={1.5} />
       </span>
     );
   }
@@ -204,11 +195,11 @@ function ProfileAvatar({
     <Image
       src={src}
       alt={name || "저자"}
-      width={AVATAR_PX}
-      height={AVATAR_PX}
-      sizes={`${AVATAR_PX}px`}
+      width={64}
+      height={64}
+      sizes="64px"
       quality={60}
-      className={`${sizeClass} rounded-full object-cover ring-1 ring-[#D9B4CA]`}
+      className={`${sizeClass} object-cover`}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
       onLoad={() => cacheAvatarSrc(uid, src)}
@@ -355,7 +346,7 @@ export function RankingRow({
   const profileClickable = hasAuthorDetail || hasYoutube;
 
   return (
-    <div className="flex w-full items-center gap-3 border-b border-[#D9DDE6] py-5 lg:items-start lg:gap-5 lg:py-[14px]">
+    <div className="flex w-full items-center gap-3 border-b border-[#E5E7EB] py-4 lg:gap-4 lg:py-[14px]">
       {showRank ? (
         <RankMeta
           rank={item.rank}
@@ -365,7 +356,7 @@ export function RankingRow({
       ) : null}
 
       <div
-        className={`${AVATAR_COL} flex h-[72px] shrink-0 items-center justify-center lg:h-[84px] ${
+        className={`${AVATAR_COL} flex shrink-0 items-center justify-center self-center ${
           profileClickable ? "cursor-pointer transition hover:opacity-90" : ""
         }`}
         onClick={profileClickable ? openProfile : undefined}
@@ -393,7 +384,7 @@ export function RankingRow({
       </div>
 
       <div
-        className={`flex min-w-0 flex-1 flex-col items-start gap-2 overflow-hidden text-left ${
+        className={`flex min-w-0 flex-1 flex-col items-start overflow-hidden text-left ${
           isHashtagLayout ? "pl-0" : ""
         }`}
       >
@@ -401,7 +392,7 @@ export function RankingRow({
           <button
             type="button"
             onClick={profileClickable ? openProfile : openIntroModal}
-            className="shrink-0 text-left text-base font-bold leading-none text-gray-900"
+            className="shrink-0 text-left text-base font-bold leading-none text-[#1A1E27]"
           >
             {authorName}
           </button>
@@ -418,31 +409,35 @@ export function RankingRow({
           */}
         </div>
 
-        <HashtagChips record2={item.record2} />
+        <HashtagChips record2={item.record2} className="my-1.5" />
 
         {intro ? (
-          <p className="hidden w-full max-w-xl break-keep rounded-[4px] bg-[#EFF0F5] px-3 py-1 text-left text-sm leading-5 text-[#41485B] lg:block">
+          <p className="w-full max-w-xl break-keep rounded-lg bg-[#F0F2F5] px-3.5 py-2 text-left text-sm font-normal leading-5 text-[#4A4E58]">
             {intro}
           </p>
         ) : null}
       </div>
 
-      <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-1 self-center lg:w-[5rem] lg:self-start lg:pt-1">
+      <div className="flex w-[4.5rem] shrink-0 flex-col items-center justify-center gap-1 self-center lg:w-[5rem]">
         <div className="flex h-10 items-center justify-center gap-1">
           {showUserIcon ? (
             <button
               type="button"
               onClick={openIntroModal}
-              className="flex h-10 w-10 items-center justify-center text-[#91949C] transition hover:text-gray-700"
+              className="flex h-10 w-10 items-center justify-center text-[#717680] transition hover:text-gray-700"
               aria-label={`${authorName} 저자 소개 열기`}
             >
-              <UserRound className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+              <UserRound
+                className="h-6 w-6 fill-none"
+                strokeWidth={1.5}
+                aria-hidden
+              />
             </button>
           ) : null}
           <button
             type="button"
             onClick={handleActionClick}
-            className="flex h-10 w-10 items-center justify-center text-[#91949C] transition hover:text-gray-700"
+            className="flex h-10 w-10 items-center justify-center text-[#717680] transition hover:text-gray-700"
             aria-label={
               address
                 ? `${authorName} 홈페이지 열기`
@@ -450,9 +445,9 @@ export function RankingRow({
             }
           >
             {address ? (
-              <StoreHeartIcon className="h-6 w-6" />
+              <StoreHeartIcon className="h-6 w-6 fill-none stroke-[#717680]" />
             ) : (
-              <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              <Search className="h-5 w-5" strokeWidth={1.5} aria-hidden />
             )}
           </button>
         </div>
@@ -757,7 +752,7 @@ export default function RankingBoard({
       <div
         role="tablist"
         aria-label="과목"
-        className="mx-auto flex items-center rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(15,23,42,0.14)]"
+        className="mx-auto my-3 inline-flex items-center rounded-full border border-gray-100 bg-white p-1 shadow-md"
       >
         {SUBJECTS.map((item) => {
           const selected = item === effectiveSubject;
@@ -768,12 +763,12 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectSubject(item)}
-              className={`min-w-[5.25rem] rounded-full px-4 py-2.5 text-lg font-bold leading-7 transition ${
+              className={`rounded-full px-6 py-1.5 text-base transition ${
                 selected
                   ? item === "국어"
-                    ? "bg-[#FFBE18] text-[#171B2B] shadow-[0_2px_7px_rgba(255,190,24,0.38)]"
-                    : "bg-[#FF5520] text-white shadow-[0_2px_7px_rgba(255,85,32,0.3)]"
-                  : "bg-white text-[#AEB6CC]"
+                    ? "bg-[#FFCC00] font-bold text-black shadow-sm"
+                    : "bg-[#FF5520] font-bold text-white shadow-sm"
+                  : "bg-transparent font-medium text-[#9E9E9E]"
               }`}
             >
               {item}
@@ -785,7 +780,7 @@ export default function RankingBoard({
       <div
         role="tablist"
         aria-label="랭킹 기준"
-        className="relative mt-8 flex w-full items-end justify-start gap-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] after:absolute after:inset-x-[-100vw] after:bottom-0 after:h-px after:bg-[#D7DBE5] sm:justify-center [&::-webkit-scrollbar]:hidden"
+        className="mt-5 flex w-full items-center justify-center gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-8 [&::-webkit-scrollbar]:hidden"
       >
         {RANKING_CATEGORIES.map((item) => {
           const selected = item === category;
@@ -797,31 +792,30 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`relative shrink-0 px-4 py-4 text-base whitespace-nowrap transition sm:px-6 sm:text-lg ${
+              className={`relative shrink-0 whitespace-nowrap pb-2 text-base transition sm:text-lg ${
                 selected
-                  ? "font-bold text-[#171B2B]"
-                  : "font-semibold text-[#6F758D] hover:text-[#4F566D]"
+                  ? "-mb-[2px] border-b-2 border-[#1A1E27] font-bold text-[#1A1E27]"
+                  : "font-medium text-[#9E9E9E] hover:text-[#4F566D]"
               }`}
             >
               {item === "해시검색" ? (
-                <span className="break-keep">
+                <span className="inline-flex items-center gap-1.5 break-keep">
                   <span
                     className={
-                      selected ? "text-[#171B2B]" : "text-[#6F758D]"
+                      selected
+                        ? "font-bold text-[#1A1E27]"
+                        : "font-medium text-[#9E9E9E]"
                     }
                   >
-                    인기{" "}
+                    인기
                   </span>
-                  <span className="rounded-[6px] bg-[#F2F6FF] px-2 py-1 font-bold text-[#245AB8] underline decoration-[1.5px] underline-offset-2">
+                  <span className="rounded-md bg-[#E8F2FF] px-2 py-0.5 font-bold text-[#2B7FFF] underline decoration-2 underline-offset-2">
                     #태그
                   </span>
                 </span>
               ) : (
                 <span className="break-keep">{label}</span>
               )}
-              {selected ? (
-                <span className="absolute inset-x-0 -bottom-px h-[3px] bg-[#202331]" />
-              ) : null}
             </button>
           );
         })}
@@ -830,11 +824,11 @@ export default function RankingBoard({
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleTextbookRankingClick}
-          className="relative inline-flex shrink-0 items-center gap-1 px-4 py-4 text-base font-semibold whitespace-nowrap text-[#6F758D] transition hover:text-[#4F566D] sm:px-6 sm:text-lg"
+          className="relative inline-flex shrink-0 items-center whitespace-nowrap pb-2 text-base font-medium text-[#9E9E9E] transition hover:text-[#4F566D] sm:text-lg"
         >
           <span className="break-keep">교재별 랭킹</span>
           <ExternalLink
-            className="h-3.5 w-3.5 shrink-0"
+            className="ml-1 inline-block h-4 w-4 shrink-0 text-[#717680]"
             strokeWidth={1.75}
             aria-hidden
           />
@@ -930,9 +924,9 @@ export default function RankingBoard({
 
       <div className="relative left-1/2 w-screen -translate-x-1/2 bg-white pb-10">
         <div className="mx-auto w-full max-w-5xl px-4 pt-7 sm:px-6 sm:pt-6">
-          <div className="relative mb-5 flex min-h-5 items-start text-left sm:justify-center sm:text-center">
+          <div className="relative my-2 mb-5 flex min-h-5 w-full items-start justify-center text-center">
             {categoryDescription ? (
-              <p className="max-w-xl break-keep text-sm leading-relaxed text-[#7B8195] sm:text-xs">
+              <p className="w-full max-w-xl break-keep text-center text-xs leading-relaxed text-[#8E939F]">
                 {categoryDescription}
                 {weekRangeLabel ? (
                   <button
@@ -943,7 +937,7 @@ export default function RankingBoard({
                       event.stopPropagation();
                       setShowWeekInfo((open) => !open);
                     }}
-                    className="ml-1 inline-flex h-[18px] w-[18px] translate-y-[3px] items-center justify-center rounded-full border border-[#9AA2B4] text-[11px] font-bold leading-none text-[#7B8195] sm:hidden"
+                    className="ml-1 inline-flex h-[18px] w-[18px] translate-y-[2px] items-center justify-center rounded-full border border-[#9AA2B4] text-[11px] font-bold leading-none text-[#8E939F] sm:hidden"
                   >
                     i
                   </button>

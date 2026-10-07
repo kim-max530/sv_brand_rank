@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import TagBadge, { TAG_BADGE_CLASS } from "@/components/TagBadge";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref, parseHashtags } from "@/lib/hashtags";
 
@@ -12,7 +13,7 @@ export type MetricChip = {
   title?: string;
 };
 
-/** 시안: 연파란 뱃지 + 파란 텍스트 */
+/** 시안: 연파란 뱃지 + 파란 텍스트 + 밑줄 */
 export default function HashtagChips({
   record2,
   className = "",
@@ -27,30 +28,17 @@ export default function HashtagChips({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-2 ${className}`.trim()}
+      className={`flex flex-wrap items-center gap-1.5 ${className}`.trim()}
     >
       {tags.map((tag) => (
-        <Link
-          key={tag}
-          href={hashtagHref(tag)}
-          className="inline-flex items-center rounded-[5px] bg-[#F2F6FF] px-2.5 py-1 text-[13px] font-bold leading-none text-[#245AB8] underline decoration-[1.5px] underline-offset-2 transition hover:bg-[#E7EFFF] lg:py-0.5 lg:text-xs"
-          onClick={(event) => {
-            event.stopPropagation();
-            trackAnalyticsEvent("hashtag_click", tag);
-          }}
-        >
-          #{tag}
-        </Link>
+        <TagBadge key={tag} tag={tag} />
       ))}
       {metricChips.map((chip) => (
         <Link
           key={chip.key}
           href={hashtagHref(chip.tag)}
           title={chip.title}
-          className={
-            chip.className ??
-            "inline-flex items-center rounded-[5px] bg-[#F2F6FF] px-2.5 py-0.5 text-xs font-bold text-[#245AB8] underline decoration-[1.5px] underline-offset-2"
-          }
+          className={chip.className ?? TAG_BADGE_CLASS}
           onClick={(event) => {
             event.stopPropagation();
             trackAnalyticsEvent("hashtag_click", chip.tag);

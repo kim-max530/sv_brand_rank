@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import {
   fetchLiveHashtagRanking,
   type LiveHashtagRankItem,
@@ -13,7 +13,6 @@ import { hashtagHref } from "@/lib/hashtags";
 const REFRESH_MS = 5 * 60 * 1000;
 const PULSE_MS = 30 * 1000;
 const TOP_N = 5;
-const TAG_BLUE = "text-[#2B7FFF]";
 
 type Row = LiveHashtagRankItem & {
   changeText: string;
@@ -105,30 +104,28 @@ export default function LiveHashtagPanel({
 
   return (
     <aside
-      className={variant === "sidebar" ? "w-[300px] shrink-0" : "w-full"}
+      className={variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"}
     >
-      <div className="overflow-hidden rounded-[8px] border border-[#D9DDE6] bg-white shadow-[0_4px_14px_rgba(15,23,42,0.08)]">
-        <div className="px-6 pt-5">
-          <h2 className="border-b border-[#E1E4EA] pb-3 text-base font-bold text-[#252833]">
-            실시간{" "}
-            <span className={`rounded-[4px] bg-[#F2F6FF] px-1 py-0.5 ${TAG_BLUE} underline decoration-[1.5px] underline-offset-2`}>
-              #태그
-            </span>{" "}
-            검색량 Top 5
-          </h2>
-        </div>
+      <div className="rounded-xl border border-[#2B7FFF] bg-white p-4 shadow-sm">
+        <h2 className="border-b border-[#E5E7EB] pb-3 text-base font-bold text-[#1A1E27]">
+          실시간{" "}
+          <span className="rounded bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF] underline decoration-2 underline-offset-2">
+            #태그
+          </span>{" "}
+          검색량 Top 5
+        </h2>
 
         {loading && rows.length === 0 ? (
-          <p className="px-4 py-8 text-center text-xs text-gray-500">
+          <p className="px-1 py-8 text-center text-xs text-gray-500">
             불러오는 중…
           </p>
         ) : rows.length === 0 ? (
-          <p className="px-4 py-8 text-center text-xs text-gray-500">
+          <p className="px-1 py-8 text-center text-xs text-gray-500">
             최근 클릭된 해시태그가 없습니다.
           </p>
         ) : (
           <ul
-            className={`px-6 py-2 transition-opacity duration-700 ease-in-out ${
+            className={`py-1 transition-opacity duration-700 ease-in-out ${
               pulse ? "opacity-40" : "opacity-100"
             }`}
           >
@@ -137,40 +134,41 @@ export default function LiveHashtagPanel({
                 authorCountByTag?.get(item.tag.toLowerCase()) ??
                 item.authorCount;
               return (
-                <li key={item.tag}>
+                <li key={item.tag} className="border-b border-[#E5E7EB] last:border-b-0">
                   <Link
                     href={hashtagHref(item.tag)}
                     onClick={() =>
                       trackAnalyticsEvent("hashtag_click", item.tag)
                     }
-                    className="flex items-center gap-1 py-1.5 transition hover:opacity-75"
+                    className="flex items-center gap-1.5 py-2 transition hover:opacity-80"
                   >
-                    <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-gray-900">
+                    <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-[#1A1E27]">
                       {item.rank}
                     </span>
                     <span
-                      className={`w-7 shrink-0 text-center text-[11px] font-semibold tabular-nums ${
+                      className={`flex w-7 shrink-0 items-center justify-center gap-0.5 text-xs font-bold tabular-nums ${
                         item.changeText.startsWith("▲")
-                          ? "text-red-500"
+                          ? "text-[#FF3B30]"
                           : item.changeText.startsWith("▼")
-                            ? "text-blue-500"
-                            : "text-gray-400"
+                            ? "text-[#2B7FFF]"
+                            : "text-[#9E9E9E]"
                       }`}
                     >
                       {item.changeText}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#3E414B] underline decoration-1 underline-offset-2">
+                    <span className="min-w-0 flex-1 truncate font-bold text-[#4A4E58] underline underline-offset-2 hover:text-[#2B7FFF]">
                       #{item.tag}
                     </span>
-                    <ExternalLink
-                      className="h-3 w-3 shrink-0 text-[#8D929F]"
-                      strokeWidth={1.5}
+                    <span
+                      className="shrink-0 text-xs font-medium text-[#717680]"
                       aria-hidden
-                    />
+                    >
+                      ↗
+                    </span>
                     <span className="flex w-16 shrink-0 items-center justify-start gap-1 text-[11px] tabular-nums text-gray-500">
                       <Users
                         className="h-3.5 w-3.5 shrink-0"
-                        strokeWidth={1.75}
+                        strokeWidth={1.5}
                         aria-hidden
                       />
                       {count}명
@@ -183,7 +181,7 @@ export default function LiveHashtagPanel({
         )}
 
         {updatedLabel ? (
-          <p className="border-t border-[#E1E4EA] px-6 py-2.5 text-right text-[10px] text-gray-400">
+          <p className="border-t border-[#E5E7EB] pt-2.5 text-right text-[10px] text-gray-400">
             {updatedLabel} 갱신
           </p>
         ) : null}

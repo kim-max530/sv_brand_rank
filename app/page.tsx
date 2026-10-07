@@ -55,21 +55,19 @@ export default async function HomePage() {
       <SiteHeader />
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-14 sm:px-6 sm:pt-10">
-        <header className="mb-9 text-center sm:mb-10">
-          <h1 className="break-keep text-2xl font-extrabold tracking-[-0.035em] text-[#171B2B] sm:text-[1.75rem]">
-            <span className="relative inline-block">
+        <header className="mb-6 text-center sm:mb-8">
+          <h1 className="break-keep text-2xl font-bold text-[#1A1E27]">
+            <span className="inline-flex flex-wrap items-center justify-center gap-x-0">
               지금 주목할 만한 인기 저자
-              <span className="pointer-events-none absolute -top-1 left-full ml-1.5 rounded-full bg-[#E8F2FF] px-2 py-0.5 text-[10px] font-bold leading-none text-[#2B7FFF] sm:text-[11px]">
+              <span className="ml-1.5 rounded-full bg-[#E8F2FF] px-2 py-0.5 text-xs font-semibold leading-none text-[#2B7FFF]">
                 Beta
               </span>
             </span>
           </h1>
-          <p className="mx-auto mt-4 max-w-[23rem] break-keep text-sm font-medium leading-[1.75] text-[#747B91] sm:mt-3 sm:max-w-lg sm:leading-relaxed">
+          <p className="mx-auto mt-3 max-w-lg break-keep text-sm leading-relaxed text-[#717680]">
             자료 선택이 고민된다면?{" "}
-            <span className="font-semibold text-[#245AB8] underline decoration-[1.5px] underline-offset-2">
-              #태그
-            </span>
-            를 클릭해서 내게 맞는 브랜드를 탐색해 보세요.
+            <span className="font-bold text-[#2B7FFF]">#태그</span>를 클릭해서
+            간편하게 내게 맞는 브랜드를 탐색해 보세요.
           </p>
         </header>
 
