@@ -10,7 +10,7 @@ import HashtagSearchPanel, {
   type HashtagSearchReadyData,
 } from "@/components/HashtagSearchPanel";
 import LiveHashtagPanel from "@/components/LiveHashtagPanel";
-import TagBadge, { TAG_HIGHLIGHT_CLASS } from "@/components/TagBadge";
+import TagBadge, { HashtagMark } from "@/components/TagBadge";
 import { fetchHashtagSearchData } from "@/actions/analytics";
 import { warmHashtagIndexAction } from "@/actions/hashtag-index";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -140,7 +140,7 @@ function RankMeta({
         : "";
     const deltaNum = compactChange.replace(/[▲▼]/g, "");
     changeInner = isUnchanged ? (
-      <span className={`text-lg font-bold leading-none ${colorClass}`}>-</span>
+      <div className="mx-auto h-[2px] w-4 rounded-full bg-[#9E9E9E]" />
     ) : (
       <span
         className={`flex items-center gap-0.5 font-bold leading-none tabular-nums ${colorClass}`}
@@ -153,7 +153,7 @@ function RankMeta({
     );
   } else {
     changeInner = (
-      <span className="text-lg font-bold leading-none text-[#9E9E9E]">-</span>
+      <div className="mx-auto h-[2px] w-4 rounded-full bg-[#9E9E9E]" />
     );
   }
 
@@ -348,11 +348,11 @@ export function RankingRow({
 
   return (
     <div
-      className={`flex w-full items-center gap-6 border-b border-[#E5E7EB] py-4 lg:py-[14px] ${
-        isHashtagLayout ? "pl-10" : ""
+      className={`flex w-full items-start gap-3 border-b border-[#E5E7EB] py-4 md:items-center md:gap-6 lg:py-[14px] ${
+        isHashtagLayout ? "pl-4 md:pl-10" : ""
       }`}
     >
-      {/* 좌측: 순위 + 등락 + 이미지 (좁은 간격) */}
+      {/* 좌측: 순위 + 등락 + 이미지 */}
       <div className="flex shrink-0 items-center gap-2">
         {showRank ? (
           <RankMeta
@@ -363,7 +363,7 @@ export function RankingRow({
         ) : null}
 
         <div
-          className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-pink-200 transition-opacity hover:cursor-pointer hover:opacity-80"
+          className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-pink-200 transition-opacity hover:cursor-pointer hover:opacity-80 md:h-24 md:w-24"
           onClick={profileClickable ? openProfile : undefined}
           onKeyDown={
             profileClickable
@@ -389,26 +389,42 @@ export function RankingRow({
         </div>
       </div>
 
-      {/* 중앙: 저자명 → 해시태그 → 대화창 */}
-      <div className="flex min-w-0 w-full flex-1 flex-col justify-center pl-1 text-left">
-        <h3
-          className="truncate text-base font-bold text-[#1A1E27] transition-opacity hover:cursor-pointer hover:opacity-80"
-          onClick={profileClickable ? openProfile : openIntroModal}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              if (profileClickable) openProfile();
-              else openIntroModal();
-            }
-          }}
-          role="button"
-          tabIndex={0}
-        >
-          {authorName}
-        </h3>
+      {/* 중앙: 저자명(+모바일 프로필) → 해시태그(w-full) → 대화창(md+) */}
+      <div className="flex min-w-0 w-full flex-1 flex-col justify-center text-left">
+        <div className="flex items-center gap-2">
+          <h3
+            className="truncate text-[18px] font-bold text-[#1A1E27] transition-opacity hover:cursor-pointer hover:opacity-80"
+            onClick={profileClickable ? openProfile : openIntroModal}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                if (profileClickable) openProfile();
+                else openIntroModal();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
+            {authorName}
+          </h3>
+          {showUserIcon ? (
+            <button
+              type="button"
+              onClick={openIntroModal}
+              className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80 md:hidden"
+              aria-label={`${authorName} 저자 소개 열기`}
+            >
+              <UserRound
+                className="h-5 w-5 fill-none stroke-[#717680]"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+            </button>
+          ) : null}
+        </div>
 
         {tags.length > 0 ? (
-          <div className="mt-1.5 mb-2 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 flex w-full flex-wrap gap-1.5">
             {tags.map((tag, idx) => (
               <TagBadge key={`${tag}-${idx}`} tag={tag} />
             ))}
@@ -416,20 +432,20 @@ export function RankingRow({
         ) : null}
 
         {intro ? (
-          <div className="mr-12 w-full rounded-lg bg-[#F0F2F5] px-3.5 py-2">
-            <p className="truncate text-base text-[#4A4E58]">{intro}</p>
+          <div className="mt-1.5 mr-12 hidden w-full rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:block">
+            <p className="truncate text-[15px] text-[#4A4E58]">{intro}</p>
           </div>
         ) : null}
       </div>
 
-      {/* 우측: 아이콘 (대화창과 넓은 간격) */}
-      <div className="ml-auto flex w-20 flex-shrink-0 flex-col items-center justify-center gap-1 pl-12">
-        <div className="flex items-center gap-6">
+      {/* 우측: 데스크탑 프로필 + 홈/검색 */}
+      <div className="ml-auto flex w-auto flex-shrink-0 flex-col items-center justify-center gap-1 self-center md:w-20 md:pl-12">
+        <div className="flex items-center gap-3 md:gap-6">
           {showUserIcon ? (
             <button
               type="button"
               onClick={openIntroModal}
-              className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80"
+              className="hidden items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80 md:flex"
               aria-label={`${authorName} 저자 소개 열기`}
             >
               <UserRound
@@ -439,7 +455,7 @@ export function RankingRow({
               />
             </button>
           ) : (
-            <div className="h-6 w-6" />
+            <div className="hidden h-6 w-6 md:block" />
           )}
           <button
             type="button"
@@ -766,7 +782,7 @@ export default function RankingBoard({
       <div
         role="tablist"
         aria-label="과목"
-        className="mx-auto my-3 inline-flex items-center rounded-full border border-gray-100 bg-white p-1 shadow-md"
+        className="mx-auto mb-3 mt-0 inline-flex items-center rounded-full border border-gray-100 bg-white p-1 shadow-md"
       >
         {SUBJECTS.map((item) => {
           const selected = item === effectiveSubject;
@@ -794,7 +810,7 @@ export default function RankingBoard({
       <div
         role="tablist"
         aria-label="랭킹 기준"
-        className="mt-5 flex w-full items-center justify-center gap-6 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-8 [&::-webkit-scrollbar]:hidden"
+        className="mt-5 flex w-full items-center justify-center gap-3 overflow-x-auto border-b border-gray-200 [-ms-overflow-style:none] [scrollbar-width:none] md:gap-8 [&::-webkit-scrollbar]:hidden"
       >
         {RANKING_CATEGORIES.map((item) => {
           const selected = item === category;
@@ -806,7 +822,7 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`relative shrink-0 cursor-pointer whitespace-nowrap px-4 pb-3 text-base transition sm:text-lg ${
+              className={`relative shrink-0 cursor-pointer whitespace-nowrap px-2 pb-2 text-sm transition md:px-4 md:pb-3 md:text-base lg:text-lg ${
                 selected
                   ? "-mb-px border-b-4 border-[#1A1E27] font-bold text-[#1A1E27]"
                   : "font-medium text-[#9E9E9E] hover:text-[#4F566D]"
@@ -820,7 +836,7 @@ export default function RankingBoard({
                       : "font-medium text-[#9E9E9E]"
                   }`}
                 >
-                  인기 <span className={TAG_HIGHLIGHT_CLASS}>#태그</span>
+                  인기 <HashtagMark text="태그" />
                 </span>
               ) : (
                 <span className="break-keep">{label}</span>
@@ -833,7 +849,7 @@ export default function RankingBoard({
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleTextbookRankingClick}
-          className="relative inline-flex shrink-0 items-center whitespace-nowrap pb-2 text-base font-medium text-[#9E9E9E] transition hover:text-[#4F566D] sm:text-lg"
+          className="relative inline-flex shrink-0 items-center whitespace-nowrap pb-2 text-sm font-medium text-[#9E9E9E] transition hover:text-[#4F566D] md:text-base lg:text-lg"
         >
           <span className="flex items-center gap-1">
             교재별 랭킹 <ExternalLink className="w-4 h-4 text-[#717680]" />
@@ -945,7 +961,7 @@ export default function RankingBoard({
             ) : null}
           </div>
 
-          <div className="relative flex w-full items-start gap-12 pr-4 lg:pr-12">
+          <div className="relative flex w-full items-start gap-8 pr-4 md:gap-16 lg:pr-32">
         <div role="tabpanel" className="min-w-0 flex-1 bg-white">
           {/* 태그 탭도 항상 마운트 — 전환 시 재fetch 지연 방지 */}
           <div className={isHashtagSearch ? "block" : "hidden"} aria-hidden={!isHashtagSearch}>

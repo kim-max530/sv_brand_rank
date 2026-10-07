@@ -109,8 +109,11 @@ export default function HashtagAuthorList({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center">
-          <h1 className="whitespace-nowrap rounded-md bg-[#E8F2FF] px-1.5 py-0.5 text-2xl font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4 sm:text-3xl">
-            #{tag}
+          <h1 className="inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2.5 py-1 text-2xl sm:text-3xl">
+            <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
+            <span className="font-bold text-[#1D58B6] underline decoration-[1.5px] underline-offset-2">
+              {tag}
+            </span>
           </h1>
           {relatedTags.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-1.5">
@@ -118,9 +121,12 @@ export default function HashtagAuthorList({
                 <Link
                   key={related}
                   href={hashtagHref(related)}
-                  className="whitespace-nowrap rounded-md bg-[#E8F2FF] px-1.5 py-0.5 text-xs font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4 transition hover:cursor-pointer hover:opacity-80"
+                  className="inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2.5 py-1 text-xs transition hover:cursor-pointer hover:opacity-80"
                 >
-                  #{related}
+                  <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
+                  <span className="font-bold text-[#1D58B6] underline decoration-[1.5px] underline-offset-2">
+                    {related}
+                  </span>
                 </Link>
               ))}
             </div>

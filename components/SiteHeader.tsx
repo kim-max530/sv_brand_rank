@@ -39,7 +39,7 @@ export default function SiteHeader() {
             href="https://solvook.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg p-1.5 text-gray-700 transition hover:bg-gray-50 lg:hidden"
+            className="hidden rounded-lg p-1.5 text-gray-700 transition hover:bg-gray-50 md:block"
             aria-label="메뉴"
           >
             <Menu className="h-6 w-6" strokeWidth={1.75} />

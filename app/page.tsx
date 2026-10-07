@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import RankingBoard from "@/components/RankingBoard";
 import SiteHeader from "@/components/SiteHeader";
+import { HashtagMark } from "@/components/TagBadge";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { fetchAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchMergedRankings } from "@/lib/csv";
@@ -55,21 +56,18 @@ export default async function HomePage() {
       <SiteHeader />
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-14 sm:px-6 sm:pt-10">
-        <header className="mb-6 text-center sm:mb-8">
+        <header className="mb-0 flex flex-col items-center text-center">
           <h1 className="break-keep text-4xl font-bold text-[#1A1E27]">
             <span className="inline-flex flex-wrap items-center justify-center gap-x-0">
               지금 주목할 만한 인기 저자
-              <span className="ml-1.5 rounded-full bg-[#E8F2FF] px-2 py-0.5 text-xs font-semibold leading-none text-[#2B7FFF]">
+              <span className="ml-1.5 rounded-full bg-[#F2F6FC] px-2 py-0.5 text-xs font-semibold leading-none text-[#1D58B6]">
                 Beta
               </span>
             </span>
           </h1>
-          <p className="my-4 w-full text-center text-sm text-[#717680]">
-            자료 선택이 고민된다면?{" "}
-            <span className="rounded-md bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
-              #태그
-            </span>
-            를 클릭해서 간편하게 내게 맞는 브랜드를 탐색해 보세요.
+          <p className="my-5 w-full text-center text-sm text-[#717680]">
+            자료 선택이 고민된다면? <HashtagMark text="태그" />를 클릭해서
+            간편하게 내게 맞는 브랜드를 탐색해 보세요.
           </p>
         </header>
 
