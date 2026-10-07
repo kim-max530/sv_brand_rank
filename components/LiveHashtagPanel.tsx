@@ -7,6 +7,7 @@ import {
   fetchLiveHashtagRanking,
   type LiveHashtagRankItem,
 } from "@/actions/analytics";
+import { TAG_HIGHLIGHT_CLASS } from "@/components/TagBadge";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
 
@@ -107,13 +108,10 @@ export default function LiveHashtagPanel({
     <aside
       className={variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"}
     >
-      <div className="rounded-xl border-2 border-blue-400 bg-white p-5 shadow-[4px_4px_15px_rgba(0,0,0,0.05)]">
-        <h3 className="mb-3 flex flex-wrap items-center gap-1 text-sm font-bold text-[#1A1E27]">
-          실시간{" "}
-          <span className="whitespace-nowrap font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
-            #태그
-          </span>{" "}
-          검색량 Top 5
+      <div className="flex flex-col items-center justify-center rounded-xl border-2 border-blue-400 bg-white p-5 shadow-[4px_4px_15px_rgba(0,0,0,0.05)]">
+        <h3 className="mb-3 flex flex-wrap items-center justify-center gap-1 text-sm font-bold text-[#1A1E27]">
+          실시간 <span className={TAG_HIGHLIGHT_CLASS}>#태그</span> 검색량 Top
+          5
         </h3>
 
         {loading && rows.length === 0 ? (
@@ -126,7 +124,7 @@ export default function LiveHashtagPanel({
           </p>
         ) : (
           <ul
-            className={`py-1 transition-opacity duration-700 ease-in-out ${
+            className={`w-full py-1 transition-opacity duration-700 ease-in-out ${
               pulse ? "opacity-40" : "opacity-100"
             }`}
           >
@@ -139,11 +137,11 @@ export default function LiveHashtagPanel({
                   }
                   className="flex w-full items-center gap-1.5 py-2 transition-opacity hover:cursor-pointer hover:opacity-80"
                 >
-                  <span className="w-4 shrink-0 text-xs font-bold">
+                  <span className="w-4 shrink-0 text-center text-xs font-bold">
                     {item.rank}
                   </span>
                   <span
-                    className={`w-6 shrink-0 text-xs font-bold ${
+                    className={`w-6 shrink-0 text-center text-xs font-bold ${
                       item.changeText.startsWith("▲")
                         ? "text-[#FF3B30]"
                         : item.changeText.startsWith("▼")
@@ -153,10 +151,14 @@ export default function LiveHashtagPanel({
                   >
                     {item.changeText}
                   </span>
-                  <span className="min-w-0 flex-1 truncate whitespace-nowrap text-xs font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
-                    #{item.tag}
+                  <span className="inline-flex min-w-0 max-w-full items-center">
+                    <span
+                      className={`${TAG_HIGHLIGHT_CLASS} truncate text-sm`}
+                    >
+                      #{item.tag}
+                    </span>
+                    <ArrowUpRight className="ml-0.5 h-3 w-3 shrink-0 text-gray-400" />
                   </span>
-                  <ArrowUpRight className="ml-1 inline h-3 w-3 shrink-0 text-gray-400" />
                 </Link>
               </li>
             ))}
@@ -164,7 +166,7 @@ export default function LiveHashtagPanel({
         )}
 
         {updatedLabel ? (
-          <p className="border-t border-[#E5E7EB] pt-2.5 text-right text-[10px] text-gray-400">
+          <p className="mt-2 w-full text-center text-[10px] text-gray-400">
             {updatedLabel} 갱신
           </p>
         ) : null}

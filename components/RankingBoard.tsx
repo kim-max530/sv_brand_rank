@@ -10,7 +10,7 @@ import HashtagSearchPanel, {
   type HashtagSearchReadyData,
 } from "@/components/HashtagSearchPanel";
 import LiveHashtagPanel from "@/components/LiveHashtagPanel";
-import TagBadge from "@/components/TagBadge";
+import TagBadge, { TAG_HIGHLIGHT_CLASS } from "@/components/TagBadge";
 import { fetchHashtagSearchData } from "@/actions/analytics";
 import { warmHashtagIndexAction } from "@/actions/hashtag-index";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -94,12 +94,12 @@ function tabTargetName(category: RankingCategory): string {
 const RANK_COL =
   "w-8 flex-shrink-0 text-center text-lg font-bold text-[#1A1E27]";
 const CHANGE_COL =
-  "flex w-10 flex-shrink-0 items-center justify-center text-xs font-bold";
+  "flex w-14 flex-shrink-0 items-center justify-center font-bold";
 
 function StatusBadge({ badge }: { badge: RankBadge }) {
   if (badge === "NEW") {
     return (
-      <span className="inline-flex items-center text-xs font-bold leading-none text-[#FF9500]">
+      <span className="inline-flex items-center text-lg font-bold leading-none text-[#FF9500]">
         New
       </span>
     );
@@ -126,24 +126,34 @@ function RankMeta({
   if (badge === "NEW") {
     changeInner = <StatusBadge badge={badge} />;
   } else if (showChange) {
-    changeInner = (
+    const colorClass = isUnchanged
+      ? "text-[#9E9E9E]"
+      : rawChange.startsWith("▲")
+        ? "text-[#FF3B30]"
+        : rawChange.startsWith("▼")
+          ? "text-[#2B7FFF]"
+          : "text-[#9E9E9E]";
+    const triangle = rawChange.startsWith("▲")
+      ? "▲"
+      : rawChange.startsWith("▼")
+        ? "▼"
+        : "";
+    const deltaNum = compactChange.replace(/[▲▼]/g, "");
+    changeInner = isUnchanged ? (
+      <span className={`text-lg font-bold leading-none ${colorClass}`}>-</span>
+    ) : (
       <span
-        className={`flex items-center gap-0.5 text-xs font-bold leading-none tabular-nums ${
-          isUnchanged
-            ? "text-[#9E9E9E]"
-            : rawChange.startsWith("▲")
-              ? "text-[#FF3B30]"
-              : rawChange.startsWith("▼")
-                ? "text-[#2B7FFF]"
-                : "text-[#9E9E9E]"
-        }`}
+        className={`flex items-center gap-0.5 font-bold leading-none tabular-nums ${colorClass}`}
       >
-        {isUnchanged ? "-" : compactChange}
+        {triangle ? (
+          <span className="text-xl leading-none">{triangle}</span>
+        ) : null}
+        <span className="text-lg leading-none">{deltaNum}</span>
       </span>
     );
   } else {
     changeInner = (
-      <span className="text-xs font-bold leading-none text-[#9E9E9E]">-</span>
+      <span className="text-lg font-bold leading-none text-[#9E9E9E]">-</span>
     );
   }
 
@@ -406,15 +416,15 @@ export function RankingRow({
         ) : null}
 
         {intro ? (
-          <div className="w-full rounded-lg bg-[#F0F2F5] px-3.5 py-2">
+          <div className="mr-12 w-full rounded-lg bg-[#F0F2F5] px-3.5 py-2">
             <p className="truncate text-base text-[#4A4E58]">{intro}</p>
           </div>
         ) : null}
       </div>
 
-      {/* 우측: 아이콘 (넓은 간격 확보) */}
-      <div className="ml-auto flex w-14 flex-shrink-0 flex-col items-center justify-center gap-1">
-        <div className="flex items-center gap-2">
+      {/* 우측: 아이콘 (대화창과 넓은 간격) */}
+      <div className="ml-auto flex w-20 flex-shrink-0 flex-col items-center justify-center gap-1 pl-12">
+        <div className="flex items-center gap-6">
           {showUserIcon ? (
             <button
               type="button"
@@ -767,7 +777,7 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectSubject(item)}
-              className={`rounded-full px-8 py-2 text-lg transition ${
+              className={`rounded-full px-6 py-2 text-lg transition ${
                 selected
                   ? item === "국어"
                     ? "bg-[#FFCC00] font-bold text-black shadow-sm"
@@ -810,10 +820,7 @@ export default function RankingBoard({
                       : "font-medium text-[#9E9E9E]"
                   }`}
                 >
-                  인기{" "}
-                  <span className="whitespace-nowrap font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
-                    #태그
-                  </span>
+                  인기 <span className={TAG_HIGHLIGHT_CLASS}>#태그</span>
                 </span>
               ) : (
                 <span className="break-keep">{label}</span>
@@ -922,21 +929,23 @@ export default function RankingBoard({
       )}
 
       <div className="relative left-1/2 w-screen -translate-x-1/2 bg-white pb-10">
-        <div className="mx-auto w-full max-w-5xl px-4 pt-7 sm:px-6 sm:pt-6">
-          <div className="relative mb-5 w-full">
+        <div className="mx-auto w-full max-w-5xl px-4 pt-5 sm:px-6 sm:pt-4">
+          <div className="relative mb-4 w-full">
             {categoryDescription ? (
-              <div className="my-2 flex w-full flex-wrap items-center justify-center gap-x-2 text-xs text-[#8E939F]">
-                <span className="text-center">{categoryDescription}</span>
-                {weekRangeLabel ? (
-                  <span className="text-center whitespace-nowrap">
+              <div className="mb-4 flex w-full flex-col items-center justify-center leading-tight">
+                <p className="text-center text-xs text-[#8E939F]">
+                  {categoryDescription}
+                </p>
+                {!isHashtagSearch && weekRangeLabel ? (
+                  <p className="mt-0.5 text-center text-xs text-[#8E939F]">
                     {weekRangeLabel}
-                  </span>
+                  </p>
                 ) : null}
               </div>
             ) : null}
           </div>
 
-          <div className="relative flex w-full items-start gap-8">
+          <div className="relative flex w-full items-start gap-12 pr-4 lg:pr-12">
         <div role="tabpanel" className="min-w-0 flex-1 bg-white">
           {/* 태그 탭도 항상 마운트 — 전환 시 재fetch 지연 방지 */}
           <div className={isHashtagSearch ? "block" : "hidden"} aria-hidden={!isHashtagSearch}>
