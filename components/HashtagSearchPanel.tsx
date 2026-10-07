@@ -114,10 +114,10 @@ export default function HashtagSearchPanel({
             <span className="flex w-6 shrink-0 items-center justify-center text-lg font-bold tabular-nums text-[#1A1E27]">
               {index + 1}
             </span>
-            <span className="flex w-10 shrink-0 items-center justify-center text-xs font-bold text-[#9E9E9E]">
-              -
+            <span className="flex w-10 shrink-0 items-center justify-center">
+              <div className="mx-auto h-[2px] w-4 rounded-full bg-[#9E9E9E]" />
             </span>
-            <span className="inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2.5 py-1 hover:cursor-pointer">
+            <span className="inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2 py-1 hover:cursor-pointer">
               <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
               <span className="font-bold text-[#1D58B6] underline decoration-[1.5px] underline-offset-2">
                 {item.tag}

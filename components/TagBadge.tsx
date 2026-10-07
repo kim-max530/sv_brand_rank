@@ -19,7 +19,7 @@ export function HashtagMark({
   return (
     <span
       className={`inline-flex items-center ${
-        withBg ? "rounded bg-[#F2F6FC] px-2.5 py-1" : ""
+        withBg ? "rounded bg-[#F2F6FC] px-2 py-1" : ""
       } ${className}`.trim()}
     >
       <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
@@ -32,7 +32,7 @@ export function HashtagMark({
 
 /** 랭킹 리스트용 (축소 폰트 + 배경) */
 export const TAG_BADGE_CLASS =
-  "inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2.5 py-1 text-[11px] hover:cursor-pointer";
+  "inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2 py-1 text-[11px] hover:cursor-pointer";
 
 export default function TagBadge({
   tag,

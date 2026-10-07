@@ -99,7 +99,7 @@ const CHANGE_COL =
 function StatusBadge({ badge }: { badge: RankBadge }) {
   if (badge === "NEW") {
     return (
-      <span className="inline-flex items-center text-lg font-bold leading-none text-[#FF9500]">
+      <span className="inline-flex items-center text-[10px] font-bold leading-none text-[#FF9500] md:text-lg">
         New
       </span>
     );
@@ -146,9 +146,11 @@ function RankMeta({
         className={`flex items-center gap-0.5 font-bold leading-none tabular-nums ${colorClass}`}
       >
         {triangle ? (
-          <span className="text-xl leading-none">{triangle}</span>
+          <span className="text-[10px] leading-none md:text-xl">
+            {triangle}
+          </span>
         ) : null}
-        <span className="text-lg leading-none">{deltaNum}</span>
+        <span className="text-[10px] leading-none md:text-lg">{deltaNum}</span>
       </span>
     );
   } else {
@@ -158,9 +160,9 @@ function RankMeta({
   }
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-0.5 lg:flex-row lg:items-center lg:gap-1">
+    <div className="flex shrink-0 flex-col items-center gap-2 md:gap-0.5 lg:flex-row lg:items-center lg:gap-1">
       <div className={RANK_COL}>{safeRank || "-"}</div>
-      <div className={CHANGE_COL}>{changeInner}</div>
+      <div className={`${CHANGE_COL} mt-1.5 md:mt-0`}>{changeInner}</div>
     </div>
   );
 }
@@ -389,11 +391,12 @@ export function RankingRow({
         </div>
       </div>
 
-      {/* 중앙: 저자명(+모바일 프로필) → 해시태그(w-full) → 대화창(md+) */}
-      <div className="flex min-w-0 w-full flex-1 flex-col justify-center text-left">
-        <div className="flex items-center gap-2">
+      {/* 중앙: 저자명(+모바일 아이콘) → 해시태그/모바일 Intro → PC Intro */}
+      <div className="flex min-w-0 w-full flex-1 flex-col justify-center text-left md:flex-[2]">
+        {/* [모바일] 첫 줄: 저자명 + 우측 아이콘 2개 / PC는 저자명만 */}
+        <div className="flex w-full items-center justify-between gap-2">
           <h3
-            className="truncate text-[18px] font-bold text-[#1A1E27] transition-opacity hover:cursor-pointer hover:opacity-80"
+            className="min-w-0 truncate text-[18px] font-bold text-[#1A1E27] transition-opacity hover:cursor-pointer hover:opacity-80 md:text-[21px]"
             onClick={profileClickable ? openProfile : openIntroModal}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -407,45 +410,73 @@ export function RankingRow({
           >
             {authorName}
           </h3>
-          {showUserIcon ? (
+          <div className="ml-auto flex shrink-0 items-center gap-3 md:hidden">
+            {showUserIcon ? (
+              <button
+                type="button"
+                onClick={openIntroModal}
+                className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80"
+                aria-label={`${authorName} 저자 소개 열기`}
+              >
+                <UserRound
+                  className="h-5 w-5 fill-none stroke-[#717680]"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+              </button>
+            ) : (
+              <div className="h-5 w-5" />
+            )}
             <button
               type="button"
-              onClick={openIntroModal}
-              className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80 md:hidden"
-              aria-label={`${authorName} 저자 소개 열기`}
+              onClick={handleActionClick}
+              className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80"
+              aria-label={
+                address
+                  ? `${authorName} 홈페이지 열기`
+                  : `${authorName} 검색하기`
+              }
             >
-              <UserRound
-                className="h-5 w-5 fill-none stroke-[#717680]"
-                strokeWidth={1.5}
-                aria-hidden
-              />
+              {address ? (
+                <StoreHeartIcon className="h-5 w-5 fill-none stroke-[#717680]" />
+              ) : (
+                <Search className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+              )}
             </button>
+          </div>
+        </div>
+
+        {/* [모바일] 두 번째 줄: 해시태그 풀폭 / 없으면 Intro */}
+        <div className="mt-1.5 w-full md:mt-0">
+          {tags.length > 0 ? (
+            <div className="flex w-full flex-wrap gap-1.5 md:mt-1.5">
+              {tags.map((tag, idx) => (
+                <TagBadge key={`${tag}-${idx}`} tag={tag} />
+              ))}
+            </div>
+          ) : intro ? (
+            <div className="block w-full truncate rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:hidden">
+              <p className="truncate text-[15px] text-[#4A4E58]">{intro}</p>
+            </div>
           ) : null}
         </div>
 
-        {tags.length > 0 ? (
-          <div className="mt-1.5 flex w-full flex-wrap gap-1.5">
-            {tags.map((tag, idx) => (
-              <TagBadge key={`${tag}-${idx}`} tag={tag} />
-            ))}
-          </div>
-        ) : null}
-
+        {/* PC 대화창 (너비 확대) */}
         {intro ? (
-          <div className="mt-1.5 mr-12 hidden w-full rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:block">
+          <div className="mt-1.5 hidden w-full max-w-none rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:block md:w-full md:max-w-2xl">
             <p className="truncate text-[15px] text-[#4A4E58]">{intro}</p>
           </div>
         ) : null}
       </div>
 
-      {/* 우측: 데스크탑 프로필 + 홈/검색 */}
-      <div className="ml-auto flex w-auto flex-shrink-0 flex-col items-center justify-center gap-1 self-center md:w-20 md:pl-12">
-        <div className="flex items-center gap-3 md:gap-6">
+      {/* 우측 액션: PC만 (모바일은 저자명 줄에 배치) */}
+      <div className="ml-auto hidden w-20 flex-shrink-0 flex-col items-center justify-center gap-1 self-center pl-12 md:flex">
+        <div className="flex items-center gap-6">
           {showUserIcon ? (
             <button
               type="button"
               onClick={openIntroModal}
-              className="hidden items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80 md:flex"
+              className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80"
               aria-label={`${authorName} 저자 소개 열기`}
             >
               <UserRound
@@ -455,7 +486,7 @@ export function RankingRow({
               />
             </button>
           ) : (
-            <div className="hidden h-6 w-6 md:block" />
+            <div className="h-6 w-6" />
           )}
           <button
             type="button"

@@ -57,7 +57,7 @@ export default async function HomePage() {
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-14 sm:px-6 sm:pt-10">
         <header className="mb-0 flex flex-col items-center text-center">
-          <h1 className="break-keep text-4xl font-bold text-[#1A1E27]">
+          <h1 className="break-keep text-2xl font-bold text-[#1A1E27] md:text-[32px]">
             <span className="inline-flex flex-wrap items-center justify-center gap-x-0">
               지금 주목할 만한 인기 저자
               <span className="ml-1.5 rounded-full bg-[#F2F6FC] px-2 py-0.5 text-xs font-semibold leading-none text-[#1D58B6]">
@@ -66,8 +66,9 @@ export default async function HomePage() {
             </span>
           </h1>
           <p className="my-5 w-full text-center text-sm text-[#717680]">
-            자료 선택이 고민된다면? <HashtagMark text="태그" />를 클릭해서
-            간편하게 내게 맞는 브랜드를 탐색해 보세요.
+            자료 선택이 고민된다면? <HashtagMark text="태그" />를 클릭해서{" "}
+            <br className="block md:hidden" />
+            간편하게 내게 맞는 브랜드를 탐색해 보세요
           </p>
         </header>
 

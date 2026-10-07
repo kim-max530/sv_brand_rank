@@ -142,7 +142,7 @@ export default function LiveHashtagPanel({
                   </span>
                   <span className="flex w-6 shrink-0 items-center justify-center">
                     {item.changeText === "-" ? (
-                      <div className="mx-auto h-[2px] w-4 rounded-full bg-[#9E9E9E]" />
+                      <div className="mx-auto h-[2px] w-[11px] rounded-full bg-[#9E9E9E]" />
                     ) : (
                       <span
                         className={`text-center text-xs font-bold ${
