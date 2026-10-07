@@ -9,8 +9,8 @@ import {
 
 const STORAGE_BUCKET = "weekly_ranking";
 
+/** 주간 랭킹 CSV만 취급. brand_info는 actions/brand-info.ts로 분리 */
 const ALLOWED_FILES = new Set<string>([
-  "brand_info.csv",
   ...CURR_RANKING_UPLOAD_FILES.map(({ file }) => file),
   ...PREV_RANKING_UPLOAD_FILES.map(({ file }) => file),
 ]);
@@ -19,26 +19,6 @@ function invalidateRankingPages(): void {
   revalidateTag("ranking-data", { expire: 0 });
   revalidatePath("/");
   revalidatePath("/hashtag", "layout");
-}
-
-function validateBrandInfoCsv(buffer: Buffer): string | null {
-  const firstLine =
-    buffer.toString("utf8").replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
-  const headers = firstLine
-    .split(",")
-    .map((value) => value.trim().replace(/^"|"$/g, "").toLowerCase());
-  const hasUid = headers.some((value) =>
-    ["uid", "brand_id"].includes(value),
-  );
-  const hasTags = headers.some((value) =>
-    ["record2", "record 2", "record_2", "hashtag", "hashtags"].includes(
-      value,
-    ),
-  );
-  if (!hasUid || !hasTags) {
-    return "brand_info.csv에는 UID와 record2(태그) 열이 반드시 필요합니다.";
-  }
-  return null;
 }
 
 export type UploadCsvResult =
@@ -92,10 +72,6 @@ export async function uploadRankingCsv(
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    if (targetName === "brand_info.csv") {
-      const validationError = validateBrandInfoCsv(buffer);
-      if (validationError) return { ok: false, error: validationError };
-    }
 
     const { error } = await client.supabase.storage
       .from(STORAGE_BUCKET)
@@ -114,11 +90,7 @@ export async function uploadRankingCsv(
 
     invalidateRankingPages();
 
-    const kind = targetName.startsWith("prev_")
-      ? "지난주"
-      : targetName === "brand_info.csv"
-        ? "브랜드 정보"
-        : "이번 주";
+    const kind = targetName.startsWith("prev_") ? "지난주" : "이번 주";
 
     return {
       ok: true,

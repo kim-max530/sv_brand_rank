@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
 import AuthorEventsPanel from "@/components/admin/AuthorEventsPanel";
 import BannerAdminPanel from "@/components/admin/BannerAdminPanel";
+import BrandInfoPanel from "@/components/admin/BrandInfoPanel";
 import HashtagAdminPanel from "@/components/admin/HashtagAdminPanel";
 import UploadPanel from "@/components/admin/UploadPanel";
 import { ADMIN_ID, ADMIN_PW } from "@/lib/admin-auth";
@@ -13,10 +14,17 @@ import {
   setAdminAuthCookie,
 } from "@/lib/admin-auth-client";
 
-type AdminTab = "upload" | "analytics" | "events" | "hashtags" | "banner";
+type AdminTab =
+  | "brand"
+  | "upload"
+  | "analytics"
+  | "events"
+  | "hashtags"
+  | "banner";
 
 const TABS: Array<{ id: AdminTab; label: string }> = [
-  { id: "upload", label: "파일 업로드" },
+  { id: "brand", label: "브랜드 정보" },
+  { id: "upload", label: "주간 랭킹 업로드" },
   { id: "analytics", label: "사용 데이터" },
   { id: "events", label: "저자 이벤트" },
   { id: "hashtags", label: "해시태그 관리" },
@@ -93,7 +101,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 function AdminShell({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab] = useState<AdminTab>("upload");
+  const [tab, setTab] = useState<AdminTab>("brand");
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:gap-6 lg:py-8">
@@ -140,6 +148,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       <div className="min-w-0 flex-1">
+        {tab === "brand" ? <BrandInfoPanel /> : null}
         {tab === "upload" ? <UploadPanel /> : null}
         {tab === "analytics" ? <AnalyticsPanel /> : null}
         {tab === "events" ? <AuthorEventsPanel /> : null}

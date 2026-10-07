@@ -15,6 +15,7 @@ import {
   SUBJECTS,
   toPrevRankFilename,
 } from "@/lib/constants";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   BrandInfo,
   MergedRanking,
@@ -23,6 +24,8 @@ import type {
   SourceRankingCategory,
   Subject,
 } from "@/types/ranking";
+
+const STORAGE_BUCKET = "weekly_ranking";
 
 function stripBom(text: string): string {
   return text.replace(/^\uFEFF/, "");
@@ -239,11 +242,36 @@ function parseBrandInfoBytes(bytes: Uint8Array): BrandInfo[] {
   return list;
 }
 
+/** CDN/public URL 캐시를 우회해 Storage 원본 brand_info를 직접 읽는다. */
+async function downloadBrandInfoFromStorage(): Promise<Uint8Array | null> {
+  try {
+    const supabase = getSupabaseAdminClient();
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .download("brand_info.csv");
+    if (error || !data) {
+      console.warn("[brand_info] storage download", error?.message);
+      return null;
+    }
+    return new Uint8Array(await data.arrayBuffer());
+  } catch (error) {
+    console.warn("[brand_info] storage download", error);
+    return null;
+  }
+}
+
 /**
  * Storage의 brand_info가 잘못 업로드됐거나 핵심 필드가 비어 있으면
  * 배포본에 포함된 정상 CSV로 복구한다.
  */
 async function fetchBaseBrandInfoList(): Promise<BrandInfo[]> {
+  const storageBytes = await downloadBrandInfoFromStorage();
+  const storageList = storageBytes ? parseBrandInfoBytes(storageBytes) : [];
+  const storageHasMetadata = storageList.some(
+    (item) => Boolean(item.address?.trim()) || Boolean(item.record2?.trim()),
+  );
+  if (storageList.length > 0 && storageHasMetadata) return storageList;
+
   const remoteBytes = await fetchCsvBytes("brand_info.csv");
   const remote = remoteBytes ? parseBrandInfoBytes(remoteBytes) : [];
   const remoteHasMetadata = remote.some(
@@ -262,7 +290,7 @@ async function fetchBaseBrandInfoList(): Promise<BrandInfo[]> {
   } catch (error) {
     console.warn("Bundled brand_info.csv fallback failed", error);
   }
-  return remote;
+  return storageList.length > 0 ? storageList : remote;
 }
 
 function toRankingRecord(row: Record<string, string>): RankingRecord | null {

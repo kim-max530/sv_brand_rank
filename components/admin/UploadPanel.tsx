@@ -14,15 +14,11 @@ import {
 const STORAGE_BUCKET = "weekly_ranking";
 
 type UploadTarget = { file: string; label: string };
-type UploadSectionKey = "brand" | "prev" | "curr";
+type UploadSectionKey = "prev" | "curr";
 
 const PREV_TARGETS: UploadTarget[] = PREV_RANKING_UPLOAD_FILES.map(
   ({ file, label }) => ({ file, label }),
 );
-
-const BRAND_TARGETS: UploadTarget[] = [
-  { file: "brand_info.csv", label: "브랜드 정보 (brand_info.csv)" },
-];
 
 const CURR_TARGETS: UploadTarget[] = CURR_RANKING_UPLOAD_FILES.map(
   ({ file, label }) => ({ file, label }),
@@ -136,9 +132,6 @@ function UploadSection({
 }
 
 export default function UploadPanel() {
-  const [brandStates, setBrandStates] = useState(() =>
-    createInitialFileState(BRAND_TARGETS),
-  );
   const [prevStates, setPrevStates] = useState(() =>
     createInitialFileState(PREV_TARGETS),
   );
@@ -155,10 +148,9 @@ export default function UploadPanel() {
 
   const isUploading = useMemo(
     () =>
-      Object.values(brandStates).some((s) => s.status === "uploading") ||
       Object.values(prevStates).some((s) => s.status === "uploading") ||
       Object.values(currStates).some((s) => s.status === "uploading"),
-    [brandStates, prevStates, currStates],
+    [prevStates, currStates],
   );
 
   const updateState = (
@@ -166,12 +158,7 @@ export default function UploadPanel() {
     name: string,
     patch: Partial<FileState>,
   ) => {
-    const setter =
-      section === "brand"
-        ? setBrandStates
-        : section === "prev"
-          ? setPrevStates
-          : setCurrStates;
+    const setter = section === "prev" ? setPrevStates : setCurrStates;
     setter((prev) => ({
       ...prev,
       [name]: { ...prev[name], ...patch },
@@ -263,12 +250,7 @@ export default function UploadPanel() {
     setGlobalMessage("");
     setRevalidateMessage("");
 
-    const states =
-      section === "brand"
-        ? brandStates
-        : section === "prev"
-          ? prevStates
-          : currStates;
+    const states = section === "prev" ? prevStates : currStates;
     const selected = targets.filter(
       ({ file }) => states[file]?.file instanceof File,
     );
@@ -302,9 +284,7 @@ export default function UploadPanel() {
     targets: UploadTarget[],
   ) => {
     const label =
-      section === "brand"
-        ? "브랜드 정보(brand_info.csv)"
-        : section === "prev"
+      section === "prev"
         ? "지난주 랭킹 데이터(prev_rank_*)"
         : "이번 주 랭킹 데이터(rank_*)";
     const ok = window.confirm(
@@ -324,9 +304,7 @@ export default function UploadPanel() {
     }
 
     setGlobalMessage(result.message);
-    if (section === "brand") {
-      setBrandStates(createInitialFileState(BRAND_TARGETS));
-    } else if (section === "prev") {
+    if (section === "prev") {
       setPrevStates(createInitialFileState(PREV_TARGETS));
     } else {
       setCurrStates(createInitialFileState(CURR_TARGETS));
@@ -353,25 +331,15 @@ export default function UploadPanel() {
     <div className="space-y-6">
       <div>
         <h2 className="font-display text-2xl font-semibold text-slate-900">
-          파일 업로드
+          주간 랭킹 업로드
         </h2>
         <p className="mt-1 text-sm text-slate-500">
           지난주(<code>prev_rank_*.csv</code>)와 이번 주(
-          <code>rank_*.csv</code>)를 분리해 관리합니다. 순위 변동·NEW 뱃지는 두
-          세트를 비교해 계산됩니다.
+          <code>rank_*.csv</code>)만 관리합니다. 브랜드 정보(
+          <code>brand_info.csv</code>)는 좌측{" "}
+          <strong>브랜드 정보</strong> 메뉴에서 별도로 업로드하세요.
         </p>
       </div>
-
-      <UploadSection
-        title="브랜드 정보 업로드 (상시 기준 데이터)"
-        description="brand_info.csv — 저자명, 브랜드 주소, 소개 및 태그(record2)를 관리합니다. 주간 랭킹 초기화와 독립적으로 유지됩니다."
-        targets={BRAND_TARGETS}
-        fileStates={brandStates}
-        onFileChange={(name, file) => handleFileChange("brand", name, file)}
-        onUpload={() => void handleUploadSection("brand", BRAND_TARGETS)}
-        onReset={() => void handleResetSection("brand", BRAND_TARGETS)}
-        busy={isBusy || isUploading}
-      />
 
       <UploadSection
         title="지난주 랭킹 데이터 업로드 (초기화 및 비교용)"
