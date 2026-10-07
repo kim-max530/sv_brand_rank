@@ -9,6 +9,7 @@ import {
 import {
   CURR_RANKING_UPLOAD_FILES,
   PREV_RANKING_UPLOAD_FILES,
+  matchesRankingUploadFilename,
 } from "@/lib/constants";
 
 const STORAGE_BUCKET = "weekly_ranking";
@@ -188,19 +189,26 @@ export default function UploadPanel() {
       return;
     }
 
-    if (file.name.toLowerCase() !== targetName.toLowerCase()) {
+    if (!matchesRankingUploadFilename(file.name, targetName)) {
+      const hint = targetName.startsWith("prev_")
+        ? `${targetName.replace(/^prev_/i, "")} 또는 ${targetName}`
+        : targetName;
       updateState(section, targetName, {
         file: null,
         status: "error",
-        message: `파일명을 ${targetName}(으)로 맞춰 주세요.`,
+        message: `파일명을 ${hint}(으)로 맞춰 주세요.`,
       });
       return;
     }
 
+    const willRename =
+      section === "prev" && !file.name.toLowerCase().startsWith("prev_");
     updateState(section, targetName, {
       file,
       status: "idle",
-      message: `${file.name} 선택됨`,
+      message: willRename
+        ? `${file.name} 선택됨 → 저장명 ${targetName}`
+        : `${file.name} 선택됨`,
     });
   };
 
@@ -332,16 +340,16 @@ export default function UploadPanel() {
       <div>
         <h3 className="text-lg font-semibold text-slate-900">데이터 업로드</h3>
         <p className="mt-1 text-sm text-slate-500">
-          지난주(<code>prev_rank_*.csv</code>)와 이번 주(
-          <code>rank_*.csv</code>) 금액·건수 등 랭킹 데이터만 관리합니다.
-          항목 순서는 <code>rank_amount</code> → <code>rank_count</code>{" "}
-          알파벳순입니다.
+          지난주는 <code>rank_*.csv</code>로 올려도 저장 시{" "}
+          <code>prev_</code>가 붙고, 이번 주는 <code>rank_*.csv</code> 그대로
+          저장됩니다. 항목 순서는 <code>rank_amount</code> →{" "}
+          <code>rank_count</code> 알파벳순입니다.
         </p>
       </div>
 
       <UploadSection
         title="지난주 랭킹 데이터 업로드 (초기화 및 비교용)"
-        description="prev_rank_*.csv — 순위 변동 비교 기준. 비어 있으면 변동 표시를 숨깁니다."
+        description="rank_*.csv로 업로드 → Storage에 prev_rank_*.csv로 저장. 순위 변동 비교 기준이며 비어 있으면 변동 표시를 숨깁니다."
         targets={PREV_TARGETS}
         fileStates={prevStates}
         onFileChange={(name, file) => handleFileChange("prev", name, file)}

@@ -5,6 +5,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   CURR_RANKING_UPLOAD_FILES,
   PREV_RANKING_UPLOAD_FILES,
+  matchesRankingUploadFilename,
 } from "@/lib/constants";
 
 const STORAGE_BUCKET = "weekly_ranking";
@@ -60,10 +61,14 @@ export async function uploadRankingCsv(
     return { ok: false, error: "CSV 파일만 업로드할 수 있습니다." };
   }
 
-  if (file.name.toLowerCase() !== targetName.toLowerCase()) {
+  // 지난주(prev_*) 대상은 rank_*.csv로 올려도 되며 Storage에는 targetName(prev_*)으로 저장
+  if (!matchesRankingUploadFilename(file.name, targetName)) {
+    const hint = targetName.startsWith("prev_")
+      ? `${targetName.replace(/^prev_/i, "")} 또는 ${targetName}`
+      : targetName;
     return {
       ok: false,
-      error: `선택한 파일명을 ${targetName}(으)로 맞춰 주세요.`,
+      error: `선택한 파일명을 ${hint}(으)로 맞춰 주세요.`,
     };
   }
 
@@ -91,10 +96,15 @@ export async function uploadRankingCsv(
     invalidateRankingPages();
 
     const kind = targetName.startsWith("prev_") ? "지난주" : "이번 주";
+    const renamed =
+      targetName.startsWith("prev_") &&
+      !file.name.toLowerCase().startsWith("prev_")
+        ? ` · ${file.name} → ${targetName}`
+        : "";
 
     return {
       ok: true,
-      message: `${kind} 업로드 완료 (${targetName})`,
+      message: `${kind} 업로드 완료 (${targetName})${renamed}`,
     };
   } catch (error) {
     return {

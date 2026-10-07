@@ -36,18 +36,34 @@ export const CURR_RANKING_UPLOAD_FILES = RANKING_FILES.map(
   }),
 );
 
-/** 지난주 비교용 (prev_rank_*.csv) — ranking_prev 역할 */
+/** 지난주 비교용 (prev_rank_*.csv) — ranking_prev 역할
+ * UI에서는 rank_*.csv로 올려도 되며, Storage에는 prev_ 접두사로 저장한다.
+ */
 export const PREV_RANKING_UPLOAD_FILES = RANKING_FILES.map(
   ({ file, category }) => ({
     file: `prev_${file}`,
     category,
-    label: `${category} · 지난주 (prev_${file})`,
+    label: `${category} · 지난주 (${file} → prev_${file})`,
   }),
 );
 
 export function toPrevRankFilename(filename: string): string {
   if (filename.startsWith("prev_")) return filename;
   return `prev_${filename}`;
+}
+
+/** 업로드 선택 파일명이 저장 대상과 맞는지 (지난주는 rank_*도 허용) */
+export function matchesRankingUploadFilename(
+  fileName: string,
+  targetName: string,
+): boolean {
+  const lower = fileName.toLowerCase();
+  const target = targetName.toLowerCase();
+  if (lower === target) return true;
+  if (target.startsWith("prev_") && lower === target.slice("prev_".length)) {
+    return true;
+  }
+  return false;
 }
 
 /** 인기 랭킹에 합산하는 지표 (가중치 없이 순위 합) */
