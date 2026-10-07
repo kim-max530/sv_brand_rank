@@ -392,7 +392,7 @@ export function RankingRow({
       </div>
 
       {/* 중앙: 저자명(+모바일 아이콘) → 해시태그/모바일 Intro → PC Intro */}
-      <div className="flex min-w-0 w-full flex-1 flex-col justify-center text-left md:flex-[2]">
+      <div className="flex min-w-0 w-full flex-1 flex-col justify-center text-left md:mr-8">
         {/* [모바일] 첫 줄: 저자명 + 우측 아이콘 2개 / PC는 저자명만 */}
         <div className="flex w-full items-center justify-between gap-2">
           <h3
@@ -456,21 +456,23 @@ export function RankingRow({
             </div>
           ) : intro ? (
             <div className="block w-full truncate rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:hidden">
-              <p className="truncate text-[15px] text-[#4A4E58]">{intro}</p>
+              <p className="w-full truncate text-[15px] text-[#4A4E58]">
+                {intro}
+              </p>
             </div>
           ) : null}
         </div>
 
-        {/* PC 대화창 (너비 확대) */}
+        {/* PC 대화창 — 중앙 flex-1 폭을 전부 사용 */}
         {intro ? (
-          <div className="mt-1.5 hidden w-full max-w-none rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:block md:w-full md:max-w-2xl">
-            <p className="truncate text-[15px] text-[#4A4E58]">{intro}</p>
+          <div className="mt-1.5 hidden w-full rounded-lg bg-[#F0F2F5] py-1 pl-1.5 pr-3.5 md:block">
+            <p className="w-full truncate text-[15px] text-[#4A4E58]">{intro}</p>
           </div>
         ) : null}
       </div>
 
       {/* 우측 액션: PC만 (모바일은 저자명 줄에 배치) */}
-      <div className="ml-auto hidden w-20 flex-shrink-0 flex-col items-center justify-center gap-1 self-center pl-12 md:flex">
+      <div className="hidden w-20 flex-shrink-0 flex-col items-center justify-center gap-1 self-center md:flex">
         <div className="flex items-center gap-6">
           {showUserIcon ? (
             <button
