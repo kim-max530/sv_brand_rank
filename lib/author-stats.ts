@@ -99,7 +99,6 @@ export async function ensureAuthorStatsForUids(
     const inserts = missing.map((uid) => ({
       uid,
       total_clicks: randomInitialClicks(),
-      updated_at: new Date().toISOString(),
     }));
 
     // 화면에는 즉시 반영 (레이스 시 아래에서 DB 실값으로 재동기화)
@@ -200,10 +199,7 @@ export async function incrementAuthorClicks(
       const next = Math.max(0, Number(current.total_clicks) || 0) + 1;
       const { error: updateError } = await supabase
         .from("author_stats")
-        .update({
-          total_clicks: next,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ total_clicks: next })
         .eq("uid", trimmed);
 
       if (updateError) {
@@ -221,7 +217,6 @@ export async function incrementAuthorClicks(
         {
           uid: trimmed,
           total_clicks: initial,
-          updated_at: new Date().toISOString(),
         },
         { onConflict: "uid", ignoreDuplicates: true },
       );

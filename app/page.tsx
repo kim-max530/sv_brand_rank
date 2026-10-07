@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import RankingBoard from "@/components/RankingBoard";
 import SiteHeader from "@/components/SiteHeader";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
-import { ensureAuthorStatsForUids } from "@/lib/author-stats";
+import { fetchAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchMergedRankings } from "@/lib/csv";
 import { getPreviousWeekDateRange } from "@/lib/date";
 import { fetchPromoBanner } from "@/lib/promo-banner";
@@ -32,7 +32,7 @@ export default async function HomePage() {
       };
     });
 
-    const clickMap = await ensureAuthorStatsForUids(
+    const clickMap = await fetchAuthorStatsForUids(
       withEvents.map((item) => item.UID),
     );
 

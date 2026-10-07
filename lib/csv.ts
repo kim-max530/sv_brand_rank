@@ -165,12 +165,30 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
   const 저자명 = cell(row, "저자명", "brand_name", "nickname", "name");
   if (!UID || !저자명) return null;
 
-  const address = cell(row, "address", "Address");
+  const address = cell(
+    row,
+    "address",
+    "Address",
+    "brand_address",
+    "브랜드주소",
+    "주소",
+  );
   const info1 = cell(row, "info1", "Info1");
   const info2 = cell(row, "info2", "Info2");
   const intro = cell(row, "intro", "Intro");
   const record = cell(row, "record", "Record");
-  const record2 = cell(row, "record2", "Record2", "RECORD2");
+  const record2 = cell(
+    row,
+    "record2",
+    "Record2",
+    "RECORD2",
+    "record 2",
+    "record_2",
+    "태그",
+    "해시태그",
+    "hashtag",
+    "hashtags",
+  );
   const range3 = cell(row, "range3", "Range3");
   const youtube_url = cell(
     row,
@@ -206,6 +224,45 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
     ...(parseMarkO(부교재Raw) ? { 부교재: true } : {}),
     ...(parseMarkO(모의고사Raw) ? { 모의고사: true } : {}),
   };
+}
+
+function parseBrandInfoBytes(bytes: Uint8Array): BrandInfo[] {
+  const list: BrandInfo[] = [];
+  const seen = new Set<string>();
+  for (const info of parseCsv(decodeCsvBytes(bytes))
+    .map(toBrandInfo)
+    .filter((item): item is BrandInfo => item !== null)) {
+    if (seen.has(info.UID)) continue;
+    seen.add(info.UID);
+    list.push(info);
+  }
+  return list;
+}
+
+/**
+ * Storage의 brand_info가 잘못 업로드됐거나 핵심 필드가 비어 있으면
+ * 배포본에 포함된 정상 CSV로 복구한다.
+ */
+async function fetchBaseBrandInfoList(): Promise<BrandInfo[]> {
+  const remoteBytes = await fetchCsvBytes("brand_info.csv");
+  const remote = remoteBytes ? parseBrandInfoBytes(remoteBytes) : [];
+  const remoteHasMetadata = remote.some(
+    (item) => Boolean(item.address?.trim()) || Boolean(item.record2?.trim()),
+  );
+  if (remote.length > 0 && remoteHasMetadata) return remote;
+
+  try {
+    const local = parseBrandInfoBytes(await readLocalCsv("brand_info.csv"));
+    if (local.length > 0) {
+      console.warn(
+        "Storage brand_info.csv가 유효하지 않아 배포본 CSV를 사용합니다.",
+      );
+      return local;
+    }
+  } catch (error) {
+    console.warn("Bundled brand_info.csv fallback failed", error);
+  }
+  return remote;
 }
 
 function toRankingRecord(row: Record<string, string>): RankingRecord | null {
@@ -518,18 +575,7 @@ function buildPopularRankings(
 export async function fetchBrandInfoList(options?: {
   applyOverrides?: boolean;
 }): Promise<BrandInfo[]> {
-  const bytes = await fetchCsvBytes("brand_info.csv");
-  if (!bytes) return [];
-
-  const list: BrandInfo[] = [];
-  const seen = new Set<string>();
-  for (const info of parseCsv(decodeCsvBytes(bytes))
-    .map(toBrandInfo)
-    .filter((item): item is BrandInfo => item !== null)) {
-    if (seen.has(info.UID)) continue;
-    seen.add(info.UID);
-    list.push(info);
-  }
+  const list = await fetchBaseBrandInfoList();
 
   if (options?.applyOverrides === false) return list;
 
@@ -561,8 +607,8 @@ function hasAnyPrevRanks(prevMaps: CategoryRankMaps): boolean {
 }
 
 export async function fetchMergedRankings(): Promise<MergedRanking[]> {
-  const [brandInfoBytes, overrides, ...fileBytes] = await Promise.all([
-    fetchCsvBytes("brand_info.csv"),
+  const [brandInfo, overrides, ...fileBytes] = await Promise.all([
+    fetchBaseBrandInfoList(),
     fetchAuthorHashtagOverrides(),
     ...RANKING_FILES.flatMap(({ file }) => [
       fetchCsvBytes(file),
@@ -571,10 +617,8 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
   ]);
 
   const brandMap = new Map<string, BrandInfo>();
-  if (brandInfoBytes) {
-    for (const info of parseCsv(decodeCsvBytes(brandInfoBytes))
-      .map(toBrandInfo)
-      .filter((item): item is BrandInfo => item !== null)) {
+  if (brandInfo.length > 0) {
+    for (const info of brandInfo) {
       brandMap.set(info.UID, info);
     }
   } else {

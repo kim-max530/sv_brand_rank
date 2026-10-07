@@ -565,7 +565,24 @@ export default function RankingBoard({
     return counts;
   }, [rankings]);
 
-  const productOptions = productFiltersForSubject(subject);
+  const effectiveSubject = useMemo<Subject>(() => {
+    if (category === "해시검색") return subject;
+
+    const hasRows = (candidate: Subject) =>
+      rankings.some(
+        (item) =>
+          item?.과목 === candidate &&
+          Number.isFinite(item.rank) &&
+          item.rank >= 1 &&
+          (item.category === category ||
+            (category === "인기" && Boolean(safeText(item.address)))),
+      );
+
+    if (hasRows(subject)) return subject;
+    return SUBJECTS.find(hasRows) ?? subject;
+  }, [rankings, category, subject]);
+
+  const productOptions = productFiltersForSubject(effectiveSubject);
 
   const handleMaterialsClick = (item: MergedRanking) => {
     openAuthorLink(item);
@@ -620,10 +637,10 @@ export default function RankingBoard({
     if (category === "해시검색" || !Array.isArray(rankings)) return [];
 
     // 연산/필터는 전체 데이터 유지 — rank 상한으로 미리 자르지 않음
-    return rankings
+    const direct = rankings
       .filter((item) => {
         if (!item || item.category !== category) return false;
-        if (item.과목 !== subject) return false;
+        if (item.과목 !== effectiveSubject) return false;
         if (!Number.isFinite(item.rank) || item.rank < 1) return false;
         if (!matchesProductFilter(item, product)) return false;
         return matchesTextbookGroupFilter(item, textbookGroup);
@@ -632,13 +649,57 @@ export default function RankingBoard({
         (a, b) =>
           a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
       );
-  }, [rankings, subject, product, textbookGroup, category]);
+
+    if (direct.length > 0 || category !== "인기") return direct;
+
+    // 배포 데이터에서 계산된 인기 카테고리가 누락되어도 브랜드관 저자는 노출한다.
+    const recommended = rankings.filter(
+      (item) =>
+        item?.category === "추천" &&
+        item.과목 === effectiveSubject &&
+        Boolean(safeText(item.address)) &&
+        Number.isFinite(item.rank) &&
+        item.rank >= 1 &&
+        matchesProductFilter(item, product) &&
+        matchesTextbookGroupFilter(item, textbookGroup),
+    );
+    const pool =
+      recommended.length > 0
+        ? recommended
+        : rankings.filter(
+            (item) =>
+              item?.과목 === effectiveSubject &&
+              Boolean(safeText(item.address)) &&
+              Number.isFinite(item.rank) &&
+              item.rank >= 1 &&
+              matchesProductFilter(item, product) &&
+              matchesTextbookGroupFilter(item, textbookGroup),
+          );
+
+    const unique = new Map<string, MergedRanking>();
+    for (const item of [...pool].sort((a, b) => a.rank - b.rank)) {
+      if (!unique.has(item.UID)) unique.set(item.UID, item);
+    }
+    return [...unique.values()].map((item, index) => ({
+      ...item,
+      category: "인기" as const,
+      rank: index + 1,
+      badge: null,
+      changeText: "-",
+    }));
+  }, [
+    rankings,
+    effectiveSubject,
+    product,
+    textbookGroup,
+    category,
+  ]);
 
   /** 화면 렌더링만 영어 15 / 국어 10으로 제한 */
   const displayList = useMemo(() => {
-    const limit = DISPLAY_RANK_LIMIT[subject] ?? 15;
+    const limit = DISPLAY_RANK_LIMIT[effectiveSubject] ?? 15;
     return list.slice(0, limit);
-  }, [list, subject]);
+  }, [list, effectiveSubject]);
 
   const categoryDescription = CATEGORY_DESCRIPTIONS[category];
   const isHashtagSearch = category === "해시검색";
@@ -699,7 +760,7 @@ export default function RankingBoard({
         className="mx-auto flex items-center rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(15,23,42,0.14)]"
       >
         {SUBJECTS.map((item) => {
-          const selected = item === subject;
+          const selected = item === effectiveSubject;
           return (
             <button
               key={item}

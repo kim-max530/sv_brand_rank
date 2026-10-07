@@ -14,15 +14,19 @@ import {
 const STORAGE_BUCKET = "weekly_ranking";
 
 type UploadTarget = { file: string; label: string };
+type UploadSectionKey = "brand" | "prev" | "curr";
 
 const PREV_TARGETS: UploadTarget[] = PREV_RANKING_UPLOAD_FILES.map(
   ({ file, label }) => ({ file, label }),
 );
 
-const CURR_TARGETS: UploadTarget[] = [
+const BRAND_TARGETS: UploadTarget[] = [
   { file: "brand_info.csv", label: "브랜드 정보 (brand_info.csv)" },
-  ...CURR_RANKING_UPLOAD_FILES.map(({ file, label }) => ({ file, label })),
 ];
+
+const CURR_TARGETS: UploadTarget[] = CURR_RANKING_UPLOAD_FILES.map(
+  ({ file, label }) => ({ file, label }),
+);
 
 type UploadStatus = "idle" | "uploading" | "success" | "error";
 
@@ -132,6 +136,9 @@ function UploadSection({
 }
 
 export default function UploadPanel() {
+  const [brandStates, setBrandStates] = useState(() =>
+    createInitialFileState(BRAND_TARGETS),
+  );
   const [prevStates, setPrevStates] = useState(() =>
     createInitialFileState(PREV_TARGETS),
   );
@@ -148,17 +155,23 @@ export default function UploadPanel() {
 
   const isUploading = useMemo(
     () =>
+      Object.values(brandStates).some((s) => s.status === "uploading") ||
       Object.values(prevStates).some((s) => s.status === "uploading") ||
       Object.values(currStates).some((s) => s.status === "uploading"),
-    [prevStates, currStates],
+    [brandStates, prevStates, currStates],
   );
 
   const updateState = (
-    section: "prev" | "curr",
+    section: UploadSectionKey,
     name: string,
     patch: Partial<FileState>,
   ) => {
-    const setter = section === "prev" ? setPrevStates : setCurrStates;
+    const setter =
+      section === "brand"
+        ? setBrandStates
+        : section === "prev"
+          ? setPrevStates
+          : setCurrStates;
     setter((prev) => ({
       ...prev,
       [name]: { ...prev[name], ...patch },
@@ -166,7 +179,7 @@ export default function UploadPanel() {
   };
 
   const handleFileChange = (
-    section: "prev" | "curr",
+    section: UploadSectionKey,
     targetName: string,
     file: File | null,
   ) => {
@@ -188,6 +201,15 @@ export default function UploadPanel() {
       return;
     }
 
+    if (file.name.toLowerCase() !== targetName.toLowerCase()) {
+      updateState(section, targetName, {
+        file: null,
+        status: "error",
+        message: `파일명을 ${targetName}(으)로 맞춰 주세요.`,
+      });
+      return;
+    }
+
     updateState(section, targetName, {
       file,
       status: "idle",
@@ -196,7 +218,7 @@ export default function UploadPanel() {
   };
 
   const uploadOne = async (
-    section: "prev" | "curr",
+    section: UploadSectionKey,
     targetName: string,
     file: File,
   ) => {
@@ -234,14 +256,19 @@ export default function UploadPanel() {
   };
 
   const handleUploadSection = async (
-    section: "prev" | "curr",
+    section: UploadSectionKey,
     targets: UploadTarget[],
   ) => {
     setGlobalError("");
     setGlobalMessage("");
     setRevalidateMessage("");
 
-    const states = section === "prev" ? prevStates : currStates;
+    const states =
+      section === "brand"
+        ? brandStates
+        : section === "prev"
+          ? prevStates
+          : currStates;
     const selected = targets.filter(
       ({ file }) => states[file]?.file instanceof File,
     );
@@ -271,13 +298,15 @@ export default function UploadPanel() {
   };
 
   const handleResetSection = async (
-    section: "prev" | "curr",
+    section: UploadSectionKey,
     targets: UploadTarget[],
   ) => {
     const label =
-      section === "prev"
+      section === "brand"
+        ? "브랜드 정보(brand_info.csv)"
+        : section === "prev"
         ? "지난주 랭킹 데이터(prev_rank_*)"
-        : "이번 주 랭킹 데이터(rank_* / brand_info)";
+        : "이번 주 랭킹 데이터(rank_*)";
     const ok = window.confirm(
       `${label}를 Storage에서 모두 삭제(초기화)할까요?\n이 작업은 되돌릴 수 없습니다.`,
     );
@@ -295,7 +324,9 @@ export default function UploadPanel() {
     }
 
     setGlobalMessage(result.message);
-    if (section === "prev") {
+    if (section === "brand") {
+      setBrandStates(createInitialFileState(BRAND_TARGETS));
+    } else if (section === "prev") {
       setPrevStates(createInitialFileState(PREV_TARGETS));
     } else {
       setCurrStates(createInitialFileState(CURR_TARGETS));
@@ -332,6 +363,17 @@ export default function UploadPanel() {
       </div>
 
       <UploadSection
+        title="브랜드 정보 업로드 (상시 기준 데이터)"
+        description="brand_info.csv — 저자명, 브랜드 주소, 소개 및 태그(record2)를 관리합니다. 주간 랭킹 초기화와 독립적으로 유지됩니다."
+        targets={BRAND_TARGETS}
+        fileStates={brandStates}
+        onFileChange={(name, file) => handleFileChange("brand", name, file)}
+        onUpload={() => void handleUploadSection("brand", BRAND_TARGETS)}
+        onReset={() => void handleResetSection("brand", BRAND_TARGETS)}
+        busy={isBusy || isUploading}
+      />
+
+      <UploadSection
         title="지난주 랭킹 데이터 업로드 (초기화 및 비교용)"
         description="prev_rank_*.csv — 순위 변동 비교 기준. 비어 있으면 변동 표시를 숨깁니다."
         targets={PREV_TARGETS}
@@ -344,7 +386,7 @@ export default function UploadPanel() {
 
       <UploadSection
         title="이번 주 랭킹 데이터 업로드 (현재 서비스 노출용)"
-        description="rank_*.csv + brand_info.csv — 메인 화면에 바로 반영되는 데이터입니다."
+        description="rank_*.csv — 현재 주간 순위를 갱신하며 brand_info.csv에는 영향을 주지 않습니다."
         targets={CURR_TARGETS}
         fileStates={currStates}
         onFileChange={(name, file) => handleFileChange("curr", name, file)}

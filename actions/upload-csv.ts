@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   CURR_RANKING_UPLOAD_FILES,
@@ -13,6 +14,32 @@ const ALLOWED_FILES = new Set<string>([
   ...CURR_RANKING_UPLOAD_FILES.map(({ file }) => file),
   ...PREV_RANKING_UPLOAD_FILES.map(({ file }) => file),
 ]);
+
+function invalidateRankingPages(): void {
+  revalidateTag("ranking-data", { expire: 0 });
+  revalidatePath("/");
+  revalidatePath("/hashtag", "layout");
+}
+
+function validateBrandInfoCsv(buffer: Buffer): string | null {
+  const firstLine =
+    buffer.toString("utf8").replace(/^\uFEFF/, "").split(/\r?\n/, 1)[0] ?? "";
+  const headers = firstLine
+    .split(",")
+    .map((value) => value.trim().replace(/^"|"$/g, "").toLowerCase());
+  const hasUid = headers.some((value) =>
+    ["uid", "brand_id"].includes(value),
+  );
+  const hasTags = headers.some((value) =>
+    ["record2", "record 2", "record_2", "hashtag", "hashtags"].includes(
+      value,
+    ),
+  );
+  if (!hasUid || !hasTags) {
+    return "brand_info.csv에는 UID와 record2(태그) 열이 반드시 필요합니다.";
+  }
+  return null;
+}
 
 export type UploadCsvResult =
   | { ok: true; message: string }
@@ -53,17 +80,29 @@ export async function uploadRankingCsv(
     return { ok: false, error: "CSV 파일만 업로드할 수 있습니다." };
   }
 
+  if (file.name.toLowerCase() !== targetName.toLowerCase()) {
+    return {
+      ok: false,
+      error: `선택한 파일명을 ${targetName}(으)로 맞춰 주세요.`,
+    };
+  }
+
   const client = getSupabaseOrError();
   if (!client.ok) return client;
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
+    if (targetName === "brand_info.csv") {
+      const validationError = validateBrandInfoCsv(buffer);
+      if (validationError) return { ok: false, error: validationError };
+    }
+
     const { error } = await client.supabase.storage
       .from(STORAGE_BUCKET)
       .upload(targetName, buffer, {
         upsert: true,
         contentType: "text/csv",
-        cacheControl: "3600",
+        cacheControl: "0",
       });
 
     if (error) {
@@ -72,6 +111,8 @@ export async function uploadRankingCsv(
         error: error.message || "업로드에 실패했습니다.",
       };
     }
+
+    invalidateRankingPages();
 
     const kind = targetName.startsWith("prev_")
       ? "지난주"
@@ -113,6 +154,7 @@ export async function deleteRankingCsv(
       return { ok: false, error: error.message || "삭제에 실패했습니다." };
     }
 
+    invalidateRankingPages();
     return { ok: true, message: `${name} 삭제(초기화) 완료` };
   } catch (error) {
     return {
@@ -147,6 +189,7 @@ export async function deleteRankingCsvBatch(
       return { ok: false, error: error.message || "일괄 삭제에 실패했습니다." };
     }
 
+    invalidateRankingPages();
     return {
       ok: true,
       message: `${names.length}개 파일 초기화 완료`,
