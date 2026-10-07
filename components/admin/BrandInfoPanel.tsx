@@ -2,11 +2,24 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
+  downloadBrandInfoCsvAction,
   getBrandInfoStatusAction,
   restoreBrandInfoFromBundleAction,
   uploadBrandInfoCsv,
   type BrandInfoStatus,
 } from "@/actions/brand-info";
+
+function triggerCsvDownload(filename: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
 
 export default function BrandInfoPanel() {
   const [file, setFile] = useState<File | null>(null);
@@ -31,7 +44,7 @@ export default function BrandInfoPanel() {
     setMessage("");
     setError("");
     if (!file) {
-      setError("업로드할 brand_info.csv를 선택해 주세요.");
+      setError("업로드할 brand_info CSV/JSON 파일을 선택해 주세요.");
       return;
     }
 
@@ -47,6 +60,20 @@ export default function BrandInfoPanel() {
       setFile(null);
       const next = await getBrandInfoStatusAction();
       setStatus(next);
+    });
+  };
+
+  const handleDownload = () => {
+    setMessage("");
+    setError("");
+    startBusy(async () => {
+      const result = await downloadBrandInfoCsvAction();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      triggerCsvDownload(result.filename, result.csv);
+      setMessage("브랜드 정보 CSV 다운로드를 시작했습니다.");
     });
   };
 
@@ -73,13 +100,13 @@ export default function BrandInfoPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-semibold text-slate-900">
-          브랜드 정보
-        </h2>
+        <h3 className="text-lg font-semibold text-slate-900">
+          브랜드 정보 업로드
+        </h3>
         <p className="mt-1 text-sm text-slate-500">
-          <code>brand_info.csv</code>만 관리합니다. 필수 열:{" "}
+          <code>brand_info</code> CSV/JSON을 Storage에 덮어씁니다. 필수 열:{" "}
           <strong>UID</strong>, <strong>address</strong>,{" "}
-          <strong>record2</strong>. 주간 랭킹 업로드와 완전히 분리됩니다.
+          <strong>record2</strong>.
         </p>
       </div>
 
@@ -164,6 +191,14 @@ export default function BrandInfoPanel() {
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
+            onClick={handleDownload}
+            disabled={busy}
+            className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-50"
+          >
+            브랜드 정보 다운로드
+          </button>
+          <button
+            type="button"
             onClick={refreshStatus}
             disabled={busy}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
@@ -184,13 +219,13 @@ export default function BrandInfoPanel() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h3 className="text-lg font-semibold text-slate-900">파일 업로드</h3>
         <p className="mt-1 text-sm text-slate-500">
-          파일명이 달라도 됩니다. 업로드 후 Storage를 다시 읽어 검증하고, 메인
-          캐시까지 즉시 갱신합니다.
+          CSV 또는 JSON(객체 배열)을 선택하세요. 업로드 후 Storage를 다시 읽어
+          검증하고, 메인 캐시까지 즉시 갱신합니다.
         </p>
 
         <input
           type="file"
-          accept=".csv,text/csv"
+          accept=".csv,.json,text/csv,application/json"
           disabled={busy}
           onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           className="mt-4 block w-full max-w-md text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-700 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-teal-800"

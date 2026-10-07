@@ -276,6 +276,46 @@ export async function getBrandInfoStatusAction(): Promise<BrandInfoStatus> {
   }
 }
 
+function jsonArrayToBrandInfoCsv(raw: string): string | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+
+  const rows = parsed.filter(
+    (row): row is Record<string, unknown> =>
+      !!row && typeof row === "object" && !Array.isArray(row),
+  );
+  if (rows.length === 0) return null;
+
+  const keySet = new Set<string>();
+  for (const row of rows) {
+    for (const key of Object.keys(row)) keySet.add(key);
+  }
+  const keys = Array.from(keySet);
+  const hasUid = keys.some((k) =>
+    ["uid", "brand_id", "UID"].includes(k),
+  );
+  if (!hasUid) return null;
+
+  const escape = (value: unknown) => {
+    const text = value == null ? "" : String(value);
+    if (/[",\r\n]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  };
+
+  const lines = [
+    keys.join(","),
+    ...rows.map((row) => keys.map((key) => escape(row[key])).join(",")),
+  ];
+  return lines.join("\n");
+}
+
 /** 파일명이 달라도 내용이 유효하면 brand_info.csv로 저장한다. */
 export async function uploadBrandInfoCsv(
   formData: FormData,
@@ -284,12 +324,28 @@ export async function uploadBrandInfoCsv(
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: "업로드할 파일이 없습니다." };
   }
-  if (!file.name.toLowerCase().endsWith(".csv")) {
-    return { ok: false, error: "CSV 파일만 업로드할 수 있습니다." };
+
+  const lower = file.name.toLowerCase();
+  const isCsv = lower.endsWith(".csv");
+  const isJson = lower.endsWith(".json");
+  if (!isCsv && !isJson) {
+    return { ok: false, error: "CSV 또는 JSON 파일만 업로드할 수 있습니다." };
   }
 
   try {
-    const buffer = Buffer.from(await file.arrayBuffer());
+    let buffer = Buffer.from(await file.arrayBuffer());
+    if (isJson) {
+      const csv = jsonArrayToBrandInfoCsv(buffer.toString("utf8"));
+      if (!csv) {
+        return {
+          ok: false,
+          error:
+            "JSON은 UID(또는 brand_id) 필드가 있는 객체 배열이어야 합니다.",
+        };
+      }
+      buffer = Buffer.from(csv, "utf8");
+    }
+
     const uploaded = await uploadBufferToStorage(buffer);
     if (!uploaded.ok) return uploaded;
 
@@ -304,6 +360,47 @@ export async function uploadBrandInfoCsv(
       ok: false,
       error:
         error instanceof Error ? error.message : "업로드에 실패했습니다.",
+    };
+  }
+}
+
+/** Storage brand_info.csv 원본을 내려받기용으로 반환한다. */
+export async function downloadBrandInfoCsvAction(): Promise<
+  | { ok: true; filename: string; csv: string }
+  | { ok: false; error: string }
+> {
+  try {
+    const supabase = getSupabaseAdminClient();
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .download(BRAND_INFO_FILE);
+
+    if (error || !data) {
+      return {
+        ok: false,
+        error:
+          error?.message ||
+          "Storage에 brand_info.csv가 없어 다운로드할 수 없습니다.",
+      };
+    }
+
+    const csv = await data.text();
+    if (!csv.trim()) {
+      return { ok: false, error: "brand_info.csv 내용이 비어 있습니다." };
+    }
+
+    return {
+      ok: true,
+      filename: "brand_info.csv",
+      csv,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "브랜드 정보 다운로드에 실패했습니다.",
     };
   }
 }

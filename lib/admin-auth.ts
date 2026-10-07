@@ -3,4 +3,4 @@ export const ADMIN_AUTH_VALUE = "1";
 export const ADMIN_AUTH_DAYS = 1;
 
 export const ADMIN_ID = "admin";
-export const ADMIN_PW = "1234";
+export const ADMIN_PW = "goo240513!@";

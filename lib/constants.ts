@@ -12,10 +12,12 @@ import {
 export { CATEGORY_LABELS, RANKING_CATEGORIES, SUBJECTS };
 export type { RankingCategory, Subject };
 
-/** Storage에서 fetch하는 원본 랭킹 CSV (발견/인기는 계산으로 생성) */
+/** Storage에서 fetch하는 원본 랭킹 CSV (발견/인기는 계산으로 생성)
+ * Admin 업로드 UI는 amount → count 알파벳 순으로 노출한다.
+ */
 export const RANKING_FILES = [
-  { file: "rank_count.csv", category: "많은", weight: 1 },
   { file: "rank_amount.csv", category: "높은", weight: 1 },
+  { file: "rank_count.csv", category: "많은", weight: 1 },
   { file: "rank_growth.csv", category: "급성장", weight: 5 },
   { file: "rank_repurchase.csv", category: "계속 찾는", weight: 10 },
   { file: "rank_search.csv", category: "자꾸 찾는", weight: 2 },

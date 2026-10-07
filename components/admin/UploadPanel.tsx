@@ -330,14 +330,12 @@ export default function UploadPanel() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-semibold text-slate-900">
-          주간 랭킹 업로드
-        </h2>
+        <h3 className="text-lg font-semibold text-slate-900">데이터 업로드</h3>
         <p className="mt-1 text-sm text-slate-500">
           지난주(<code>prev_rank_*.csv</code>)와 이번 주(
-          <code>rank_*.csv</code>)만 관리합니다. 브랜드 정보(
-          <code>brand_info.csv</code>)는 좌측{" "}
-          <strong>브랜드 정보</strong> 메뉴에서 별도로 업로드하세요.
+          <code>rank_*.csv</code>) 금액·건수 등 랭킹 데이터만 관리합니다.
+          항목 순서는 <code>rank_amount</code> → <code>rank_count</code>{" "}
+          알파벳순입니다.
         </p>
       </div>
 
