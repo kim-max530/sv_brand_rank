@@ -267,17 +267,16 @@ async function downloadBrandInfoFromStorage(): Promise<Uint8Array | null> {
 async function fetchBaseBrandInfoList(): Promise<BrandInfo[]> {
   const storageBytes = await downloadBrandInfoFromStorage();
   const storageList = storageBytes ? parseBrandInfoBytes(storageBytes) : [];
-  const storageHasMetadata = storageList.some(
-    (item) => Boolean(item.address?.trim()) || Boolean(item.record2?.trim()),
+  /** address가 있어야 브랜드 랭킹/홈 아이콘이 정상 동작한다. */
+  const storageHasAddress = storageList.some((item) =>
+    Boolean(item.address?.trim()),
   );
-  if (storageList.length > 0 && storageHasMetadata) return storageList;
+  if (storageList.length > 0 && storageHasAddress) return storageList;
 
   const remoteBytes = await fetchCsvBytes("brand_info.csv");
   const remote = remoteBytes ? parseBrandInfoBytes(remoteBytes) : [];
-  const remoteHasMetadata = remote.some(
-    (item) => Boolean(item.address?.trim()) || Boolean(item.record2?.trim()),
-  );
-  if (remote.length > 0 && remoteHasMetadata) return remote;
+  const remoteHasAddress = remote.some((item) => Boolean(item.address?.trim()));
+  if (remote.length > 0 && remoteHasAddress) return remote;
 
   try {
     const local = parseBrandInfoBytes(await readLocalCsv("brand_info.csv"));
