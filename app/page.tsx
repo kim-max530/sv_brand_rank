@@ -64,10 +64,12 @@ export default async function HomePage() {
               </span>
             </span>
           </h1>
-          <p className="mx-auto mt-3 max-w-lg break-keep text-sm leading-relaxed text-[#717680]">
+          <p className="my-2 w-full text-center text-sm text-[#717680]">
             자료 선택이 고민된다면?{" "}
-            <span className="font-bold text-[#2B7FFF]">#태그</span>를 클릭해서
-            간편하게 내게 맞는 브랜드를 탐색해 보세요.
+            <span className="mx-0.5 rounded-md bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF]">
+              #태그
+            </span>
+            를 클릭해서 간편하게 내게 맞는 브랜드를 탐색해 보세요.
           </p>
         </header>
 

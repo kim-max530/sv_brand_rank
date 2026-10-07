@@ -117,7 +117,7 @@ export default function HashtagSearchPanel({
             <span className="flex w-10 shrink-0 items-center justify-center text-xs font-bold text-[#9E9E9E]">
               -
             </span>
-            <span className="inline-flex min-w-0 items-center rounded-md bg-[#E8F2FF] px-2 py-1 text-sm font-bold text-[#2B7FFF] underline decoration-2 underline-offset-2">
+            <span className="inline-flex min-w-0 items-center rounded-md border-b-2 border-[#2B7FFF] bg-[#E8F2FF] px-2 py-1 text-sm font-bold text-[#2B7FFF]">
               #{item.tag}
             </span>
           </Link>

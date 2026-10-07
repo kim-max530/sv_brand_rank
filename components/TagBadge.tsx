@@ -4,9 +4,9 @@ import Link from "next/link";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
 
-/** 시안: 연파란 뱃지 + 파란 볼드 + 밑줄 */
+/** 시안: 연파란 뱃지 + 파란 볼드 */
 export const TAG_BADGE_CLASS =
-  "inline-flex items-center rounded-md bg-[#E8F2FF] px-2 py-1 text-xs font-bold text-[#2B7FFF] underline decoration-2 underline-offset-2 transition hover:bg-[#DCEBFF]";
+  "rounded-md bg-[#E8F2FF] px-2 py-1 text-xs font-bold text-[#2B7FFF]";
 
 export default function TagBadge({
   tag,

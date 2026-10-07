@@ -107,13 +107,13 @@ export default function LiveHashtagPanel({
       className={variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"}
     >
       <div className="rounded-xl border border-[#2B7FFF] bg-white p-4 shadow-sm">
-        <h2 className="border-b border-[#E5E7EB] pb-3 text-base font-bold text-[#1A1E27]">
+        <h3 className="mb-3 flex items-center gap-1 text-base font-bold text-[#1A1E27]">
           실시간{" "}
-          <span className="rounded bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF] underline decoration-2 underline-offset-2">
+          <span className="rounded-md bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF]">
             #태그
           </span>{" "}
           검색량 Top 5
-        </h2>
+        </h3>
 
         {loading && rows.length === 0 ? (
           <p className="px-1 py-8 text-center text-xs text-gray-500">
@@ -140,39 +140,29 @@ export default function LiveHashtagPanel({
                     onClick={() =>
                       trackAnalyticsEvent("hashtag_click", item.tag)
                     }
-                    className="flex items-center gap-1.5 py-2 transition hover:opacity-80"
+                    className="flex w-full items-center justify-between py-2 transition hover:opacity-80"
                   >
-                    <span className="w-4 shrink-0 text-center text-sm font-bold tabular-nums text-[#1A1E27]">
-                      {item.rank}
-                    </span>
-                    <span
-                      className={`flex w-7 shrink-0 items-center justify-center gap-0.5 text-xs font-bold tabular-nums ${
-                        item.changeText.startsWith("▲")
-                          ? "text-[#FF3B30]"
-                          : item.changeText.startsWith("▼")
-                            ? "text-[#2B7FFF]"
-                            : "text-[#9E9E9E]"
-                      }`}
-                    >
-                      {item.changeText}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate font-bold text-[#4A4E58] underline underline-offset-2 hover:text-[#2B7FFF]">
-                      #{item.tag}
-                    </span>
-                    <span
-                      className="shrink-0 text-xs font-medium text-[#717680]"
-                      aria-hidden
-                    >
-                      ↗
-                    </span>
-                    <span className="flex w-16 shrink-0 items-center justify-start gap-1 text-[11px] tabular-nums text-gray-500">
-                      <Users
-                        className="h-3.5 w-3.5 shrink-0"
-                        strokeWidth={1.5}
-                        aria-hidden
-                      />
-                      {count}명
-                    </span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="w-4 font-bold">{item.rank}</span>
+                      <span
+                        className={`w-6 text-xs font-bold ${
+                          item.changeText.startsWith("▲")
+                            ? "text-[#FF3B30]"
+                            : item.changeText.startsWith("▼")
+                              ? "text-[#2B7FFF]"
+                              : "text-[#9E9E9E]"
+                        }`}
+                      >
+                        {item.changeText}
+                      </span>
+                      <span className="truncate font-bold text-[#2B7FFF] underline underline-offset-2">
+                        #{item.tag}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-[#717680]">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{count}명</span>
+                    </div>
                   </Link>
                 </li>
               );

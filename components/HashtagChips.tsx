@@ -13,7 +13,7 @@ export type MetricChip = {
   title?: string;
 };
 
-/** 시안: 연파란 뱃지 + 파란 텍스트 + 밑줄 */
+/** 시안: 연파란 뱃지 + 파란 텍스트 + 하단 보더 */
 export default function HashtagChips({
   record2,
   className = "",
