@@ -109,7 +109,7 @@ export default function HashtagAuthorList({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-center">
-          <h1 className="rounded-md border-b-2 border-[#2B7FFF] bg-[#E8F2FF] px-3 py-1.5 text-2xl font-bold text-[#2B7FFF] sm:text-3xl">
+          <h1 className="whitespace-nowrap text-2xl font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4 sm:text-3xl">
             #{tag}
           </h1>
           {relatedTags.length > 0 ? (
@@ -118,7 +118,7 @@ export default function HashtagAuthorList({
                 <Link
                   key={related}
                   href={hashtagHref(related)}
-                  className="rounded-md border-b-2 border-[#2B7FFF] bg-[#E8F2FF] px-2 py-1 text-xs font-bold text-[#2B7FFF] transition hover:bg-[#DCEBFF]"
+                  className="whitespace-nowrap text-xs font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4 transition hover:cursor-pointer hover:opacity-80"
                 >
                   #{related}
                 </Link>

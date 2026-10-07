@@ -16,18 +16,9 @@ export function getPreviousWeekDateRange(now: Date = new Date()): string {
   const monday = new Date(sunday);
   monday.setDate(sunday.getDate() - 6);
 
-  const startYear = monday.getFullYear();
-  const endYear = sunday.getFullYear();
-  const startMonth = monday.getMonth() + 1;
-  const endMonth = sunday.getMonth() + 1;
-  const startDay = monday.getDate();
-  const endDay = sunday.getDate();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const startText = `${monday.getFullYear()}.${pad(monday.getMonth() + 1)}.${pad(monday.getDate())}`;
+  const endText = `${sunday.getFullYear()}.${pad(sunday.getMonth() + 1)}.${pad(sunday.getDate())}`;
 
-  const startText = `${startYear}년 ${startMonth}월 ${startDay}일`;
-  const endText =
-    startYear === endYear
-      ? `${endMonth}월 ${endDay}일`
-      : `${endYear}년 ${endMonth}월 ${endDay}일`;
-
-  return `집계일 : ${startText} ~ ${endText}`;
+  return `(${startText} ~ ${endText})`;
 }

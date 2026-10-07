@@ -185,9 +185,9 @@ function ProfileAvatar({
     <Image
       src={src}
       alt={name || "저자"}
-      width={64}
-      height={64}
-      sizes="64px"
+      width={96}
+      height={96}
+      sizes="96px"
       quality={60}
       className="h-full w-full object-cover"
       loading={priority ? "eager" : "lazy"}
@@ -338,50 +338,51 @@ export function RankingRow({
 
   return (
     <div
-      className={`flex w-full items-center border-b border-[#E5E7EB] py-4 lg:py-[14px] ${
+      className={`flex w-full items-center gap-6 border-b border-[#E5E7EB] py-4 lg:py-[14px] ${
         isHashtagLayout ? "pl-10" : ""
       }`}
     >
-      {showRank ? (
-        <RankMeta
-          rank={item.rank}
-          badge={item.badge ?? null}
-          changeText={item.changeText ?? ""}
-        />
-      ) : null}
+      {/* 좌측: 순위 + 등락 + 이미지 (좁은 간격) */}
+      <div className="flex shrink-0 items-center gap-2">
+        {showRank ? (
+          <RankMeta
+            rank={item.rank}
+            badge={item.badge ?? null}
+            changeText={item.changeText ?? ""}
+          />
+        ) : null}
 
-      <div
-        className={`mx-3 flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-100 ${
-          profileClickable ? "cursor-pointer transition hover:opacity-90" : ""
-        }`}
-        onClick={profileClickable ? openProfile : undefined}
-        onKeyDown={
-          profileClickable
-            ? (event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  openProfile();
+        <div
+          className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-pink-200 transition-opacity hover:cursor-pointer hover:opacity-80"
+          onClick={profileClickable ? openProfile : undefined}
+          onKeyDown={
+            profileClickable
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openProfile();
+                  }
                 }
-              }
-            : undefined
-        }
-        role={profileClickable ? "button" : undefined}
-        tabIndex={profileClickable ? 0 : undefined}
-        aria-label={
-          profileClickable ? `${authorName} 저자 소개 열기` : undefined
-        }
-      >
-        <ProfileAvatar
-          uid={item.UID}
-          name={authorName}
-          priority={priority}
-        />
+              : undefined
+          }
+          role={profileClickable ? "button" : undefined}
+          tabIndex={profileClickable ? 0 : undefined}
+          aria-label={
+            profileClickable ? `${authorName} 저자 소개 열기` : undefined
+          }
+        >
+          <ProfileAvatar
+            uid={item.UID}
+            name={authorName}
+            priority={priority}
+          />
+        </div>
       </div>
 
-      <div className="flex w-full min-w-0 flex-1 flex-col justify-center pl-1 text-left">
-        {/* 1. 첫 번째 줄: 저자명 */}
+      {/* 중앙: 저자명 → 해시태그 → 대화창 */}
+      <div className="flex min-w-0 w-full flex-1 flex-col justify-center pl-1 text-left">
         <h3
-          className="cursor-pointer truncate text-base font-bold text-[#1A1E27]"
+          className="truncate text-base font-bold text-[#1A1E27] transition-opacity hover:cursor-pointer hover:opacity-80"
           onClick={profileClickable ? openProfile : openIntroModal}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
@@ -396,7 +397,6 @@ export function RankingRow({
           {authorName}
         </h3>
 
-        {/* 2. 두 번째 줄: 해시태그 (저자명 바로 아래, 대화창 위) */}
         {tags.length > 0 ? (
           <div className="mt-1.5 mb-2 flex flex-wrap gap-1.5">
             {tags.map((tag, idx) => (
@@ -405,25 +405,21 @@ export function RankingRow({
           </div>
         ) : null}
 
-        {/* 3. 세 번째 줄: 대화창 (Intro) */}
         {intro ? (
           <div className="w-full rounded-lg bg-[#F0F2F5] px-3.5 py-2">
-            <p className="truncate text-sm text-[#4A4E58]">
-              <span className="mr-1 font-black text-gray-600">&quot;</span>
-              {intro}
-              <span className="ml-1 font-black text-gray-600">&quot;</span>
-            </p>
+            <p className="truncate text-base text-[#4A4E58]">{intro}</p>
           </div>
         ) : null}
       </div>
 
-      <div className="flex w-14 flex-shrink-0 flex-col items-center justify-center gap-1">
+      {/* 우측: 아이콘 (넓은 간격 확보) */}
+      <div className="ml-auto flex w-14 flex-shrink-0 flex-col items-center justify-center gap-1">
         <div className="flex items-center gap-2">
           {showUserIcon ? (
             <button
               type="button"
               onClick={openIntroModal}
-              className="flex items-center justify-center text-[#717680] transition hover:text-gray-700"
+              className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80"
               aria-label={`${authorName} 저자 소개 열기`}
             >
               <UserRound
@@ -438,7 +434,7 @@ export function RankingRow({
           <button
             type="button"
             onClick={handleActionClick}
-            className="flex items-center justify-center text-[#717680] transition hover:text-gray-700"
+            className="flex items-center justify-center text-[#717680] transition-opacity hover:cursor-pointer hover:opacity-80"
             aria-label={
               address
                 ? `${authorName} 홈페이지 열기`
@@ -456,7 +452,7 @@ export function RankingRow({
           <button
             type="button"
             onClick={openCoupons}
-            className="rounded bg-purple-100 px-1 text-[10px] font-bold text-purple-600"
+            className="rounded bg-purple-100 px-1 text-[10px] font-bold text-purple-600 transition-opacity hover:cursor-pointer hover:opacity-80"
           >
             {eventDiscount}% Event
           </button>
@@ -492,7 +488,6 @@ export default function RankingBoard({
   const [selectedAuthor, setSelectedAuthor] = useState<MergedRanking | null>(
     null,
   );
-  const [showWeekInfo, setShowWeekInfo] = useState(false);
   const [textbookConfirmOpen, setTextbookConfirmOpen] = useState(false);
   const [dontShowTextbookConfirm, setDontShowTextbookConfirm] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>(() => {
@@ -772,7 +767,7 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectSubject(item)}
-              className={`rounded-full px-6 py-1.5 text-base transition ${
+              className={`rounded-full px-8 py-2 text-lg transition ${
                 selected
                   ? item === "국어"
                     ? "bg-[#FFCC00] font-bold text-black shadow-sm"
@@ -801,28 +796,25 @@ export default function RankingBoard({
               role="tab"
               aria-selected={selected}
               onClick={() => selectCategory(item)}
-              className={`relative shrink-0 whitespace-nowrap pb-2 text-base transition sm:text-lg ${
+              className={`relative shrink-0 cursor-pointer whitespace-nowrap px-4 pb-3 text-base transition sm:text-lg ${
                 selected
-                  ? "-mb-[2px] border-b-2 border-[#1A1E27] font-bold text-[#1A1E27]"
+                  ? "-mb-px border-b-4 border-[#1A1E27] font-bold text-[#1A1E27]"
                   : "font-medium text-[#9E9E9E] hover:text-[#4F566D]"
               }`}
             >
               {item === "해시검색" ? (
-                selected ? (
-                  <span className="flex items-center gap-1 font-bold text-[#1A1E27]">
-                    인기{" "}
-                    <span className="rounded-md bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF] underline underline-offset-2">
-                      #태그
-                    </span>
+                <span
+                  className={`flex items-center gap-1 ${
+                    selected
+                      ? "font-bold text-[#1A1E27]"
+                      : "font-medium text-[#9E9E9E]"
+                  }`}
+                >
+                  인기{" "}
+                  <span className="whitespace-nowrap font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
+                    #태그
                   </span>
-                ) : (
-                  <span className="flex items-center gap-1 font-medium text-[#9E9E9E]">
-                    인기{" "}
-                    <span className="rounded-md bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF]">
-                      #태그
-                    </span>
-                  </span>
-                )
+                </span>
               ) : (
                 <span className="break-keep">{label}</span>
               )}
@@ -933,28 +925,14 @@ export default function RankingBoard({
         <div className="mx-auto w-full max-w-5xl px-4 pt-7 sm:px-6 sm:pt-6">
           <div className="relative mb-5 w-full">
             {categoryDescription ? (
-              <p className="my-2 w-full text-center text-xs text-[#8E939F]">
-                {categoryDescription}
+              <div className="my-2 flex w-full flex-wrap items-center justify-center gap-x-2 text-xs text-[#8E939F]">
+                <span className="text-center">{categoryDescription}</span>
                 {weekRangeLabel ? (
-                  <button
-                    type="button"
-                    aria-label="집계일 확인"
-                    aria-expanded={showWeekInfo}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setShowWeekInfo((open) => !open);
-                    }}
-                    className="ml-1 inline-flex h-[18px] w-[18px] translate-y-[2px] items-center justify-center rounded-full border border-[#9AA2B4] text-[11px] font-bold leading-none text-[#8E939F] sm:hidden"
-                  >
-                    i
-                  </button>
+                  <span className="text-center whitespace-nowrap">
+                    {weekRangeLabel}
+                  </span>
                 ) : null}
-              </p>
-            ) : null}
-            {weekRangeLabel ? (
-              <p className="absolute top-0 right-0 hidden shrink-0 text-[11px] text-gray-400 sm:block">
-                {weekRangeLabel}
-              </p>
+              </div>
             ) : null}
           </div>
 
@@ -1015,23 +993,6 @@ export default function RankingBoard({
           </div>
         </div>
       </div>
-
-      {showWeekInfo && weekRangeLabel ? (
-        <button
-          type="button"
-          aria-label="집계일 안내 닫기"
-          className="fixed inset-0 z-40 cursor-default bg-slate-950/10 sm:hidden"
-          onClick={() => setShowWeekInfo(false)}
-        >
-          <span
-            role="dialog"
-            aria-modal="true"
-            className="absolute left-1/2 top-1/2 w-[calc(100%-3rem)] max-w-xs -translate-x-1/2 -translate-y-1/2 rounded-xl bg-white px-5 py-4 text-center text-sm font-semibold text-[#41485B] shadow-[0_12px_36px_rgba(15,23,42,0.22)]"
-          >
-            {weekRangeLabel}
-          </span>
-        </button>
-      ) : null}
 
       {showPromoBanner ? (
         <Banner

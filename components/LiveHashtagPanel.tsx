@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import {
   fetchLiveHashtagRanking,
   type LiveHashtagRankItem,
@@ -51,11 +51,12 @@ function formatUpdatedAt(date: Date): string {
 
 export default function LiveHashtagPanel({
   variant = "sidebar",
-  authorCountByTag,
+  authorCountByTag: _authorCountByTag,
 }: {
   variant?: "sidebar" | "strip";
   authorCountByTag?: Map<string, number>;
 }) {
+  void _authorCountByTag;
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [pulse, setPulse] = useState(false);
@@ -106,10 +107,10 @@ export default function LiveHashtagPanel({
     <aside
       className={variant === "sidebar" ? "w-[260px] shrink-0" : "w-full"}
     >
-      <div className="rounded-xl border border-[#2B7FFF] bg-white p-4 shadow-sm">
-        <h3 className="mb-3 flex items-center gap-1 text-base font-bold text-[#1A1E27]">
+      <div className="rounded-xl border-2 border-blue-400 bg-white p-5 shadow-[4px_4px_15px_rgba(0,0,0,0.05)]">
+        <h3 className="mb-3 flex flex-wrap items-center gap-1 text-sm font-bold text-[#1A1E27]">
           실시간{" "}
-          <span className="rounded-md bg-[#E8F2FF] px-1.5 py-0.5 font-bold text-[#2B7FFF]">
+          <span className="whitespace-nowrap font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
             #태그
           </span>{" "}
           검색량 Top 5
@@ -129,44 +130,36 @@ export default function LiveHashtagPanel({
               pulse ? "opacity-40" : "opacity-100"
             }`}
           >
-            {rows.map((item) => {
-              const count =
-                authorCountByTag?.get(item.tag.toLowerCase()) ??
-                item.authorCount;
-              return (
-                <li key={item.tag} className="border-b border-[#E5E7EB] last:border-b-0">
-                  <Link
-                    href={hashtagHref(item.tag)}
-                    onClick={() =>
-                      trackAnalyticsEvent("hashtag_click", item.tag)
-                    }
-                    className="flex w-full items-center justify-between py-2 transition hover:opacity-80"
+            {rows.map((item) => (
+              <li key={item.tag}>
+                <Link
+                  href={hashtagHref(item.tag)}
+                  onClick={() =>
+                    trackAnalyticsEvent("hashtag_click", item.tag)
+                  }
+                  className="flex w-full items-center gap-1.5 py-2 transition-opacity hover:cursor-pointer hover:opacity-80"
+                >
+                  <span className="w-4 shrink-0 text-xs font-bold">
+                    {item.rank}
+                  </span>
+                  <span
+                    className={`w-6 shrink-0 text-xs font-bold ${
+                      item.changeText.startsWith("▲")
+                        ? "text-[#FF3B30]"
+                        : item.changeText.startsWith("▼")
+                          ? "text-[#2B7FFF]"
+                          : "text-[#9E9E9E]"
+                    }`}
                   >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="w-4 font-bold">{item.rank}</span>
-                      <span
-                        className={`w-6 text-xs font-bold ${
-                          item.changeText.startsWith("▲")
-                            ? "text-[#FF3B30]"
-                            : item.changeText.startsWith("▼")
-                              ? "text-[#2B7FFF]"
-                              : "text-[#9E9E9E]"
-                        }`}
-                      >
-                        {item.changeText}
-                      </span>
-                      <span className="truncate font-bold text-[#2B7FFF] underline underline-offset-2">
-                        #{item.tag}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-[#717680]">
-                      <Users className="h-3.5 w-3.5" />
-                      <span>{count}명</span>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
+                    {item.changeText}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate whitespace-nowrap text-xs font-bold text-[#2B7FFF] underline decoration-2 underline-offset-4">
+                    #{item.tag}
+                  </span>
+                  <ArrowUpRight className="ml-1 inline h-3 w-3 shrink-0 text-gray-400" />
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
 
