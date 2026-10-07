@@ -350,12 +350,12 @@ export function RankingRow({
 
   return (
     <div
-      className={`flex w-full items-start gap-3 border-b border-[#E5E7EB] py-4 md:items-center md:gap-6 lg:py-[14px] ${
+      className={`flex w-full items-center justify-between border-b border-[#E5E7EB] py-4 lg:py-[14px] ${
         isHashtagLayout ? "pl-4 md:pl-10" : ""
       }`}
     >
       {/* 좌측: 순위 + 등락 + 이미지 */}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex flex-shrink-0 items-center gap-2">
         {showRank ? (
           <RankMeta
             rank={item.rank}
@@ -392,7 +392,7 @@ export function RankingRow({
       </div>
 
       {/* 중앙: 저자명(+모바일 아이콘) → 해시태그/모바일 Intro → PC Intro */}
-      <div className="flex min-w-0 w-full flex-1 flex-col justify-center text-left md:mr-8">
+      <div className="mx-4 flex min-w-0 flex-1 flex-col justify-center text-left md:mx-6 md:mr-8">
         {/* [모바일] 첫 줄: 저자명 + 우측 아이콘 2개 / PC는 저자명만 */}
         <div className="flex w-full items-center justify-between gap-2">
           <h3
@@ -472,8 +472,8 @@ export function RankingRow({
       </div>
 
       {/* 우측 액션: PC만 (모바일은 저자명 줄에 배치) */}
-      <div className="hidden w-20 flex-shrink-0 flex-col items-center justify-center gap-1 self-center md:flex">
-        <div className="flex items-center gap-6">
+      <div className="hidden flex-shrink-0 flex-col items-center justify-center gap-1 self-center md:flex">
+        <div className="flex flex-shrink-0 items-center gap-6">
           {showUserIcon ? (
             <button
               type="button"
@@ -811,7 +811,7 @@ export default function RankingBoard({
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-5xl flex-col px-0">
+    <section className="mx-auto flex w-full max-w-7xl flex-col px-0">
       <div
         role="tablist"
         aria-label="과목"
@@ -978,7 +978,7 @@ export default function RankingBoard({
       )}
 
       <div className="relative left-1/2 w-screen -translate-x-1/2 bg-white pb-10">
-        <div className="mx-auto w-full max-w-5xl px-4 pt-5 sm:px-6 sm:pt-4">
+        <div className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 sm:pt-4">
           <div className="relative mb-4 w-full">
             {categoryDescription ? (
               <div className="mb-4 flex w-full flex-col items-center justify-center leading-tight">
@@ -995,7 +995,7 @@ export default function RankingBoard({
           </div>
 
           <div className="relative flex w-full items-start gap-8 pr-4 md:gap-16 lg:pr-32">
-        <div role="tabpanel" className="min-w-0 flex-1 bg-white">
+        <div role="tabpanel" className="min-w-0 w-full max-w-5xl flex-1 bg-white">
           {/* 태그 탭도 항상 마운트 — 전환 시 재fetch 지연 방지 */}
           <div className={isHashtagSearch ? "block" : "hidden"} aria-hidden={!isHashtagSearch}>
             <HashtagSearchPanel initialData={hashtagPrefetch} />
@@ -1021,10 +1021,11 @@ export default function RankingBoard({
                 </div>
               )
             ) : (
-              <ul>
+              <ul className="w-full max-w-5xl">
                 {displayList.map((item, index) => (
                   <li
                     key={`${item.category}-${item.과목}-${item.UID}-${item.rank}`}
+                    className="w-full"
                   >
                     <RankingRow
                       item={item}

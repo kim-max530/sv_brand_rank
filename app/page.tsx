@@ -55,7 +55,7 @@ export default async function HomePage() {
     <main className="relative flex flex-1 flex-col overflow-x-clip bg-[#F7F8FC]">
       <SiteHeader />
 
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 pt-14 sm:px-6 sm:pt-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pt-14 sm:px-6 sm:pt-10">
         <header className="mb-0 flex flex-col items-center text-center">
           <h1 className="break-keep text-2xl font-bold text-[#1A1E27] md:text-[32px]">
             <span className="inline-flex flex-wrap items-center justify-center gap-x-0">
