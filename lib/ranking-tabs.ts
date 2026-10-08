@@ -89,7 +89,7 @@ export const COUPONS_HREF = "https://solvook.com/coupons";
 export const CATEGORY_DESCRIPTIONS: Partial<Record<RankingCategory, string>> = {
   추천:
     "고객 피드백과 판매 지표를 바탕으로 쏠북이 추천하는 브랜드를 보여드려요",
-  인기: "집계 기간 중 쏠북 마켓에서 가장 많이 검색된 브랜드를 보여드려요",
+  인기: "집계 기간 중 쏠북 마켓에서 가장 많이 활용된 브랜드를 보여드려요",
   해시검색: "최근 많이 클릭된 인기 #태그를 보여드려요",
 };
 

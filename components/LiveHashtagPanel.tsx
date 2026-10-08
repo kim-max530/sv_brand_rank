@@ -11,8 +11,8 @@ import { HashtagMark } from "@/components/TagBadge";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
 
-const REFRESH_MS = 5 * 60 * 1000;
-const PULSE_MS = 30 * 1000;
+const REFRESH_MS = 30 * 60 * 1000; // 30분
+const PULSE_MS = 30 * 60 * 1000;
 const TOP_N = 5;
 
 type Row = LiveHashtagRankItem & {

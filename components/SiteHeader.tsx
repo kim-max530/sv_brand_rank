@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Menu, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 /** 본문(max-w-7xl + px-4/6) 좌측 시작선과 BI 정렬 */
 export default function SiteHeader() {
@@ -34,15 +34,6 @@ export default function SiteHeader() {
             aria-label="검색"
           >
             <Search className="h-6 w-6 sm:h-5 sm:w-5" strokeWidth={1.75} />
-          </a>
-          <a
-            href="https://solvook.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden rounded-lg p-1.5 text-gray-700 transition hover:bg-gray-50 md:block"
-            aria-label="메뉴"
-          >
-            <Menu className="h-6 w-6" strokeWidth={1.75} />
           </a>
         </div>
       </div>

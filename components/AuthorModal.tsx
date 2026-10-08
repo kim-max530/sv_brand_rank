@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Home, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import {
   cacheBannerSrc,
   getBannerImageCandidates,
@@ -11,6 +11,7 @@ import {
 } from "@/lib/brand-images";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import HashtagChips from "@/components/HashtagChips";
+import StoreHeartIcon from "@/components/StoreHeartIcon";
 import { formatClicks } from "@/lib/format-clicks";
 import { COUPONS_HREF } from "@/lib/ranking-tabs";
 import { openAuthorExternalLink } from "@/lib/solvook-links";
@@ -57,15 +58,14 @@ export default function AuthorModal({
   onClose,
   onMaterialsClick,
 }: AuthorModalProps) {
-  /** prop의 실제 클릭수를 초기·동기화 — 0 하드코딩 방지 */
-  const [clicks, setClicks] = useState(() => author?.totalClicks ?? 0);
+  /** prop의 실제 클릭수를 초기·동기화 — 0 하드코딩 금지 */
+  const [homeClicks, setHomeClicks] = useState(
+    () => author?.totalClicks ?? 0,
+  );
 
   useEffect(() => {
-    if (author?.totalClicks != null) {
-      setClicks(author.totalClicks);
-    } else if (author) {
-      setClicks(0);
-    }
+    if (!author) return;
+    setHomeClicks(author.totalClicks ?? 0);
   }, [author, author?.UID, author?.totalClicks]);
 
   useEffect(() => {
@@ -95,9 +95,13 @@ export default function AuthorModal({
   const embedUrl = toYouTubeEmbedUrl(author.youtube_url);
   const showEventCue = Boolean(author.hasEvent);
   const eventDiscount = author.eventDiscount ?? 35;
-  const totalClicks = Math.max(clicks, author.totalClicks ?? 0);
+  const totalClicks = Math.max(homeClicks, author.totalClicks ?? 0);
 
   const openHomepage = () => {
+    // 즉시 +1 반영 (부모/서버 동기화는 onMaterialsClick·useEffect가 담당)
+    if (address) {
+      setHomeClicks((prev) => prev + 1);
+    }
     if (address && onMaterialsClick) {
       onMaterialsClick(author);
       return;
@@ -157,7 +161,7 @@ export default function AuthorModal({
                       className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-slate-50 hover:text-gray-900"
                       aria-label={`${authorName} 홈페이지 열기`}
                     >
-                      <Home className="h-5 w-5" aria-hidden />
+                      <StoreHeartIcon className="h-6 w-6 fill-none stroke-[#717680]" />
                     </button>
                     <span className="text-[11px] font-semibold tabular-nums text-gray-600">
                       {formatClicks(totalClicks)}
