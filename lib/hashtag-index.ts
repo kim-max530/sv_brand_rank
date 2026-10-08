@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { fetchAuthorStatsForUids } from "@/lib/author-stats";
 import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
+import { fetchHiddenHashtagSet } from "@/lib/hashtag-metadata";
 import {
   parseHashtags,
   resolveSystemBadgeTag,
@@ -73,10 +74,11 @@ function sortAuthors(a: MergedRanking, b: MergedRanking): number {
 }
 
 async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
-  const [brandInfo, rankings, eventMap] = await Promise.all([
+  const [brandInfo, rankings, eventMap, hidden] = await Promise.all([
     fetchBrandInfoList(),
     fetchMergedRankings(),
     fetchActiveAuthorEvents(),
+    fetchHiddenHashtagSet(),
   ]);
 
   const metaByUid = new Map<string, MutableAuthorMeta>();
@@ -121,7 +123,9 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
 
   for (const author of authors) {
     if (!safeAddress(author.address)) continue;
-    const tags = parseHashtags(author.record2);
+    const tags = parseHashtags(author.record2).filter(
+      (tag) => !hidden.has(tag.toLowerCase()),
+    );
     for (const tag of tags) {
       const key = tag.toLowerCase();
       const entry = tagUidSets.get(key) ?? {
@@ -135,6 +139,7 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
       for (const otherTag of tags) {
         const otherKey = otherTag.toLowerCase();
         if (otherKey === key) continue;
+        if (hidden.has(otherKey)) continue;
         const current = related.get(otherKey);
         if (current) current.count += 1;
         else related.set(otherKey, { label: otherTag, count: 1 });
@@ -188,16 +193,25 @@ const getCachedHashtagAuthorIndex = unstable_cache(
   ["hashtag-author-index-v2"],
   {
     revalidate: 300,
-    tags: ["ranking-data", "hashtag-data", "author-events"],
+    tags: ["ranking-data", "hashtag-data", "hashtag-metadata", "author-events"],
   },
 );
 
 export async function getHashtagPageData(
   tag: string,
 ): Promise<HashtagPageData> {
-  const index = await getCachedHashtagAuthorIndex();
+  const [index, hidden] = await Promise.all([
+    getCachedHashtagAuthorIndex(),
+    fetchHiddenHashtagSet(),
+  ]);
   const systemTag = resolveSystemBadgeTag(tag);
   const key = tag.replace(/^#+/, "").trim().toLowerCase();
+
+  // 숨김 처리된 일반 태그는 서비스에서 완전 비노출
+  if (!systemTag && hidden.has(key)) {
+    return { authors: [], relatedTags: [] };
+  }
+
   const entry = index.tags[key];
   const uids = systemTag ? index.systemUids[systemTag] : (entry?.uids ?? []);
 

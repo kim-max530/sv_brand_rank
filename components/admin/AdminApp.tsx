@@ -6,6 +6,7 @@ import AuthorEventsPanel from "@/components/admin/AuthorEventsPanel";
 import BannerAdminPanel from "@/components/admin/BannerAdminPanel";
 import FileManagePanel from "@/components/admin/FileManagePanel";
 import HashtagAdminPanel from "@/components/admin/HashtagAdminPanel";
+import HashtagMetadataPanel from "@/components/admin/HashtagMetadataPanel";
 import { ADMIN_ID, ADMIN_PW } from "@/lib/admin-auth";
 import {
   clearAdminAuthCookie,
@@ -13,13 +14,20 @@ import {
   setAdminAuthCookie,
 } from "@/lib/admin-auth-client";
 
-type AdminTab = "files" | "analytics" | "events" | "hashtags" | "banner";
+type AdminTab =
+  | "files"
+  | "analytics"
+  | "events"
+  | "hashtags"
+  | "hashtagInfo"
+  | "banner";
 
 const TABS: Array<{ id: AdminTab; label: string }> = [
   { id: "files", label: "파일 업로드" },
   { id: "analytics", label: "사용 데이터" },
   { id: "events", label: "저자 이벤트" },
   { id: "hashtags", label: "해시태그 관리" },
+  { id: "hashtagInfo", label: "해시태그 정보 관리" },
   { id: "banner", label: "배너 관리" },
 ];
 
@@ -144,6 +152,7 @@ function AdminShell({ onLogout }: { onLogout: () => void }) {
         {tab === "analytics" ? <AnalyticsPanel /> : null}
         {tab === "events" ? <AuthorEventsPanel /> : null}
         {tab === "hashtags" ? <HashtagAdminPanel /> : null}
+        {tab === "hashtagInfo" ? <HashtagMetadataPanel /> : null}
         {tab === "banner" ? <BannerAdminPanel /> : null}
       </div>
     </div>

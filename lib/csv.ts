@@ -15,6 +15,11 @@ import {
   SUBJECTS,
   toPrevRankFilename,
 } from "@/lib/constants";
+import { parseHashtags } from "@/lib/hashtags";
+import {
+  fetchHiddenHashtagSet,
+  stripHiddenFromRecord2,
+} from "@/lib/hashtag-metadata";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type {
   BrandInfo,
@@ -24,6 +29,16 @@ import type {
   SourceRankingCategory,
   Subject,
 } from "@/types/ranking";
+
+/** 부문별 1위 자동 주입 태그 (영어/국어 각각) */
+const CHAMPION_AUTO_TAGS: Array<{
+  category: SourceRankingCategory;
+  tag: string;
+}> = [
+  { category: "급성장", tag: "급상승1등" },
+  { category: "계속 찾는", tag: "재구매1등" },
+  { category: "자꾸 찾는", tag: "검색어1등" },
+];
 
 const STORAGE_BUCKET = "weekly_ranking";
 
@@ -316,6 +331,58 @@ function buildRankMap(rows: Record<string, string>[]): Map<string, number> {
   return map;
 }
 
+type CategoryRankMaps = Map<SourceRankingCategory, Map<string, number>>;
+
+/**
+ * Growth/Repurchase/Search 각 부문·과목 1위 저자 record2에
+ * 급상승1등 / 재구매1등 / 검색어1등 태그를 중복 없이 주입.
+ */
+function injectChampionAutoTags(
+  brandMap: Map<string, BrandInfo>,
+  categoryRankMaps: CategoryRankMaps,
+): void {
+  for (const { category, tag } of CHAMPION_AUTO_TAGS) {
+    const rankMap = categoryRankMaps.get(category);
+    if (!rankMap || rankMap.size === 0) continue;
+
+    for (const subject of SUBJECTS) {
+      let championUid: string | null = null;
+      for (const [key, rank] of rankMap) {
+        if (rank !== 1) continue;
+        const [uid, subj] = key.split("::");
+        if (!uid || subj !== subject) continue;
+        championUid = uid;
+        break;
+      }
+      if (!championUid) continue;
+
+      const info = brandMap.get(championUid);
+      if (!info) continue;
+
+      const existing = parseHashtags(info.record2);
+      const seen = new Set(existing.map((t) => t.toLowerCase()));
+      if (seen.has(tag.toLowerCase())) continue;
+
+      brandMap.set(championUid, {
+        ...info,
+        record2: [...existing, tag].join(", "),
+      });
+    }
+  }
+}
+
+function stripHiddenTagsFromBrandMap(
+  brandMap: Map<string, BrandInfo>,
+  hidden: Set<string>,
+): void {
+  if (hidden.size === 0) return;
+  for (const [uid, info] of brandMap) {
+    const next = stripHiddenFromRecord2(info.record2, hidden);
+    if (next === info.record2) continue;
+    brandMap.set(uid, { ...info, record2: next });
+  }
+}
+
 /**
  * prev 파일이 있고 내용이 있을 때만 변동/뱃지 계산.
  * NEW: 지난주 순위가 노출권(영어 15 / 국어 10) 밖이거나 없으며,
@@ -359,8 +426,6 @@ function calcBadgeAndChangeText(
 
   return { badge: null, changeText: `▼ ${Math.abs(delta)}` };
 }
-
-type CategoryRankMaps = Map<SourceRankingCategory, Map<string, number>>;
 
 /** CSV에 UID가 한 번이라도 있으면 포함 (순위 제한 없음) */
 function collectPresentUids(
@@ -598,16 +663,63 @@ function buildPopularRankings(
   return results;
 }
 
+/** Growth/Repurchase/Search CSV만 읽어 1위 자동 태그를 brandMap에 주입 */
+async function loadAndInjectChampionTags(
+  brandMap: Map<string, BrandInfo>,
+): Promise<void> {
+  const targets: Array<{ category: SourceRankingCategory; file: string }> = [];
+  for (const { category } of CHAMPION_AUTO_TAGS) {
+    const file = RANKING_FILES.find((item) => item.category === category)?.file;
+    if (!file) continue;
+    targets.push({ category, file });
+  }
+
+  const bytesList = await Promise.all(
+    targets.map(({ file }) => fetchCsvBytes(file)),
+  );
+
+  const categoryRankMaps: CategoryRankMaps = new Map();
+  targets.forEach(({ category }, index) => {
+    const bytes = bytesList[index];
+    if (!bytes) return;
+    categoryRankMaps.set(
+      category,
+      buildRankMap(parseCsv(decodeCsvBytes(bytes))),
+    );
+  });
+
+  injectChampionAutoTags(brandMap, categoryRankMaps);
+}
+
 /** brand_info.csv 전체 로드 */
 export async function fetchBrandInfoList(options?: {
   applyOverrides?: boolean;
+  /** 숨김 해시태그 제거 (기본 true — 공개 화면용) */
+  stripHidden?: boolean;
+  /** 부문 1위 자동 태그 주입 (기본: stripHidden과 동일) */
+  injectChampions?: boolean;
 }): Promise<BrandInfo[]> {
   const list = await fetchBaseBrandInfoList();
+  const withOverrides =
+    options?.applyOverrides === false
+      ? list
+      : applyHashtagOverrides(list, await fetchAuthorHashtagOverrides());
 
-  if (options?.applyOverrides === false) return list;
+  const shouldInject =
+    options?.injectChampions ?? options?.stripHidden !== false;
+  const shouldStrip = options?.stripHidden !== false;
 
-  const overrides = await fetchAuthorHashtagOverrides();
-  return applyHashtagOverrides(list, overrides);
+  if (!shouldInject && !shouldStrip) return withOverrides;
+
+  const brandMap = new Map(withOverrides.map((info) => [info.UID, info]));
+  if (shouldInject) {
+    await loadAndInjectChampionTags(brandMap);
+  }
+  if (shouldStrip) {
+    stripHiddenTagsFromBrandMap(brandMap, await fetchHiddenHashtagSet());
+  }
+
+  return withOverrides.map((info) => brandMap.get(info.UID) ?? info);
 }
 
 /** brand_info.csv에서 저자명 부분일치 검색 */
@@ -634,9 +746,10 @@ function hasAnyPrevRanks(prevMaps: CategoryRankMaps): boolean {
 }
 
 export async function fetchMergedRankings(): Promise<MergedRanking[]> {
-  const [brandInfo, overrides, ...fileBytes] = await Promise.all([
+  const [brandInfo, overrides, hidden, ...fileBytes] = await Promise.all([
     fetchBaseBrandInfoList(),
     fetchAuthorHashtagOverrides(),
+    fetchHiddenHashtagSet(),
     ...RANKING_FILES.flatMap(({ file }) => [
       fetchCsvBytes(file),
       fetchCsvBytes(toPrevRankFilename(file)),
@@ -706,6 +819,10 @@ export async function fetchMergedRankings(): Promise<MergedRanking[]> {
   if (loadedFiles === 0) {
     throw new Error("불러올 랭킹 CSV가 없습니다.");
   }
+
+  // 부문별 1위 자동 태그 → 이후 숨김 필터 적용
+  injectChampionAutoTags(brandMap, categoryRankMaps);
+  stripHiddenTagsFromBrandMap(brandMap, hidden);
 
   const growthUids = collectPresentUids(categoryRankMaps.get("급성장"));
   const repurchaseUids = collectPresentUids(

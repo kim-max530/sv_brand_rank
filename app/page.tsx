@@ -68,7 +68,7 @@ export default async function HomePage() {
           <p className="my-5 w-full text-center text-sm text-[#717680]">
             자료 선택이 고민된다면? <HashtagMark text="태그" />를 클릭해서{" "}
             <br className="block md:hidden" />
-            간편하게 내게 맞는 브랜드를 탐색해 보세요
+            내게 맞는 브랜드를 간편하게 탐색해 보세요
           </p>
         </header>
 

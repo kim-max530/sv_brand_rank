@@ -511,7 +511,7 @@ export function RankingRow({
           <button
             type="button"
             onClick={openCoupons}
-            className="rounded bg-purple-100 px-1 text-[10px] font-bold text-purple-600 transition-opacity hover:cursor-pointer hover:opacity-80"
+            className="rounded bg-purple-100 px-1.5 py-1.5 text-xs font-bold text-purple-600 transition-opacity hover:cursor-pointer hover:opacity-80"
           >
             {eventDiscount}% Event
           </button>
@@ -1080,7 +1080,7 @@ export default function RankingBoard({
               페이지 이동
             </h3>
             <p className="mt-3 break-keep text-sm leading-relaxed text-slate-600">
-              지금 보고 있는 랭킹 페이지를 벗어나 교재 별 자료 랭킹 페이지로
+              지금 보고 있는 랭킹 페이지를 벗어나 교재별 자료 랭킹 페이지로
               이동합니다.
             </p>
             <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-slate-700">

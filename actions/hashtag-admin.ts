@@ -161,7 +161,11 @@ export async function searchAuthorsForHashtagAction(
     }
 
     const [list, overrides] = await Promise.all([
-      fetchBrandInfoList({ applyOverrides: false }),
+      fetchBrandInfoList({
+        applyOverrides: false,
+        stripHidden: false,
+        injectChampions: false,
+      }),
       fetchAuthorHashtagOverrides(),
     ]);
 
@@ -214,7 +218,11 @@ export async function appendAuthorHashtagAction(
   if (!tag) return { ok: false, error: "추가할 해시태그를 입력해 주세요." };
 
   try {
-    const list = await fetchBrandInfoList({ applyOverrides: false });
+    const list = await fetchBrandInfoList({
+      applyOverrides: false,
+      stripHidden: false,
+      injectChampions: false,
+    });
     const author = list.find((item) => item.UID === trimmedUid);
     if (!author) {
       return { ok: false, error: "해당 UID의 저자를 brand_info에서 찾지 못했습니다." };

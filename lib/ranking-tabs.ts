@@ -79,7 +79,7 @@ export const CATEGORY_LABELS: Record<RankingCategory, string> = {
   "자꾸 찾는": "인기",
 };
 
-/** 교재 별 랭킹 바로가기 */
+/** 교재별 랭킹 바로가기 */
 export const TEXTBOOK_RANKING_HREF =
   "https://solvook.com/#:~:text=%EC%84%A0%ED%83%9D%ED%95%9C%20%EA%B5%90%EC%9E%AC%EC%9D%98%20%EC%9E%90%EB%A3%8C%EB%A5%BC%20%EB%B3%B4%EC%97%AC%EB%93%9C%EB%A0%A4%EC%9A%94";
 

@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { fetchHashtagSearchData } from "@/actions/analytics";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
 
 export type HashtagSearchReadyData = {
-  topTags: Array<{ tag: string; count: number }>;
+  topTags: Array<{
+    tag: string;
+    count: number;
+    authorCount: number;
+    description: string;
+  }>;
   recentTags: Array<{ tag: string; created_at: string }>;
 };
 
@@ -105,24 +111,45 @@ export default function HashtagSearchPanel({
   return (
     <ul>
       {topTags.map((item, index) => (
-        <li key={item.tag}>
+        <li
+          key={item.tag}
+          className="flex w-full items-center border-b border-gray-200 py-3"
+        >
           <Link
             href={hashtagHref(item.tag)}
             onClick={() => onTagClick(item.tag)}
-            className="flex w-full items-center gap-2 border-b border-[#E5E7EB] py-5 transition hover:bg-gray-50"
+            className="flex w-full items-center transition-opacity hover:cursor-pointer hover:opacity-80"
           >
-            <span className="flex w-6 shrink-0 items-center justify-center text-lg font-bold tabular-nums text-[#1A1E27]">
-              {index + 1}
-            </span>
-            <span className="flex w-10 shrink-0 items-center justify-center">
-              <div className="mx-auto h-[2px] w-4 rounded-full bg-[#9E9E9E]" />
-            </span>
-            <span className="inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2 py-1 hover:cursor-pointer">
-              <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
-              <span className="font-bold text-[#1D58B6] underline decoration-[1.5px] underline-offset-2">
-                {item.tag}
+            {/* 1. 순위 및 등락 (고정 너비) */}
+            <div className="flex w-16 flex-shrink-0 items-center gap-2">
+              <span className="w-5 text-center text-lg font-bold tabular-nums text-[#1A1E27]">
+                {index + 1}
               </span>
-            </span>
+              <div className="mx-auto h-[2px] w-4 rounded-full bg-[#9E9E9E]" />
+            </div>
+
+            {/* 2. 해시태그 뱃지 (고정 너비 — 설명 시작점 통일) */}
+            <div className="w-[180px] flex-shrink-0">
+              <span className="inline-flex items-center rounded bg-[#F2F6FC] px-2.5 py-1">
+                <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
+                <span className="font-bold text-[#1D58B6] underline decoration-[1.5px] underline-offset-2">
+                  {item.tag}
+                </span>
+              </span>
+            </div>
+
+            {/* 3. 해시태그 설명 */}
+            <div className="min-w-0 flex-1 pr-4">
+              <p className="truncate text-[13px] text-[#8E939F]">
+                {item.description || " "}
+              </p>
+            </div>
+
+            {/* 4. 포함된 브랜드 수 */}
+            <div className="flex flex-shrink-0 items-center gap-1 text-[13px] text-[#717680]">
+              <Users className="h-4 w-4" aria-hidden />
+              <span>브랜드 {item.authorCount}명</span>
+            </div>
           </Link>
         </li>
       ))}

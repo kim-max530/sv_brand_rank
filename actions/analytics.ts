@@ -33,7 +33,12 @@ export interface AnalyticsSummary {
 }
 
 export interface HashtagSearchData {
-  topTags: Array<{ tag: string; count: number }>;
+  topTags: Array<{
+    tag: string;
+    count: number;
+    authorCount: number;
+    description: string;
+  }>;
   recentTags: Array<{ tag: string; created_at: string }>;
 }
 
@@ -106,27 +111,41 @@ export async function fetchHashtagSearchData(): Promise<
   { ok: true; data: HashtagSearchData } | { ok: false; error: string }
 > {
   try {
+    const [
+      { fetchBrandInfoList },
+      { parseHashtags },
+      { fetchHashtagDescriptionMap, fetchHiddenHashtagSet },
+    ] = await Promise.all([
+      import("@/lib/csv"),
+      import("@/lib/hashtags"),
+      import("@/lib/hashtag-metadata"),
+    ]);
+
     const supabase = getSupabaseAdminClient();
     const from = new Date();
     from.setDate(from.getDate() - 6);
     from.setHours(0, 0, 0, 0);
 
-    const [topResult, recentResult] = await Promise.all([
-      supabase
-        .from("analytics_events")
-        .select("target_name, created_at")
-        .eq("event_type", "hashtag_click")
-        .gte("created_at", from.toISOString())
-        .not("target_name", "is", null)
-        .limit(3000),
-      supabase
-        .from("analytics_events")
-        .select("target_name, created_at")
-        .eq("event_type", "hashtag_click")
-        .not("target_name", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(30),
-    ]);
+    const [topResult, recentResult, hidden, descriptions, brands] =
+      await Promise.all([
+        supabase
+          .from("analytics_events")
+          .select("target_name, created_at")
+          .eq("event_type", "hashtag_click")
+          .gte("created_at", from.toISOString())
+          .not("target_name", "is", null)
+          .limit(3000),
+        supabase
+          .from("analytics_events")
+          .select("target_name, created_at")
+          .eq("event_type", "hashtag_click")
+          .not("target_name", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(30),
+        fetchHiddenHashtagSet(),
+        fetchHashtagDescriptionMap(),
+        fetchBrandInfoList(),
+      ]);
 
     if (topResult.error) {
       return { ok: false, error: topResult.error.message };
@@ -135,15 +154,35 @@ export async function fetchHashtagSearchData(): Promise<
       return { ok: false, error: recentResult.error.message };
     }
 
-    const counts = new Map<string, number>();
+    const authorCounts = new Map<string, number>();
+    for (const info of brands) {
+      const seen = new Set<string>();
+      for (const tag of parseHashtags(info.record2)) {
+        const key = tag.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        authorCounts.set(key, (authorCounts.get(key) ?? 0) + 1);
+      }
+    }
+
+    const counts = new Map<string, { label: string; count: number }>();
     for (const row of topResult.data ?? []) {
       const tag = normalizeTag(row.target_name);
       if (!tag) continue;
-      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      if (hidden.has(tag.toLowerCase())) continue;
+      const key = tag.toLowerCase();
+      const prev = counts.get(key);
+      if (prev) prev.count += 1;
+      else counts.set(key, { label: tag, count: 1 });
     }
 
-    const topTags = [...counts.entries()]
-      .map(([tag, count]) => ({ tag, count }))
+    const topTags = [...counts.values()]
+      .map((item) => ({
+        tag: item.label,
+        count: item.count,
+        authorCount: authorCounts.get(item.label.toLowerCase()) ?? 0,
+        description: descriptions.get(item.label.toLowerCase()) ?? "",
+      }))
       .sort(
         (a, b) =>
           b.count - a.count || a.tag.localeCompare(b.tag, "ko"),
@@ -154,6 +193,7 @@ export async function fetchHashtagSearchData(): Promise<
     for (const row of recentResult.data ?? []) {
       const tag = normalizeTag(row.target_name);
       if (!tag) continue;
+      if (hidden.has(tag.toLowerCase())) continue;
       recentTags.push({
         tag,
         created_at: String(row.created_at ?? ""),
@@ -178,30 +218,13 @@ export async function fetchLiveHashtagRanking(): Promise<
   { ok: true; data: LiveHashtagRankItem[] } | { ok: false; error: string }
 > {
   try {
-    const [{ fetchBrandInfoList }, { parseHashtags }] = await Promise.all([
-      import("@/lib/csv"),
-      import("@/lib/hashtags"),
-    ]);
-
     const search = await fetchHashtagSearchData();
     if (!search.ok) return search;
-
-    const brands = await fetchBrandInfoList();
-    const authorCounts = new Map<string, number>();
-    for (const info of brands) {
-      const seen = new Set<string>();
-      for (const tag of parseHashtags(info.record2)) {
-        const key = tag.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        authorCounts.set(key, (authorCounts.get(key) ?? 0) + 1);
-      }
-    }
 
     const data = search.data.topTags.slice(0, 10).map((item, index) => ({
       tag: item.tag,
       clickCount: item.count,
-      authorCount: authorCounts.get(item.tag.toLowerCase()) ?? 0,
+      authorCount: item.authorCount,
       rank: index + 1,
     }));
 
