@@ -9,7 +9,11 @@ import { RankingRow } from "@/components/RankingBoard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { bumpAuthorClicks } from "@/lib/author-stats-client";
 import { HASHTAG_PAGE_SIZE } from "@/lib/constants";
-import { hashtagHref } from "@/lib/hashtags";
+import {
+  authorMatchesSubject,
+  hashtagHref,
+  normalizeSubjectFilterParam,
+} from "@/lib/hashtags";
 import {
   bannerVisibleForPlacement,
   type PromoBanner,
@@ -25,14 +29,19 @@ export default function HashtagAuthorList({
   tag,
   relatedTags,
   promoBanner,
+  initialSubject = "영어",
 }: {
   authors: MergedRanking[];
   tag: string;
   relatedTags: string[];
   promoBanner: PromoBanner;
+  /** 홈 과목 탭에서 넘어온 값 (기본: 영어 — 혼합 노출 방지) */
+  initialSubject?: SubjectFilter | string;
 }) {
   const [selected, setSelected] = useState<MergedRanking | null>(null);
-  const [subjectFilter, setSubjectFilter] = useState<SubjectFilter>("전체");
+  const [subjectFilter, setSubjectFilter] = useState<SubjectFilter>(() =>
+    normalizeSubjectFilterParam(initialSubject),
+  );
   const [limit, setLimit] = useState(HASHTAG_PAGE_SIZE);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -41,6 +50,11 @@ export default function HashtagAuthorList({
     }
     return initial;
   });
+
+  useEffect(() => {
+    setSubjectFilter(normalizeSubjectFilterParam(initialSubject));
+    setLimit(HASHTAG_PAGE_SIZE);
+  }, [initialSubject, tag]);
 
   useEffect(() => {
     setClickCounts((prev) => {
@@ -54,10 +68,10 @@ export default function HashtagAuthorList({
     });
   }, [authors]);
 
+  /** 태그 목록은 서버에서 이미 태그로 걸러짐 → 과목 교차 검증 필수 */
   const filtered = useMemo(() => {
-    if (subjectFilter === "전체") return authors;
-    return authors.filter((item) =>
-      (item.subjects ?? []).includes(subjectFilter),
+    return authors.filter((author) =>
+      authorMatchesSubject(author, subjectFilter),
     );
   }, [authors, subjectFilter]);
 
@@ -96,7 +110,7 @@ export default function HashtagAuthorList({
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="mx-auto w-full max-w-4xl">
       <header className="mb-8">
         <div className="flex items-center gap-2">
           <Link
@@ -120,7 +134,10 @@ export default function HashtagAuthorList({
               {relatedTags.map((related) => (
                 <Link
                   key={related}
-                  href={hashtagHref(related)}
+                  href={hashtagHref(
+                    related,
+                    subjectFilter === "전체" ? undefined : subjectFilter,
+                  )}
                   className="inline-flex items-center whitespace-nowrap rounded bg-[#F2F6FC] px-2 py-1 text-xs transition hover:cursor-pointer hover:opacity-80"
                 >
                   <span className="mr-0.5 font-bold text-[#1D58B6]">#</span>
@@ -164,15 +181,15 @@ export default function HashtagAuthorList({
         </div>
       </header>
 
-      <div className="overflow-hidden border-t border-[#E1E4EA] bg-white">
+      <div className="w-full overflow-hidden border-t border-[#E1E4EA] bg-white">
         {visible.length === 0 ? (
-          <p className="px-4 py-12 text-center text-sm text-gray-500">
+          <p className="px-6 py-12 text-center text-sm text-gray-500 md:px-8">
             해당 조건의 브랜드관 저자가 없습니다.
           </p>
         ) : (
-          <ul>
+          <ul className="w-full">
             {visible.map((item) => (
-              <li key={item.UID}>
+              <li key={item.UID} className="w-full">
                 <RankingRow
                   item={item}
                   onOpenIntro={setSelected}

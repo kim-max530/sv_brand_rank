@@ -22,8 +22,55 @@ export function parseHashtags(
   return unique;
 }
 
-export function hashtagHref(tag: string): string {
-  return `/hashtag/${encodeURIComponent(tag)}`;
+/** 쿼리/탭 값을 Subject 필터로 정규화 (EN/KO 방어) */
+export function normalizeSubjectFilterParam(
+  raw: string | null | undefined,
+): "전체" | "영어" | "국어" {
+  const value = String(raw ?? "").trim();
+  const upper = value.toUpperCase();
+  if (value === "영어" || upper === "EN" || upper === "ENGLISH") return "영어";
+  if (value === "국어" || upper === "KO" || upper === "KOREAN") return "국어";
+  if (value === "전체" || upper === "ALL") return "전체";
+  // 빈 값·미지정은 기본 영어 (혼합 노출 방지)
+  if (!value) return "영어";
+  return "영어";
+}
+
+export function hashtagHref(
+  tag: string,
+  subject?: string | null,
+): string {
+  const base = `/hashtag/${encodeURIComponent(tag)}`;
+  if (subject == null || String(subject).trim() === "") return base;
+  const normalized = normalizeSubjectFilterParam(subject);
+  if (normalized === "전체") return base;
+  return `${base}?subject=${encodeURIComponent(normalized)}`;
+}
+
+/** 저자가 선택 과목에 속하는지 (subjects 우선, 없으면 과목 필드) */
+export function authorMatchesSubject(
+  author: {
+    과목?: string | null;
+    subjects?: string[] | null;
+    subject?: string | null;
+  },
+  activeSubject: string,
+): boolean {
+  const target = normalizeSubjectFilterParam(activeSubject);
+  if (target === "전체") return true;
+
+  const fromList = (author.subjects ?? [])
+    .map((s) => normalizeSubjectFilterParam(s))
+    .filter((s): s is "영어" | "국어" => s === "영어" || s === "국어");
+
+  if (fromList.length > 0) {
+    return fromList.includes(target);
+  }
+
+  const single = normalizeSubjectFilterParam(
+    author.과목 ?? author.subject ?? "",
+  );
+  return single === target;
 }
 
 export function normalizeHashtagParam(raw: string): string {

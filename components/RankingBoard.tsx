@@ -351,7 +351,7 @@ export function RankingRow({
   return (
     <div
       className={`flex w-full items-center justify-between border-b border-[#E5E7EB] py-4 lg:py-[14px] ${
-        isHashtagLayout ? "pl-4 md:pl-10" : ""
+        isHashtagLayout ? "px-6 md:px-8" : ""
       }`}
     >
       {/* 좌측: 순위 + 등락 + 이미지 */}
@@ -451,7 +451,11 @@ export function RankingRow({
           {tags.length > 0 ? (
             <div className="flex w-full flex-wrap gap-1.5 md:mt-1.5">
               {tags.map((tag, idx) => (
-                <TagBadge key={`${tag}-${idx}`} tag={tag} />
+                <TagBadge
+                  key={`${tag}-${idx}`}
+                  tag={tag}
+                  subject={item.과목}
+                />
               ))}
             </div>
           ) : intro ? (

@@ -209,7 +209,10 @@ export default function AuthorModal({
                 <h3 className="mb-2 text-xs font-semibold tracking-wide text-teal-700 uppercase">
                   해시태그
                 </h3>
-                <HashtagChips record2={author.record2} />
+                <HashtagChips
+                  record2={author.record2}
+                  subject={author.과목}
+                />
                 {!author.record2?.trim() ? (
                   <p className="text-sm text-slate-500">
                     등록된 해시태그가 없습니다.

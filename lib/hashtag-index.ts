@@ -1,7 +1,11 @@
 import { unstable_cache } from "next/cache";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { fetchAuthorStatsForUids } from "@/lib/author-stats";
-import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
+import {
+  fetchAuthorSubjectsByUid,
+  fetchBrandInfoList,
+  fetchMergedRankings,
+} from "@/lib/csv";
 import { fetchHiddenHashtagSet } from "@/lib/hashtag-metadata";
 import {
   parseHashtags,
@@ -74,12 +78,14 @@ function sortAuthors(a: MergedRanking, b: MergedRanking): number {
 }
 
 async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
-  const [brandInfo, rankings, eventMap, hidden] = await Promise.all([
-    fetchBrandInfoList(),
-    fetchMergedRankings(),
-    fetchActiveAuthorEvents(),
-    fetchHiddenHashtagSet(),
-  ]);
+  const [brandInfo, rankings, eventMap, hidden, subjectsByUid] =
+    await Promise.all([
+      fetchBrandInfoList(),
+      fetchMergedRankings(),
+      fetchActiveAuthorEvents(),
+      fetchHiddenHashtagSet(),
+      fetchAuthorSubjectsByUid(),
+    ]);
 
   const metaByUid = new Map<string, MutableAuthorMeta>();
   for (const row of rankings) {
@@ -98,6 +104,22 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
     if (row.inSearch) current.inSearch = true;
     current.subjects.add(row.과목);
     metaByUid.set(row.UID, current);
+  }
+
+  // 인기/추천 상위권뿐 아니라 전체 랭킹 CSV 등장 과목을 병합 (혼합 노출 방지)
+  for (const [uid, subjects] of subjectsByUid) {
+    const current = metaByUid.get(uid) ?? {
+      isInPopular: false,
+      isInRecommend: false,
+      inGrowth: false,
+      inRepurchase: false,
+      inSearch: false,
+      subjects: new Set<Subject>(),
+    };
+    for (const subject of subjects) {
+      current.subjects.add(subject);
+    }
+    metaByUid.set(uid, current);
   }
 
   const clickMap = await fetchAuthorStatsForUids(
@@ -190,7 +212,7 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
 
 const getCachedHashtagAuthorIndex = unstable_cache(
   buildHashtagAuthorIndex,
-  ["hashtag-author-index-v2"],
+  ["hashtag-author-index-v3"],
   {
     revalidate: 300,
     tags: ["ranking-data", "hashtag-data", "hashtag-metadata", "author-events"],

@@ -331,6 +331,35 @@ function buildRankMap(rows: Record<string, string>[]): Map<string, number> {
   return map;
 }
 
+/**
+ * 모든 랭킹 CSV(과목×부문)에서 UID별 등장 과목을 수집.
+ * 해시태그 상세 등에서 영어/국어 혼합 노출을 막기 위한 기준 데이터.
+ */
+export async function fetchAuthorSubjectsByUid(): Promise<
+  Map<string, Set<Subject>>
+> {
+  const result = new Map<string, Set<Subject>>();
+  const bytesList = await Promise.all(
+    RANKING_FILES.map(({ file }) => fetchCsvBytes(file)),
+  );
+
+  for (const bytes of bytesList) {
+    if (!bytes) continue;
+    for (const row of parseCsv(decodeCsvBytes(bytes))) {
+      const record = toRankingRecord(row);
+      if (!record) continue;
+      let set = result.get(record.UID);
+      if (!set) {
+        set = new Set<Subject>();
+        result.set(record.UID, set);
+      }
+      set.add(record.과목);
+    }
+  }
+
+  return result;
+}
+
 type CategoryRankMaps = Map<SourceRankingCategory, Map<string, number>>;
 
 /**

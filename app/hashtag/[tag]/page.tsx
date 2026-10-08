@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import HashtagAuthorList from "@/components/HashtagAuthorList";
 import SiteHeader from "@/components/SiteHeader";
 import { getHashtagPageData } from "@/lib/hashtag-index";
-import { normalizeHashtagParam } from "@/lib/hashtags";
+import {
+  normalizeHashtagParam,
+  normalizeSubjectFilterParam,
+} from "@/lib/hashtags";
 import { fetchPromoBanner } from "@/lib/promo-banner";
 
 export const revalidate = false;
@@ -25,10 +28,17 @@ export async function generateMetadata({
 
 export default async function HashtagPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tag: string }>;
+  searchParams?: Promise<{ subject?: string | string[] }>;
 }) {
   const { tag: rawTag } = await params;
+  const query = searchParams ? await searchParams : {};
+  const rawSubject = Array.isArray(query.subject)
+    ? query.subject[0]
+    : query.subject;
+  const initialSubject = normalizeSubjectFilterParam(rawSubject);
   const tag = normalizeHashtagParam(rawTag);
 
   if (!tag) {
@@ -63,6 +73,7 @@ export default async function HashtagPage({
             tag={tag}
             relatedTags={relatedTags}
             promoBanner={promoBanner}
+            initialSubject={initialSubject}
           />
         </div>
       </main>

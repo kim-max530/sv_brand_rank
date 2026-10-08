@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hashtagHref } from "@/lib/hashtags";
+import type { Subject } from "@/types/ranking";
 
 /** #와 텍스트 분리 · 딥블루/페일블루 · #에는 밑줄 없음 */
 export function HashtagMark({
@@ -36,9 +37,12 @@ export const TAG_BADGE_CLASS =
 
 export default function TagBadge({
   tag,
+  subject,
   className = "",
 }: {
   tag: string;
+  /** 클릭 시 해시태그 상세에 넘길 과목 (혼합 노출 방지) */
+  subject?: Subject | string | null;
   className?: string;
 }) {
   const label = tag.replace(/^#/, "").trim();
@@ -46,7 +50,7 @@ export default function TagBadge({
 
   return (
     <Link
-      href={hashtagHref(label)}
+      href={hashtagHref(label, subject)}
       className={`${TAG_BADGE_CLASS} ${className}`.trim()}
       onClick={(event) => {
         event.stopPropagation();
