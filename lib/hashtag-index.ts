@@ -1,15 +1,12 @@
 import { unstable_cache } from "next/cache";
 import { fetchActiveAuthorEvents } from "@/lib/author-events";
 import { fetchAuthorStatsForUids } from "@/lib/author-stats";
-import {
-  fetchAuthorSubjectsByUid,
-  fetchBrandInfoList,
-  fetchMergedRankings,
-} from "@/lib/csv";
+import { fetchBrandInfoList, fetchMergedRankings } from "@/lib/csv";
 import { fetchHiddenHashtagSet } from "@/lib/hashtag-metadata";
 import {
   parseHashtags,
   resolveSystemBadgeTag,
+  subjectsFromRange1,
   type SystemBadgeTag,
 } from "@/lib/hashtags";
 import type { BrandInfo, MergedRanking, Subject } from "@/types/ranking";
@@ -50,7 +47,8 @@ function toAuthorView(
   totalClicks: number,
   eventDiscount: number | undefined,
 ): MergedRanking {
-  const subjects = meta ? [...meta.subjects] : [];
+  // 과목 소속은 brand_info.range1 키워드 기준 (랭킹 CSV 과목 코드 폐기)
+  const subjects = subjectsFromRange1(info.range1);
   return {
     ...info,
     과목: (subjects[0] ?? "영어") as Subject,
@@ -78,14 +76,12 @@ function sortAuthors(a: MergedRanking, b: MergedRanking): number {
 }
 
 async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
-  const [brandInfo, rankings, eventMap, hidden, subjectsByUid] =
-    await Promise.all([
-      fetchBrandInfoList(),
-      fetchMergedRankings(),
-      fetchActiveAuthorEvents(),
-      fetchHiddenHashtagSet(),
-      fetchAuthorSubjectsByUid(),
-    ]);
+  const [brandInfo, rankings, eventMap, hidden] = await Promise.all([
+    fetchBrandInfoList(),
+    fetchMergedRankings(),
+    fetchActiveAuthorEvents(),
+    fetchHiddenHashtagSet(),
+  ]);
 
   const metaByUid = new Map<string, MutableAuthorMeta>();
   for (const row of rankings) {
@@ -102,24 +98,7 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
     if (row.inGrowth) current.inGrowth = true;
     if (row.inRepurchase) current.inRepurchase = true;
     if (row.inSearch) current.inSearch = true;
-    current.subjects.add(row.과목);
     metaByUid.set(row.UID, current);
-  }
-
-  // 인기/추천 상위권뿐 아니라 전체 랭킹 CSV 등장 과목을 병합 (혼합 노출 방지)
-  for (const [uid, subjects] of subjectsByUid) {
-    const current = metaByUid.get(uid) ?? {
-      isInPopular: false,
-      isInRecommend: false,
-      inGrowth: false,
-      inRepurchase: false,
-      inSearch: false,
-      subjects: new Set<Subject>(),
-    };
-    for (const subject of subjects) {
-      current.subjects.add(subject);
-    }
-    metaByUid.set(uid, current);
   }
 
   const clickMap = await fetchAuthorStatsForUids(
@@ -145,6 +124,8 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
 
   for (const author of authors) {
     if (!safeAddress(author.address)) continue;
+    // 영어/국어 range1 미보유(수학·과학만 등)는 태그 인덱스에도 넣지 않음
+    if (subjectsFromRange1(author.range1).length === 0) continue;
     const tags = parseHashtags(author.record2).filter(
       (tag) => !hidden.has(tag.toLowerCase()),
     );
@@ -212,7 +193,7 @@ async function buildHashtagAuthorIndex(): Promise<HashtagAuthorIndex> {
 
 const getCachedHashtagAuthorIndex = unstable_cache(
   buildHashtagAuthorIndex,
-  ["hashtag-author-index-v3"],
+  ["hashtag-author-index-v4"],
   {
     revalidate: 300,
     tags: ["ranking-data", "hashtag-data", "hashtag-metadata", "author-events"],

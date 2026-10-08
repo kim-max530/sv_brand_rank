@@ -47,30 +47,38 @@ export function hashtagHref(
   return `${base}?subject=${encodeURIComponent(normalized)}`;
 }
 
-/** 저자가 선택 과목에 속하는지 (subjects 우선, 없으면 과목 필드) */
+/** activeSubject → range1 검색 키워드 (EN/KO/영어/국어 방어) */
+export function subjectKeyword(activeSubject: string): "영어" | "국어" | null {
+  const target = normalizeSubjectFilterParam(activeSubject);
+  if (target === "전체") return null;
+  return target;
+}
+
+/** range1 문자열에서 영어/국어 탭 소속 과목 추출 */
+export function subjectsFromRange1(
+  range1: string | null | undefined,
+): Array<"영어" | "국어"> {
+  if (typeof range1 !== "string" || !range1.trim()) return [];
+  const result: Array<"영어" | "국어"> = [];
+  if (range1.includes("영어")) result.push("영어");
+  if (range1.includes("국어")) result.push("국어");
+  return result;
+}
+
+/**
+ * 저자가 선택 과목 탭에 속하는지 — brand_info.range1 키워드 includes 기준.
+ * range1 없음 / 영어·국어 미포함(수학·과학만 등) → 미노출.
+ */
 export function authorMatchesSubject(
   author: {
-    과목?: string | null;
-    subjects?: string[] | null;
-    subject?: string | null;
+    range1?: string | null;
   },
   activeSubject: string,
 ): boolean {
-  const target = normalizeSubjectFilterParam(activeSubject);
-  if (target === "전체") return true;
-
-  const fromList = (author.subjects ?? [])
-    .map((s) => normalizeSubjectFilterParam(s))
-    .filter((s): s is "영어" | "국어" => s === "영어" || s === "국어");
-
-  if (fromList.length > 0) {
-    return fromList.includes(target);
-  }
-
-  const single = normalizeSubjectFilterParam(
-    author.과목 ?? author.subject ?? "",
-  );
-  return single === target;
+  const keyword = subjectKeyword(activeSubject);
+  if (keyword == null) return true; // 전체 탭
+  if (!author.range1?.trim()) return false;
+  return author.range1.includes(keyword);
 }
 
 export function normalizeHashtagParam(raw: string): string {

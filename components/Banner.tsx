@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { PromoBanner } from "@/lib/promo-banner";
 
 type PromoBannerProps = {
@@ -57,6 +58,9 @@ export default function Banner({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                trackAnalyticsEvent("banner_click", buttonText.trim() || title)
+              }
               className="inline-flex shrink-0 items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#2B7FFF] transition hover:bg-blue-50"
             >
               {buttonText}

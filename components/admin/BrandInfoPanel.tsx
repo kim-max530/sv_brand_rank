@@ -10,7 +10,9 @@ import {
 } from "@/actions/brand-info";
 
 function triggerCsvDownload(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  // Excel UTF-8 인식용 BOM — 이미 있으면 중복 삽입하지 않음
+  const withBom = csv.startsWith("\uFEFF") ? csv : `\uFEFF${csv}`;
+  const blob = new Blob([withBom], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

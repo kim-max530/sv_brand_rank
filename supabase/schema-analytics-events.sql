@@ -5,14 +5,22 @@ create table if not exists public.analytics_events (
   id uuid primary key default gen_random_uuid(),
   event_type text not null,
   target_name text,
+  visitor_id text,
   created_at timestamptz not null default now()
 );
+
+-- 기존 테이블에 visitor_id 컬럼이 없으면 추가 (Unique Visitors 집계)
+alter table public.analytics_events
+  add column if not exists visitor_id text;
 
 create index if not exists analytics_events_created_at_idx
   on public.analytics_events (created_at desc);
 
 create index if not exists analytics_events_event_type_idx
   on public.analytics_events (event_type);
+
+create index if not exists analytics_events_visitor_id_idx
+  on public.analytics_events (visitor_id);
 
 alter table public.analytics_events enable row level security;
 

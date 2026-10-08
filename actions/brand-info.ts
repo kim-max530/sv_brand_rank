@@ -389,10 +389,13 @@ export async function downloadBrandInfoCsvAction(): Promise<
       return { ok: false, error: "brand_info.csv 내용이 비어 있습니다." };
     }
 
+    // Excel 한글 깨짐 방지 — 다운로드 응답에 UTF-8 BOM 보장
+    const withBom = csv.startsWith("\uFEFF") ? csv : `\uFEFF${csv}`;
+
     return {
       ok: true,
       filename: "brand_info.csv",
-      csv,
+      csv: withBom,
     };
   } catch (error) {
     return {

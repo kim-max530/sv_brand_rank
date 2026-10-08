@@ -197,6 +197,9 @@ export default function HashtagAuthorList({
                   layout="hashtag"
                   totalClicks={clickCounts[item.UID] ?? item.totalClicks ?? 0}
                   onMaterialsClick={handleMaterialsClick}
+                  activeSubject={
+                    subjectFilter === "전체" ? undefined : subjectFilter
+                  }
                 />
               </li>
             ))}
@@ -229,8 +232,10 @@ export default function HashtagAuthorList({
           selected
             ? {
                 ...selected,
-                totalClicks:
-                  clickCounts[selected.UID] ?? selected.totalClicks ?? 0,
+                totalClicks: Math.max(
+                  clickCounts[selected.UID] ?? 0,
+                  selected.totalClicks ?? 0,
+                ),
               }
             : null
         }

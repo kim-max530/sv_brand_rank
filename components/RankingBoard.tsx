@@ -14,6 +14,7 @@ import TagBadge, { HashtagMark } from "@/components/TagBadge";
 import { fetchHashtagSearchData } from "@/actions/analytics";
 import { warmHashtagIndexAction } from "@/actions/hashtag-index";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { authorMatchesSubject } from "@/lib/hashtags";
 import {
   cacheAvatarSrc,
   getCachedAvatarSrc,
@@ -85,9 +86,8 @@ function StoreHeartIcon({ className = "" }: { className?: string }) {
 }
 
 function tabTargetName(category: RankingCategory): string {
-  return (CATEGORY_LABELS[category] ?? String(category))
-    .replace(/^\S+\s+/, "")
-    .trim();
+  // Admin 집계용 고정 라벨 (브랜드 랭킹 / 추천 랭킹 / 인기 #태그)
+  return CATEGORY_LABELS[category] ?? String(category);
 }
 
 /** 순위·변동·아바타 열 고정폭 — 리스트 X축 정렬 기준 */
@@ -293,6 +293,7 @@ export function RankingRow({
   layout = "default",
   totalClicks = 0,
   onMaterialsClick,
+  activeSubject,
 }: {
   item: MergedRanking;
   onOpenIntro: (item: MergedRanking) => void;
@@ -301,6 +302,8 @@ export function RankingRow({
   layout?: "default" | "hashtag";
   totalClicks?: number;
   onMaterialsClick?: (item: MergedRanking) => void;
+  /** 태그 클릭 시 상세로 넘길 과목 탭 (range1 필터와 동일) */
+  activeSubject?: Subject | string | null;
 }) {
   const authorName = safeText(item.저자명) || safeText(item.UID) || "이름 없음";
   const intro = safeText(item.intro);
@@ -454,7 +457,7 @@ export function RankingRow({
                 <TagBadge
                   key={`${tag}-${idx}`}
                   tag={tag}
-                  subject={item.과목}
+                  subject={activeSubject ?? item.과목}
                 />
               ))}
             </div>
@@ -633,7 +636,7 @@ export default function RankingBoard({
     const hasRows = (candidate: Subject) =>
       rankings.some(
         (item) =>
-          item?.과목 === candidate &&
+          authorMatchesSubject(item, candidate) &&
           Number.isFinite(item.rank) &&
           item.rank >= 1 &&
           (item.category === category ||
@@ -698,19 +701,42 @@ export default function RankingBoard({
   const list = useMemo(() => {
     if (category === "해시검색" || !Array.isArray(rankings)) return [];
 
-    // 연산/필터는 전체 데이터 유지 — rank 상한으로 미리 자르지 않음
-    const direct = rankings
-      .filter((item) => {
-        if (!item || item.category !== category) return false;
-        if (item.과목 !== effectiveSubject) return false;
-        if (!Number.isFinite(item.rank) || item.rank < 1) return false;
-        if (!matchesProductFilter(item, product)) return false;
-        return matchesTextbookGroupFilter(item, textbookGroup);
-      })
-      .sort(
+    /** range1 키워드 매칭 + UID 중복 제거 (양쪽 탭 소속 시 해당 과목 행 우선) */
+    const dedupeByUid = (items: MergedRanking[]) => {
+      const unique = new Map<string, MergedRanking>();
+      for (const item of [...items].sort(
+        (a, b) =>
+          a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
+      )) {
+        const prev = unique.get(item.UID);
+        if (!prev) {
+          unique.set(item.UID, item);
+          continue;
+        }
+        if (
+          item.과목 === effectiveSubject &&
+          prev.과목 !== effectiveSubject
+        ) {
+          unique.set(item.UID, item);
+        }
+      }
+      return [...unique.values()].sort(
         (a, b) =>
           a.rank - b.rank || a.저자명.localeCompare(b.저자명, "ko"),
       );
+    };
+
+    // 연산/필터는 전체 데이터 유지 — rank 상한으로 미리 자르지 않음
+    const direct = dedupeByUid(
+      rankings.filter((item) => {
+        if (!item || item.category !== category) return false;
+        // brand_info.range1 includes("영어"|"국어") — subject 코드 일치 폐기
+        if (!authorMatchesSubject(item, effectiveSubject)) return false;
+        if (!Number.isFinite(item.rank) || item.rank < 1) return false;
+        if (!matchesProductFilter(item, product)) return false;
+        return matchesTextbookGroupFilter(item, textbookGroup);
+      }),
+    );
 
     if (direct.length > 0 || category !== "인기") return direct;
 
@@ -718,7 +744,7 @@ export default function RankingBoard({
     const recommended = rankings.filter(
       (item) =>
         item?.category === "추천" &&
-        item.과목 === effectiveSubject &&
+        authorMatchesSubject(item, effectiveSubject) &&
         Boolean(safeText(item.address)) &&
         Number.isFinite(item.rank) &&
         item.rank >= 1 &&
@@ -730,7 +756,7 @@ export default function RankingBoard({
         ? recommended
         : rankings.filter(
             (item) =>
-              item?.과목 === effectiveSubject &&
+              authorMatchesSubject(item, effectiveSubject) &&
               Boolean(safeText(item.address)) &&
               Number.isFinite(item.rank) &&
               item.rank >= 1 &&
@@ -738,11 +764,7 @@ export default function RankingBoard({
               matchesTextbookGroupFilter(item, textbookGroup),
           );
 
-    const unique = new Map<string, MergedRanking>();
-    for (const item of [...pool].sort((a, b) => a.rank - b.rank)) {
-      if (!unique.has(item.UID)) unique.set(item.UID, item);
-    }
-    return [...unique.values()].map((item, index) => ({
+    return dedupeByUid(pool).map((item, index) => ({
       ...item,
       category: "인기" as const,
       rank: index + 1,
@@ -790,6 +812,7 @@ export default function RankingBoard({
     event: React.MouseEvent<HTMLAnchorElement>,
   ) => {
     event.preventDefault();
+    trackAnalyticsEvent("tab_click", "교재별 랭킹");
     try {
       if (window.localStorage.getItem(TEXTBOOK_SKIP_KEY) === "1") {
         goTextbookRanking();
@@ -1039,6 +1062,7 @@ export default function RankingBoard({
                         clickCounts[item.UID] ?? item.totalClicks ?? 0
                       }
                       onMaterialsClick={handleMaterialsClick}
+                      activeSubject={effectiveSubject}
                     />
                   </li>
                 ))}
@@ -1121,10 +1145,10 @@ export default function RankingBoard({
           selectedAuthor
             ? {
                 ...selectedAuthor,
-                totalClicks:
-                  clickCounts[selectedAuthor.UID] ??
-                  selectedAuthor.totalClicks ??
-                  0,
+                totalClicks: Math.max(
+                  clickCounts[selectedAuthor.UID] ?? 0,
+                  selectedAuthor.totalClicks ?? 0,
+                ),
               }
             : null
         }

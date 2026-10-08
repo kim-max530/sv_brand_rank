@@ -4,16 +4,42 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type AnalyticsPeriod = "day" | "week" | "month";
 
+/** Admin 사용 데이터 대시보드용 집계 */
 export interface AnalyticsSummary {
   period: AnalyticsPeriod;
   rangeStart: string;
   rangeEnd: string;
+  metrics: {
+    /** 접속 횟수 (Session views) */
+    sessionViews: number;
+    /** 접속자수 (Unique Visitors) */
+    uniqueVisitors: number;
+    /** 홈페이지 연결 */
+    homeLinkClicks: number;
+    /** 탭 - 브랜드 랭킹 */
+    tabBrand: number;
+    /** 탭 - 추천 랭킹 */
+    tabRecommend: number;
+    /** 탭 - 인기 #태그 */
+    tabHashtag: number;
+    /** 탭 - 교재별 랭킹 */
+    tabTextbook: number;
+    /** 해시태그 클릭 */
+    hashtagClicks: number;
+    /** 배너 클릭 */
+    bannerClicks: number;
+    /** 프로필 클릭 (참고) */
+    profileClicks: number;
+    /** 평균 클릭 수 (전체 클릭 / 접속자수), 소수 1자리 */
+    avgClicksPerVisitor: number;
+  };
   totals: {
     page_view: number;
     tab_click: number;
     profile_click: number;
     homepage_click: number;
     hashtag_click: number;
+    banner_click: number;
     all: number;
   };
   byTarget: Array<{
@@ -28,8 +54,33 @@ export interface AnalyticsSummary {
     profile_click: number;
     homepage_click: number;
     hashtag_click: number;
+    banner_click: number;
     all: number;
   }>;
+}
+
+const TAB_BRAND = "브랜드 랭킹";
+const TAB_RECOMMEND = "추천 랭킹";
+const TAB_HASHTAG = "인기 #태그";
+const TAB_TEXTBOOK = "교재별 랭킹";
+
+function normalizeTabTarget(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  if (t === TAB_BRAND || t === "인기" || t === "brand") return TAB_BRAND;
+  if (t === TAB_RECOMMEND || t === "추천" || t === "recommend")
+    return TAB_RECOMMEND;
+  if (
+    t === TAB_HASHTAG ||
+    t === "해시검색" ||
+    t === "search" ||
+    t.includes("#태그") ||
+    t === "#태그"
+  ) {
+    return TAB_HASHTAG;
+  }
+  if (t === TAB_TEXTBOOK || t.includes("교재")) return TAB_TEXTBOOK;
+  return t;
 }
 
 export interface HashtagSearchData {
@@ -246,26 +297,53 @@ export async function fetchAnalyticsSummary(
   try {
     const supabase = getSupabaseAdminClient();
     const from = startOfPeriod(period);
-    const { data, error } = await supabase
+
+    let rows: Array<{
+      event_type: string | null;
+      target_name: string | null;
+      visitor_id?: string | null;
+      created_at: string | null;
+    }> = [];
+
+    const withVisitor = await supabase
       .from("analytics_events")
-      .select("event_type, target_name, created_at")
+      .select("event_type, target_name, visitor_id, created_at")
       .gte("created_at", from.toISOString())
       .order("created_at", { ascending: false })
-      .limit(5000);
+      .limit(8000);
 
-    if (error) {
-      return { ok: false, error: error.message };
+    if (withVisitor.error && /visitor_id/i.test(withVisitor.error.message)) {
+      const fallback = await supabase
+        .from("analytics_events")
+        .select("event_type, target_name, created_at")
+        .gte("created_at", from.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(8000);
+      if (fallback.error) {
+        return { ok: false, error: fallback.error.message };
+      }
+      rows = fallback.data ?? [];
+    } else if (withVisitor.error) {
+      return { ok: false, error: withVisitor.error.message };
+    } else {
+      rows = withVisitor.data ?? [];
     }
 
-    const rows = data ?? [];
     const totals = {
       page_view: 0,
       tab_click: 0,
       profile_click: 0,
       homepage_click: 0,
       hashtag_click: 0,
+      banner_click: 0,
       all: rows.length,
     };
+
+    const uniqueVisitors = new Set<string>();
+    let tabBrand = 0;
+    let tabRecommend = 0;
+    let tabHashtag = 0;
+    let tabTextbook = 0;
 
     const targetMap = new Map<string, number>();
     const bucketMap = new Map<
@@ -276,6 +354,7 @@ export async function fetchAnalyticsSummary(
         profile_click: number;
         homepage_click: number;
         hashtag_click: number;
+        banner_click: number;
         all: number;
       }
     >();
@@ -286,7 +365,18 @@ export async function fetchAnalyticsSummary(
         totals[type as keyof Omit<typeof totals, "all">] += 1;
       }
 
+      const visitorId = String(row.visitor_id ?? "").trim();
+      if (visitorId) uniqueVisitors.add(visitorId);
+
       const target = String(row.target_name ?? "").trim() || "(없음)";
+      if (type === "tab_click") {
+        const tab = normalizeTabTarget(target);
+        if (tab === TAB_BRAND) tabBrand += 1;
+        else if (tab === TAB_RECOMMEND) tabRecommend += 1;
+        else if (tab === TAB_HASHTAG) tabHashtag += 1;
+        else if (tab === TAB_TEXTBOOK) tabTextbook += 1;
+      }
+
       const targetKey = `${type}::${target}`;
       targetMap.set(targetKey, (targetMap.get(targetKey) ?? 0) + 1);
 
@@ -297,6 +387,7 @@ export async function fetchAnalyticsSummary(
         profile_click: 0,
         homepage_click: 0,
         hashtag_click: 0,
+        banner_click: 0,
         all: 0,
       };
       bucket.all += 1;
@@ -305,12 +396,28 @@ export async function fetchAnalyticsSummary(
         type === "tab_click" ||
         type === "profile_click" ||
         type === "homepage_click" ||
-        type === "hashtag_click"
+        type === "hashtag_click" ||
+        type === "banner_click"
       ) {
         bucket[type] += 1;
       }
       bucketMap.set(label, bucket);
     }
+
+    const interactionClicks =
+      totals.tab_click +
+      totals.profile_click +
+      totals.homepage_click +
+      totals.hashtag_click +
+      totals.banner_click;
+
+    // visitor_id 미수집 구간 호환: page_view를 최소 방문자 하한으로 사용
+    const uniqueCount =
+      uniqueVisitors.size > 0 ? uniqueVisitors.size : totals.page_view;
+    const avgClicksPerVisitor =
+      uniqueCount > 0
+        ? Math.round((interactionClicks / uniqueCount) * 10) / 10
+        : 0;
 
     const byTarget = [...targetMap.entries()]
       .map(([key, count]) => {
@@ -330,6 +437,19 @@ export async function fetchAnalyticsSummary(
         period,
         rangeStart: toKstDate(from),
         rangeEnd: toKstDate(new Date()),
+        metrics: {
+          sessionViews: totals.page_view,
+          uniqueVisitors: uniqueCount,
+          homeLinkClicks: totals.homepage_click,
+          tabBrand,
+          tabRecommend,
+          tabHashtag,
+          tabTextbook,
+          hashtagClicks: totals.hashtag_click,
+          bannerClicks: totals.banner_click,
+          profileClicks: totals.profile_click,
+          avgClicksPerVisitor,
+        },
         totals,
         byTarget,
         byBucket,

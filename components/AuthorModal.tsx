@@ -57,6 +57,17 @@ export default function AuthorModal({
   onClose,
   onMaterialsClick,
 }: AuthorModalProps) {
+  /** prop의 실제 클릭수를 초기·동기화 — 0 하드코딩 방지 */
+  const [clicks, setClicks] = useState(() => author?.totalClicks ?? 0);
+
+  useEffect(() => {
+    if (author?.totalClicks != null) {
+      setClicks(author.totalClicks);
+    } else if (author) {
+      setClicks(0);
+    }
+  }, [author, author?.UID, author?.totalClicks]);
+
   useEffect(() => {
     if (!author) return;
 
@@ -84,7 +95,7 @@ export default function AuthorModal({
   const embedUrl = toYouTubeEmbedUrl(author.youtube_url);
   const showEventCue = Boolean(author.hasEvent);
   const eventDiscount = author.eventDiscount ?? 35;
-  const totalClicks = author.totalClicks ?? 0;
+  const totalClicks = Math.max(clicks, author.totalClicks ?? 0);
 
   const openHomepage = () => {
     if (address && onMaterialsClick) {
@@ -211,7 +222,7 @@ export default function AuthorModal({
                 </h3>
                 <HashtagChips
                   record2={author.record2}
-                  subject={author.과목}
+                  subject={author.subjects?.[0] ?? author.과목}
                 />
                 {!author.record2?.trim() ? (
                   <p className="text-sm text-slate-500">

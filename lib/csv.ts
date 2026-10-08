@@ -15,7 +15,7 @@ import {
   SUBJECTS,
   toPrevRankFilename,
 } from "@/lib/constants";
-import { parseHashtags } from "@/lib/hashtags";
+import { authorMatchesSubject, parseHashtags } from "@/lib/hashtags";
 import {
   fetchHiddenHashtagSet,
   stripHiddenFromRecord2,
@@ -207,6 +207,7 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
     "hashtag",
     "hashtags",
   );
+  const range1 = cell(row, "range1", "Range1", "RANGE1", "과목범위");
   const range3 = cell(row, "range3", "Range3");
   const youtube_url = cell(
     row,
@@ -232,6 +233,7 @@ function toBrandInfo(row: Record<string, string>): BrandInfo | null {
     ...(intro ? { intro } : {}),
     ...(record ? { record } : {}),
     ...(record2 ? { record2 } : {}),
+    ...(range1 ? { range1 } : {}),
     ...(range3 ? { range3 } : {}),
     ...(youtube_url ? { youtube_url } : {}),
     ...(parseTruthyFlag(변형문제Raw) ? { 변형문제: true } : {}),
@@ -329,35 +331,6 @@ function buildRankMap(rows: Record<string, string>[]): Map<string, number> {
     map.set(rankingKey(record.UID, record.과목), record.rank);
   }
   return map;
-}
-
-/**
- * 모든 랭킹 CSV(과목×부문)에서 UID별 등장 과목을 수집.
- * 해시태그 상세 등에서 영어/국어 혼합 노출을 막기 위한 기준 데이터.
- */
-export async function fetchAuthorSubjectsByUid(): Promise<
-  Map<string, Set<Subject>>
-> {
-  const result = new Map<string, Set<Subject>>();
-  const bytesList = await Promise.all(
-    RANKING_FILES.map(({ file }) => fetchCsvBytes(file)),
-  );
-
-  for (const bytes of bytesList) {
-    if (!bytes) continue;
-    for (const row of parseCsv(decodeCsvBytes(bytes))) {
-      const record = toRankingRecord(row);
-      if (!record) continue;
-      let set = result.get(record.UID);
-      if (!set) {
-        set = new Set<Subject>();
-        result.set(record.UID, set);
-      }
-      set.add(record.과목);
-    }
-  }
-
-  return result;
 }
 
 type CategoryRankMaps = Map<SourceRankingCategory, Map<string, number>>;
@@ -495,16 +468,19 @@ function buildRecommendRankMap(
   if (brands.length === 0) return result;
 
   for (const subject of SUBJECTS) {
-    const scored = brands.map((info) => {
-      let score = 0;
-      for (const { category, weight } of RANKING_FILES) {
-        const rankMap = categoryRankMaps.get(category);
-        const rank =
-          rankMap?.get(rankingKey(info.UID, subject)) ?? MISSING_RANK_FALLBACK;
-        score += rank * weight;
-      }
-      return { info, score };
-    });
+    const scored = brands
+      .filter((info) => authorMatchesSubject(info, subject))
+      .map((info) => {
+        let score = 0;
+        for (const { category, weight } of RANKING_FILES) {
+          const rankMap = categoryRankMaps.get(category);
+          const rank =
+            rankMap?.get(rankingKey(info.UID, subject)) ??
+            MISSING_RANK_FALLBACK;
+          score += rank * weight;
+        }
+        return { info, score };
+      });
 
     scored.sort(
       (a, b) =>
@@ -538,16 +514,19 @@ function buildRecommendRankings(
   const results: MergedRanking[] = [];
 
   for (const subject of SUBJECTS) {
-    const scored = brands.map((info) => {
-      let score = 0;
-      for (const { category, weight } of RANKING_FILES) {
-        const rankMap = categoryRankMaps.get(category);
-        const rank =
-          rankMap?.get(rankingKey(info.UID, subject)) ?? MISSING_RANK_FALLBACK;
-        score += rank * weight;
-      }
-      return { info, score };
-    });
+    const scored = brands
+      .filter((info) => authorMatchesSubject(info, subject))
+      .map((info) => {
+        let score = 0;
+        for (const { category, weight } of RANKING_FILES) {
+          const rankMap = categoryRankMaps.get(category);
+          const rank =
+            rankMap?.get(rankingKey(info.UID, subject)) ??
+            MISSING_RANK_FALLBACK;
+          score += rank * weight;
+        }
+        return { info, score };
+      });
 
     scored.sort(
       (a, b) =>
@@ -600,16 +579,19 @@ function buildPopularRankMap(
   if (brands.length === 0) return result;
 
   for (const subject of SUBJECTS) {
-    const scored = brands.map((info) => {
-      let score = 0;
-      for (const category of POPULAR_RANK_CATEGORIES) {
-        const rankMap = categoryRankMaps.get(category);
-        const rank =
-          rankMap?.get(rankingKey(info.UID, subject)) ?? MISSING_RANK_FALLBACK;
-        score += rank;
-      }
-      return { info, score };
-    });
+    const scored = brands
+      .filter((info) => authorMatchesSubject(info, subject))
+      .map((info) => {
+        let score = 0;
+        for (const category of POPULAR_RANK_CATEGORIES) {
+          const rankMap = categoryRankMaps.get(category);
+          const rank =
+            rankMap?.get(rankingKey(info.UID, subject)) ??
+            MISSING_RANK_FALLBACK;
+          score += rank;
+        }
+        return { info, score };
+      });
 
     scored.sort(
       (a, b) =>
@@ -645,16 +627,19 @@ function buildPopularRankings(
   const results: MergedRanking[] = [];
 
   for (const subject of SUBJECTS) {
-    const scored = brands.map((info) => {
-      let score = 0;
-      for (const category of POPULAR_RANK_CATEGORIES) {
-        const rankMap = categoryRankMaps.get(category);
-        const rank =
-          rankMap?.get(rankingKey(info.UID, subject)) ?? MISSING_RANK_FALLBACK;
-        score += rank;
-      }
-      return { info, score };
-    });
+    const scored = brands
+      .filter((info) => authorMatchesSubject(info, subject))
+      .map((info) => {
+        let score = 0;
+        for (const category of POPULAR_RANK_CATEGORIES) {
+          const rankMap = categoryRankMaps.get(category);
+          const rank =
+            rankMap?.get(rankingKey(info.UID, subject)) ??
+            MISSING_RANK_FALLBACK;
+          score += rank;
+        }
+        return { info, score };
+      });
 
     scored.sort(
       (a, b) =>

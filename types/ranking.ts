@@ -31,6 +31,8 @@ export interface BrandInfo {
   intro?: string;
   record?: string;
   record2?: string;
+  /** 과목 키워드 문자열 (예: "영어, 국어, 수학") — 탭 필터 기준 */
+  range1?: string;
   range3?: string;
   youtube_url?: string;
   /** brand_info 상품 플래그 */
